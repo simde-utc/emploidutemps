@@ -1,0 +1,37 @@
+Permettre uniquement la màj à une seule personne (donc vérifier son Modcasid)
+Si MODCASID périmé, supprimer de update et permettre un nouveau login à faire la màj (logs/update)
+Améliorer l'affichage de màj (index et maj)
+
+
+Créer un affichage si nouvel utilisateur
+
+Utiliser $.param({elem: text});
+ajouter l'option se désinscrire du service, ajouter la possibilité de créer un évènement, ajout d'un VRAI calendrier, ajouter la possibilité de modifier son edt [modification auprès du SME. Surement demander le nouveau mail de changement d'edt]
+Changer les accepter=1, refuse=1 et assigner valeur à par ex type=accepter
+Voir le système de clé étrangère
+
+IMPOSSIBLE: ...
+Ajouter l'affichage d'une fréquence de 1/3 pour les organisations. Les afficher au milieu de taille 1/3
+
+Afficher les infos de proposition avant d'envoyer la demande
+
+Remplacer les card en css et les calculer en fonction de leur position
+
+Si on veut échanger A avec B et aussi A avec C, si A est échangé avec B faut supprimer la demande de A vers C
+(+ Checker les incompatibilités d'edt)
+
+Format mobile
+
+Supprier la case nouveau dans étudiants et eniyer des mails quand même mais donner le lien pour se désinscrire
+TODO: finir le protocole d'échanges, ajouter l'option se désinscrire du service,
+ajouter la possibilité de créer un évènement, ajout d'un VRAI calendrier, ajouter la possibilité de modifier son edt [modification auprès du SME. Surement demander le nouveau mail de changement d'edt]
+
+Contacter la DSI pour l'edt + téléchargement direct des edts
+
+Créer un iframe pour la màj + script ?
+Créer un iframe pour la connexion au Moodle et à UVweb automatique
+// Corriger le bug de suppression d'onglets
+// Corriger le bug d'affichage des tasks
+Automatiquement refuser toutes les demandes à la désinscriptions
+Améliorer le défilement
+Créer un menu pour inscription déco etc...
