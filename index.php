@@ -39,12 +39,12 @@
       });
     });
   </script>
-  <title>Emploi d'UTemps Beta 1.2</title>
+  <title>Emploi d'UTemps Beta 1.3</title>
 </head>
 
 <body onLoad='main()'>
   <div id='header'>
-    <a id='title' href='/'>Emploi d'UTemps Beta 1.2</a>
+    <a id='title' href='/'>Emploi d'UTemps Beta 1.3</a>
     <div id='sTitle'></div>
     <div id='bar'></div>
   </div>
@@ -70,6 +70,7 @@
       echo '<a style="color:#FFFFFF" onClick="reinscription();"">Se réinscrire du service (recevoir de nouveau des demandes)</a>';
   ?>
   <a style='color:#FFFFFF' href='/deconnexion.php'>Se déconnecter</a>
+    <button id='parameters' onClick="console.log('Hum'); seeMenu();"><i class="fa fa-2x fa-bars" aria-hidden="true"></i></button>
 </body>
 
 </html>

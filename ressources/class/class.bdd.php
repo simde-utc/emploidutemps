@@ -5,7 +5,7 @@ class BDD extends PDO {
   const DB_HOST = 'localhost';
   const DB_NAME = 'emploidutemps';
   const DB_USER = 'emploidutemps';
-  const DB_PASS = '';
+  const DB_PASS = 'Il y a une vie après les cours';
   const DB_OPTION = array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC);
 
   public function __construct () {

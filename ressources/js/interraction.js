@@ -524,3 +524,9 @@ function reinscription() {
     popup(info);
   });
 }
+
+function seeMenu() {
+  $.get('https://' + window.location.hostname + '/ressources/php/parameters.php', function (info) {
+    popup(info);
+  });
+}

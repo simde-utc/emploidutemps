@@ -118,4 +118,6 @@ Beta 1.2: 2017-02-13
 Beta 1.3: 2017-02-14
   - Ajout de la table Jours pour le calendrier des alternances
   - Ajout d'un outil d'ajout manuel du calendrier des altenances
+  - Conversion de tous les fichiers au format Unix (Bye bye le format DOS de Windaube)
+  - Déplacement du site vers les serveurs assos de l'UTC
   - Finalisation de la préparation de la version béta
