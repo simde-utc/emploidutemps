@@ -1,0 +1,127 @@
+Création d'Agend'UTC par Samy Nastuzzi (TC03, membre du SIMDE)
+Merci à Troc'UTC et Etupoisson pour l'idée de base
+Merci au template skeduler, au plugin print, et à Ginger Client (merci au SIMDE ♥)
+
+Alpha 1.0: 2016-09-26
+  - Création de la BDD permettant de sauvegarder les emplois du temps de chacun, leur photo de Trombi
+  - La BDD est optimisée pour gérer plus facilement l'emploi du temps de chaque UV
+  - L'affichage basique du calendrier a été créé, fonctionnement uniquement pour les étudiants
+
+Alpha 2.0: 2016-09-27
+  - Le calendrier gère maintenant l'affichage des couleurs
+  - Les informations concernant les UVs sont mieux affichés
+  - Création d'une animation lors d'un clic sur une UV
+  - Gestion du double affichage: afficher un emploi du temps (étudiant ou UV) et un autre
+  - Changement des ids de chaque "card"
+
+Alpha 3.0: 2016-09-28
+  - Ajout de la génération aléatoire des couleurs de chaque UV
+  - Changement de la gestion des couleurs (si aucune couleur n'est affecté par l'étudiant, ses UVs sont de même couleur que celle de l'UV et inversement)
+  - Ajout d'une meilleure distinction pour le double emploi du temps affiché
+  - Modification de l'affichage des "cards"
+  - Ajout d'un choix d'affichage: seulement son emploi du temps ou avec celui d'une UV spécifique
+  - Ajout automatique dans le changelog en cas de nouvelle mise à jour de l'emploi du temps
+  - Affichage des jours passés, en cours et à venir
+
+Alpha 4.0: 2016-09-29
+  - Ajout d'un renvoi direct vers l'emploi du temps de l'UV
+  - Ajout d'un bouton permettant d'ouvrir la page UVweb de l'UV dans un autre onglet
+  - Ajout d'un bouton de renvoi vers la page Moodle de l'UV dans un nouvel onglet
+  - Meilleure gestion de plusieurs TD/TP/cours en même temps à la même horaire
+  - Amélioration de l'affichage de la "card" sélectionnée
+  - Ajout d'un assombrissement à la sélection et possibilité de déselectionner en cliquant sur l'assombrissement
+  - Grisement du TP/TD/cours à vouloir échanger mais déjà présent dans l'emploi du temps de l'étudiant
+
+Alpha 5.0: 2016-09-30
+  - Ajout de boutons de modification et de redirection pour chaque "card" en fonction de son mode d'affichage
+  - Ajout de la gestion de couleurs de ses "cards"
+  - Ajout de l'affichage simultané de 4 TD/TP/cours en même temps (Merci MT90 pour ce travail)
+  - Gestion de l'affichage dans le changelog en cas de mise à jour
+  - Gestion d'une photo par défaut pour ceux qui n'en ont pas dans le Trombi
+  - Supression de pas mal de bugs
+
+Alpha 6.0: 2016-10-01
+  - Ajout de la connexion CAS
+  - Modification des couleurs et demande d'échange disponible uniquement pour son propre emploi du temps
+  - Suppression d'autres bugs (pas d'affichage sur mobile par exemple)
+  - Ajout de l'enregistrement automatique des informations pour chaque étudiant connecté
+  - Amélioration de l'affichage d'"interraction"
+  - Ajout d'un affichage de l'emploi du temps original, de la comparaison du nouveau et de l'ancien (les échangés sont indiqués par des couleurs: vert et rouge)
+  - Ajout de la comparaison de deux edts: un edt d'un étudiant et celui d'un autre (voire soi-même) ou d'une uv
+  - Affectation des options en fonctions de l'affichage automatique
+
+Alpha 7.0: 2016-10-03
+  - Ajout de l'affichage des étudiants inscrits à une cours/TP/TD précis
+  - Ajout d'un header affichant le nom du service ainsi que le mode d'affichage choisi
+  - Suppression de nombreux bugs (bug des photos, mauvais enregistrement des informations CAS)
+  - Ajout d'un système d'onglets pour afficher d'autres étudiants ou UVs (pas encore designé)
+  - Test d'un affichage dynamique des emplois du temps => impossible à réaliser. Le JS ne s'exécute pas après avoir été inséré par JQuery lors du .load
+  - Affichage dynamique de la couleur de l'emploi du temps d'une UV si celle-ci est suivie par l'utilisateur
+  - Ajout de lien direct vers Moodle, UVWeb, la page de mise à jour, la page de changelog et la page de déconnexion
+
+Alpha 8.0: 2016-10-04
+  - Amélioration de la gestion des onglets
+  - Ajout d'un affichage montrant tous les horaires occupés par les étudiants de chaque onglet
+  - Plaquette d'affichage réalisée, il ne reste plus qu'à faire le CSS, le JS/Jquery et prier Dieu :)
+  - Optimisation de quelques requêtes SQL
+  - Lors d'un clique sur un étudiant, celui-ci s'ajoute en onglet et l'emploi du temps de celui-ci est affiché
+
+Alpha 9.0: 2016-10-05
+  - Amélioration du système d'affichage des onglets
+  - Ajout d'une selectbox pour choisir le mode d'affichage
+
+Beta 1.0: 2016-10-09
+  - Refonte complète du système d'affichage d'emploi du temps (fini les reload, tout est fait par des appels JS/JQuery)
+  - Stabilisation et répartition du code dans différents fichiers
+  - Les "cards" qui dépassaient le calendrier en s'affichant sont maintenant déplacées automatiquement pour éviter ce défaut
+  - Le sysètme de mise à jour a été amélioré (affichage dynamique)
+  - Suppression de la table jours dans la BDD (totalement useless et débile)
+  - Ajout dans la BDD de la table echanges
+  - Ajout de l'appel Ginger qui permet d'enregistrer noms/prénoms/adresse de chaque étudiants (Attention, certains ne font pas parti de Ginger: chelou...)
+  - Ajout de la fonctionnalité print qui permet d'imprimé le calendrier dans l'état affiché (bugué..)
+  - Système d'onglets terminé, ajout, suppression et comparaison dynamique (avec l'aide précieuse de mon bien cher et tendre Nacim Bensakhria ❤)
+  - Ajout de la recherche dynamique d'un étudiant ou d'une UV (recherche possible par login, nom, prénom, ou combo des deux et UV )
+  - Ajout de la possibilité d'accéder directement à un mode par un get mode
+  - Le protocole d'échanges a commencé à être fait (vérification avant échanges: appartenance, demande déjà faite ou déjà refusé par tout le monde)
+  - Ajout de l'affichage proposition et demande pour les échanges (en cas de proposition ou de demande en cours)
+  - Ajout de l'affichage original et voir les changements si l'emploi du temps a été modifié
+  - Ajout de la comparaison d'emploi du temps entre plusieurs étudiants (peut-être infini) avec choix d'affichage ou non (je suis fier, c'est trop propre)
+  - Passage à la version BETA (TODO: finir le protocole d'échanges, ajouter l'option se désinscrire du service, ajouter la possibilité de créer un évènement, ajout d'un VRAI calendrier, ajouter la possibilité de modifier son edt [modification auprès du SME. Surement demander le nouveau mail de changement d'edt])
+  - Les premiers béta-testeurs ont l'air satisfait
+
+Beta 1.1: 2016-10-14
+  - Protocole d'échange fini (nécessité de tester pour vérifier les erreurs)
+  - Multiple bugs corrigés, fautes de frappes et surtout incohérences dans le système
+  - Tables recues et envoies ajoutés à la BDD
+  - Gestion des erreurs PHP: tout est logué
+
+Mise à jour des emplois du temps: 2016-10-17 09:44:38
+
+Beta 1.2: 2017-02-13
+  - Ajout de l'envoie de mail lors d'une instansion d'échange
+  - Des bugs revenus ont été corrigé
+  - Ajout de la nécessité d'avoir déjà été connecté pour recevoir des mails
+  - Ajout de l'affichage colorée des cases horaires en fonction de la date
+  - Fixation des couleurs uniquement lors du mode affichage
+  - Compatibilité créée avec les mobiles/petits formats (affichage de moins de jours, de façon dynamique)
+  - Possibilité de balailler les différents jours avec le bouton qui s'affichage lorsque l'edt n'est pas entier
+  - Modification de l'organisation (ajout de l'UV et de la salle)
+  - Gestion des onglets modifiés (maintenant la suppression se fait directement sur l'onglet, comme pour chaque navigateur internet)
+  - Optimisation de la recherche d'étudiants et d'UV
+  - Les jours peuvent maintenant être défilés par un simple swipe à gauche ou à droite
+  - Correction de nouveaux bugs
+  - Changement de l'affichage des "tasks"
+  - Ajout d'icônes pour simplifier la compréhension
+  - Modification du nom: Agend'UTC => Emploi d'UTemps
+  - Ajout au Gitlab: https://gitlab.utc.fr/simde/EmploisDUTemps/
+
+Beta 1.3: 2017-02-16
+  - Ajout de la table Jours pour le calendrier des alternances
+  - Ajout d'un outil d'ajout manuel du calendrier des altenances
+  - Conversion de tous les fichiers au format Unix (Bye bye le format DOS de Windaube)
+  - Déplacement du site vers les serveurs assos de l'UTC
+
+Beta 1.3.1: 2017-02-17
+  - Déplacement des données sensibles dans le fichier /ressources/mdp.php
+  - Suppression des debugs JS
+  - Finalisation de la préparation de la version béta
