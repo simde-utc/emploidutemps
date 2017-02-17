@@ -1,4 +1,4 @@
-<?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/mdp.php'); // Récupération des données
+<?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps'.'/ressources/mdp.php'); // Récupération des données
 
 class BDD extends PDO {
 
@@ -24,7 +24,7 @@ class BDD extends PDO {
 
 	private static function meurt($type, PDOException $e)	{
 		$signature = date('Y/m/d H:i:s').'	'.$_SERVER['REMOTE_ADDR'];
-		file_put_contents($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/logs/bdd.exception.txt',$signature.'	'.$type.'	'.$e->getMessage()."\r\n", FILE_APPEND);
+		file_put_contents($_SERVER['DOCUMENT_ROOT'].'/emploidutemps'.'/logs/bdd.exception.txt',$signature.'	'.$type.'	'.$e->getMessage()."\r\n", FILE_APPEND);
 		die('SQL Error loged : '.$signature);
 	}
 }

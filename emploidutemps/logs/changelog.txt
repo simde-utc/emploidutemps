@@ -125,3 +125,7 @@ Beta 1.3.1: 2017-02-17
   - Déplacement des données sensibles dans le fichier /ressources/mdp.php
   - Suppression des debugs JS
   - Finalisation de la préparation de la version béta
+
+Beta 1.3.2: 2017-02-17
+  - Adaptation du code à la vieille version PHP des serveurs des assos...
+  - Mauvais path... (double /)
