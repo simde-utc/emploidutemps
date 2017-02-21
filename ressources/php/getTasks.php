@@ -1,4 +1,4 @@
-<?php include($_SERVER['DOCUMENT_ROOT'].'/ressources/php/include.php');
+<?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/include.php');
 
   $id = 1;
 
@@ -7,8 +7,10 @@
     $nbrSameTime = count(array_keys($passed, array($recueInfo['jour'], $recueInfo['debut'], $recueInfo['fin'])));
     $exchange = getUVFromIdUV($recue['pour']);
     // Conversion de minutes en heures
-    $debut = join('.', array(explode(':', $recueInfo['debut'])[0], 50/30*explode(':', $recueInfo['debut'])[1]));
-    $fin = join('.', array(explode(':', $recueInfo['fin'])[0], 50/30*explode(':', $recueInfo['fin'])[1]));
+    $exploded = explode(':', $recueInfo['debut']);
+    $debut = join('.', array($exploded[0], 50/30*$exploded[1]));
+    $exploded = explode(':', $recueInfo['fin']);
+    $fin = join('.', array($exploded[0], 50/30*$exploded[1]));
 
     $fgColor = getFgColor($bgColor);
 
@@ -79,13 +81,15 @@
     $nbrSameTime = count(array_keys($passed, array($envoieInfo['jour'], $envoieInfo['debut'], $envoieInfo['fin'])));
     $exchange = getUVFromIdUV($envoie['pour']);
     // Conversion de minutes en heures
-    $debut = join('.', array(explode(':', $envoieInfo['debut'])[0], 50/30*explode(':', $envoieInfo['debut'])[1]));
-    $fin = join('.', array(explode(':', $envoieInfo['fin'])[0], 50/30*explode(':', $envoieInfo['fin'])[1]));
+    $exploded = explode(':', $envoieInfo['debut']);
+    $debut = join('.', array($exploded[0], 50/30*$exploded[1]));
+    $exploded = explode(':', $envoieInfo['fin']);
+    $fin = join('.', array($exploded[0], 50/30*$exploded[1]));
 
     $fgColor = getFgColor($bgColor);
 
     return array(
-      'id' => 'e'.$envoie['idEnvoie'],
+      'id' => 'e'.$envoie['idEchange'],
       'login' => $login,
       'column' => $envoieInfo['jour'],
       'duration' => $fin - $debut,
@@ -153,8 +157,10 @@
     foreach ($result as $edt) {
 
       // Conversion de minutes en heures
-      $debut = join('.', array(explode(':', $edt['debut'])[0], 50/30*explode(':', $edt['debut'])[1]));
-      $fin = join('.', array(explode(':', $edt['fin'])[0], 50/30*explode(':', $edt['fin'])[1]));
+      $exploded = explode(':', $edt['debut']);
+      $debut = join('.', array($exploded[0], 50/30*$exploded[1]));
+      $exploded = explode(':', $edt['fin']);
+      $fin = join('.', array($exploded[0], 50/30*$exploded[1]));
 
       if ($edt['login'] == $_SESSION['login'])
         $bgColor = '#770000';
@@ -192,8 +198,10 @@
     foreach ($allEdt as $edt) {
       $nbrSameTime = count(array_keys($passed, array($edt['jour'], $edt['debut'], $edt['fin'])));
       // Conversion de minutes en heures
-      $debut = join('.', array(explode(':', $edt['debut'])[0], 50/30*explode(':', $edt['debut'])[1]));
-      $fin = join('.', array(explode(':', $edt['fin'])[0], 50/30*explode(':', $edt['fin'])[1]));
+      $exploded = explode(':', $edt['debut']);
+      $debut = join('.', array($exploded[0], 50/30*$exploded[1]));
+      $exploded = explode(':', $edt['fin']);
+      $fin = join('.', array($exploded[0], 50/30*$exploded[1]));
 
       $bgColor = ($edt['color'] == NULL ? $edt['colorUV'] : $edt['color']);
 
@@ -243,8 +251,10 @@
       $nbrSameTime = count(array_keys($passed, array($edt['jour'], $edt['debut'], $edt['fin'])));
 
       // Conversion de minutes en heures
-      $debut = join('.', array(explode(':', $edt['debut'])[0], 50/30*explode(':', $edt['debut'])[1]));
-      $fin = join('.', array(explode(':', $edt['fin'])[0], 50/30*explode(':', $edt['fin'])[1]));
+      $exploded = explode(':', $edt['debut']);
+      $debut = join('.', array($exploded[0], 50/30*$exploded[1]));
+      $exploded = explode(':', $edt['fin']);
+      $fin = join('.', array($exploded[0], 50/30*$exploded[1]));
 
       $query = $GLOBALS['bdd']->prepare('SELECT color FROM uvs, cours WHERE uvs.uv = ? AND cours.login = ? AND uvs.id = cours.id LIMIT 1');
       $GLOBALS['bdd']->execute($query, array($uv, $_SESSION['login']));
@@ -252,7 +262,8 @@
       if ($query->rowCount() == 0)
         $bgColor = $edt['color'];
       else {
-        $bgColor = $query->fetch()['color'];
+        $data = $query->fetch();
+        $bgColor = $data['color'];
 
         if ($bgColor == NULL)
           $bgColor = $edt['color'];

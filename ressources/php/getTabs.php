@@ -1,4 +1,4 @@
-<?php include($_SERVER['DOCUMENT_ROOT'].'/ressources/php/include.php');
+<?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/include.php');
   if (isset($_GET['mode']) && is_string($_GET['mode']) && !empty($_GET['mode']))
     $mode = $_GET['mode'];
   else
@@ -36,21 +36,21 @@
   }
 
 ?><div id='menu'><button id='sessionLogin' class=<?php
-echo (($mode != 'organiser' && ($mode != 'modifier' || $_GET == array('mode' => 'modifier') || $_GET == array('mode' => 'modifier', 'login' => '', 'addTab' => '')) && (!isset($_GET['uv']) || $_GET['uv'] == '') && (!isset($_GET['login']) || isset($_GET['login']) && is_string($_GET['login']) && (($_GET['login'] == $_SESSION['login']) || ($_GET['login'] == '')) || empty($_GET) || (isset($_GET['tab']) && is_string($_GET['tab']) && $_GET['tab'] == 1))) ? '\'active\'>' : '\'notActive\' onClick="edtEtu(\'\');">');
+$nbrRecu = count(getRecuesList($_SESSION['login']));
+$nbrEnvoi = count(getEnvoiesList($_SESSION['login']));
+
+echo (($mode != 'organiser' && (($mode != 'modifier' && (!isset($_GET['uv']) || $_GET['uv'] == '')) || ($mode == 'modifier' && (!isset($_GET['envoi']) || $nbrEnvoi == 0) && (!isset($_GET['recu']) || $nbrRecu == 0) && !isset($_GET['original']) && !isset($_GET['changement'])) || $_GET == array('mode' => 'modifier', 'login' => '', 'addTab' => '')) && (!isset($_GET['login']) || isset($_GET['login']) && is_string($_GET['login']) && (($_GET['login'] == $_SESSION['login']) || ($_GET['login'] == '')) || empty($_GET) || (isset($_GET['tab']) && is_string($_GET['tab']) && $_GET['tab'] == 1))) ? '\'active\'>' : '\'notActive\' onClick="edtEtu(\'\');">');
 echo $_SESSION['nom'], ' ', $_SESSION['prenom'], '</button>';
 
 if ($mode == 'modifier') {
-  $nbrRecu = count(getRecuesList($_SESSION['login']));
-  $nbrEnvoi = count(getEnvoiesList($_SESSION['login']));
-
   if ($nbrRecu != 0)
-    echo '<button class="', (isset($_GET['recu']) && is_string($_GET['recu']) && $_GET['recu'] == '1' ? 'active' : 'notActive'), '" onClick="seeRecues();">', $nbrRecu, ' proposition', ($nbrRecu > 1 ? 's': ''), ' récue', ($nbrRecu > 1 ? 's': ''), '</button>';
+    echo '<button class="', (isset($_GET['recu']) && $_GET['recu'] == '1' ? 'active' : 'notActive'), '" onClick="seeRecues();">', $nbrRecu, ' proposition', ($nbrRecu > 1 ? 's': ''), ' récue', ($nbrRecu > 1 ? 's': ''), '</button>';
   if ($nbrEnvoi != 0)
-    echo '<button class="', (isset($_GET['envoi']) && is_string($_GET['envoi']) && $_GET['envoi'] == '1' ? 'active' : 'notActive'), '" onClick="seeEnvoies();">', $nbrEnvoi, ' proposition', ($nbrEnvoi > 1 ? 's': ''), ' envoyée', ($nbrEnvoi > 1 ? 's': ''), '</button>';
+    echo '<button class="', (isset($_GET['envoi']) && $_GET['envoi'] == '1' ? 'active' : 'notActive'), '" onClick="seeEnvoies();">', $nbrEnvoi, ' proposition', ($nbrEnvoi > 1 ? 's': ''), ' envoyée', ($nbrEnvoi > 1 ? 's': ''), '</button>';
 
   if (!isEdtEtuVoid($_SESSION['login'], 0)) {
-    echo '<button class="', (isset($_GET['original']) && is_string($_GET['original']) && $_GET['original'] == '1' ? 'active' : 'notActive'), '" onClick="seeOriginal();">Voir l\'original</button>';
-    echo '<button class="', (isset($_GET['changement']) && is_string($_GET['changement']) && $_GET['changement'] == '1' ? 'active' : 'notActive'), '" onClick="seeChangement();">Voir les changements</button>';
+    echo '<button class="', (isset($_GET['original']) && $_GET['original'] == '1' ? 'active' : 'notActive'), '" onClick="seeOriginal();">Voir l\'original</button>';
+    echo '<button class="', (isset($_GET['changement']) && $_GET['changement'] == '1' ? 'active' : 'notActive'), '" onClick="seeChangement();">Voir les changements</button>';
   }
 }
 
@@ -98,10 +98,16 @@ foreach ($_SESSION['tab']['uv'] as $uv) {
     echo 'class="blocked"'; ?>><i class="fa fa-plus" aria-hidden="true"></i></button>
 
   <select id='mode' onChange="selectMode('', this.options[this.selectedIndex].value);">
-    <option value='afficher'<?php echo ($mode == 'afficher' ? 'selected' : ''); ?>>Afficher</option>
-    <option value='comparer'<?php echo ($mode == 'comparer' ? 'selected' : ''); ?>>Comparer</option>
-    <option value='modifier'<?php echo ($mode == 'modifier' ? 'selected' : ''); ?>>Modifier</option>
-    <option value='organiser'<?php echo ($mode == 'organiser' ? 'selected' : ''); ?>>Organiser</option>
+  <?php
+    $query = $GLOBALS['bdd']->prepare('SELECT login FROM etudiants WHERE login = ?');
+    $GLOBALS['bdd']->execute($query, array($_SESSION['login']));
+
+    if ($query->rowCount() == 1)
+      echo '<option value=\'afficher\'', ($mode == 'afficher' ? ' selected' : ''), '>Afficher</option>
+      <option value=\'comparer\'', ($mode == 'comparer' ? ' selected' : ''), '>Comparer</option>
+      <option value=\'modifier\'', ($mode == 'modifier' ? ' selected' : ''), '>Modifier</option>
+      ';
+   ?><option value='organiser'<?php echo ($mode == 'organiser' ? 'selected' : ''); ?>>Organiser</option>
   <!--  <option value='planifier'<?php echo ($mode == 'planifier' ? 'selected' : ''); ?>>Planifier</option> -->
   </select>
 </div>

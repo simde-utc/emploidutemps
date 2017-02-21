@@ -1,4 +1,17 @@
-<?php include($_SERVER['DOCUMENT_ROOT'].'/ressources/php/include.php');
+<form method='get'>
+  <input name='annee' <?php echo isset($_GET['annee']) ? 'value="'.$_GET['annee'].'"' : ''; ?> placeholder="annee" />
+  <input name='mois' <?php echo isset($_GET['mois']) ? 'value="'.$_GET['mois'].'"' : ''; ?> placeholder="mois" />
+  <input name='jour' <?php echo isset($_GET['jour']) ? 'value="'.($_GET['jour'] + 1).'"' : ''; ?> placeholder="jour" /><br />
+  <input name='special' <?php echo isset($_GET['special']) ? 'value="'.$_GET['special'].'"' : ''; ?> placeholder="special" />
+  <input name='jours' <?php echo isset($_GET['jours']) ? 'value="'.$_GET['jours'].'"' : ''; ?> placeholder="jours" /><br />
+  <input name='type' <?php echo isset($_GET['type']) ? 'value="'.($_GET['type'] + 1).'"' : ''; ?> placeholder="type" />
+  <input name='alternance' <?php echo isset($_GET['alternance']) ? 'value="'.$_GET['alternance'].'"' : ''; ?> placeholder="alternance" />
+  <input name='semaine' <?php echo isset($_GET['semaine']) ? 'value="'.$_GET['semaine'].'"' : ''; ?> placeholder="semaine" /><br />
+  <input name='infos' <?php echo isset($_GET['infos']) ? 'value="'.$_GET['infos'].'"' : ''; ?> placeholder="infos" /><br />
+  <input type='submit' />
+</form>
+
+<?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/include.php');
 
   function send($status, $info) {
     echo '<div style="background-color: '.($status == 'error' ? '#FF0000': '#00FF00').'" id="popupHead">'.$info.'</div>';

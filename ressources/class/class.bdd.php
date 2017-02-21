@@ -1,15 +1,9 @@
-<?php
+<?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps'.'/ressources/mdp.php'); // Récupération des données
 
 class BDD extends PDO {
-  const DB_TYPE = 'mysql';
-  const DB_HOST = 'localhost';
-  const DB_NAME = 'emploidutemps';
-  const DB_USER = 'emploidutemps';
-  const DB_PASS = 'Il y a une vie après les cours';
-  const DB_OPTION = array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC);
 
   public function __construct () {
-    try { parent::__construct($this::DB_TYPE.':host='.$this::DB_HOST.'; dbname='.$this::DB_NAME.'; charset=utf8', $this::DB_USER, $this::DB_PASS, $this::DB_OPTION); }
+    try { parent::__construct('mysql'.':host='.DB_HOST.'; dbname='.DB_NAME.'; charset=utf8', DB_USER, DB_PASS, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC)); }
     catch (PDOException $e)  { BDD::meurt('__construct', $e); }
 	}
 
@@ -30,7 +24,7 @@ class BDD extends PDO {
 
 	private static function meurt($type, PDOException $e)	{
 		$signature = date('Y/m/d H:i:s').'	'.$_SERVER['REMOTE_ADDR'];
-		file_put_contents($_SERVER['DOCUMENT_ROOT'].'/logs/bdd.exception.txt',$signature.'	'.$type.'	'.$e->getMessage()."\r\n", FILE_APPEND);
+		file_put_contents($_SERVER['DOCUMENT_ROOT'].'/emploidutemps'.'/logs/bdd.exception.txt',$signature.'	'.$type.'	'.$e->getMessage()."\r\n", FILE_APPEND);
 		die('SQL Error loged : '.$signature);
 	}
 }

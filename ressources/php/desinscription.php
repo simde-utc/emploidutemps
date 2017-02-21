@@ -1,4 +1,4 @@
-<?php include($_SERVER['DOCUMENT_ROOT'].'/ressources/php/include.php');
+<?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/include.php');
   $query = $GLOBALS['bdd']->prepare('UPDATE etudiants SET desinscrit = 1 WHERE login = ?');
   $GLOBALS['bdd']->execute($query, array($_SESSION['login']));
 

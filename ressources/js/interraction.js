@@ -22,11 +22,9 @@ function newRequest(get, tab) {
   $('#zoneFocus').removeClass('focused');
   $('#zonePopup').removeClass('focused');
 
-  console.log('https://' + window.location.hostname + '/ressources/php/getTabs.php?mode=' + window.mode + get + tab);
-
-  $('#bar').load('https://' + window.location.hostname + '/ressources/php/getTabs.php?mode=' + window.mode + get + tab, function() {
-    $('#sTitle').load('https://' + window.location.hostname + '/ressources/php/getTitle.php?&mode=' + window.mode + get, function () {
-        $.get('https://' + window.location.hostname + '/ressources/php/getTasks.php?mode=' + window.mode + get, function (tasks) {
+  $('#bar').load('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getTabs.php?mode=' + window.mode + get + tab, function() {
+    $('#sTitle').load('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getTitle.php?&mode=' + window.mode + get, function () {
+      $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getTasks.php?mode=' + window.mode + get, function (tasks) {
         schedule(JSON.parse(tasks));
         setSkeduler();
       });
@@ -272,7 +270,7 @@ function selectMode(get, mode) {
 function loading() {
   var img = document.createElement('img');
   img.id = 'loading';
-  img.src = 'https://' + window.location.hostname + '/ressources/img/loading.gif';
+  img.src = 'https://' + window.location.hostname + '/emploidutemps' + '/ressources/img/loading.gif';
 
   var src = document.getElementById('skeduler-container');
   src.appendChild(img);
@@ -314,7 +312,7 @@ function seeOthers(uv, type, idUV) {
 
 function changeColor(idUV, color) {
   setTimeout(function () { // Attendre la fin de l'animation pour actualisr la couleur ^^'
-    $.get('https://' + window.location.hostname + '/ressources/php/setColor.php?idUV=' + idUV + '&color=' + color.substr(1), function () {
+    $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/setColor.php?idUV=' + idUV + '&color=' + color.substr(1), function () {
       newRequest(window.get, '');
     });
   }, 200);
@@ -328,11 +326,15 @@ function edtUV(uv) {
   if (window.mode != 'comparer')
     window.mode = 'afficher';
 
+  setTimeout(function () {
+    unFocus();
+    popupClose(); }, 100);
   newRequest('&uv=' + uv, '&addTab=' + uv);
 }
 
 function edtEtu(login) {
   window.uv = '';
+  window.idUV = '';
   window.login = login;
 
   unFocus();
@@ -396,17 +398,15 @@ function popup(info) {
   $('#popup').css('visibility', 'visible');
   $('#popup').css('opacity', '1');
   $('#zonePopup').addClass('focused');
-  console.log(4);
 }
 
 function popupClose() {
   window.click = false;
+
   $('#popup').css('visibility', 'hidden');
   $('#popup').css('opacity', '0');
 
   $('#zonePopup').removeClass('focused');
-
-  console.log(5);
 }
 
 function unFocus() {
@@ -414,14 +414,13 @@ function unFocus() {
 
   $('#zoneGrey').removeClass('focused');
   $('#zoneFocus').removeClass('focused');
-  console.log(6);
 
   $('#' + window.card.id).click();
 }
 
 function seeEtu(idUV) {
   window.click = true;
-  $.get('https://' + window.location.hostname + '/ressources/php/getEtuList.php?idUV=' + idUV, function (etus) {
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getEtuList.php?idUV=' + idUV, function (etus) {
     popup(etus);
   });
 }
@@ -431,7 +430,7 @@ function searchTab() {
 
   if (!$('#addTab').hasClass("blocked")) {
     popup("<div id='popupHead'>\
-      <div style='margin-bottom: 2px;'>Ajouter un étudiant ou une UV</div>\
+      <div style='margin-bottom: 2px;'>Chercher un étudiant ou une UV pour l'ajouter</div>\
       <input type='text' autofocus='autofocus'' onInput='checkEtuAndUVList(this.value);' id='addTabText' />\
       <button onClick='printEtuAndUVList();'>Chercher</button>\
     </div>\
@@ -456,15 +455,22 @@ function checkEtuAndUVList(search) {
   window.toSearch = text;
 }
 
-function printEtuAndUVList() {
+function printEtuAndUVList(begin) {
   if (window.toSearch != window.search) {
     loading();
+
     window.search = window.toSearch;
 
-    var search = window.toSearch;
-    console.log(window.toSearch + ' ' + window.search);
+    searchTab();
+    checkEtuAndUVList(window.search);
+    $('#popup').scrollTop(0);
 
-    $('#searchResult').load('https://' + window.location.hostname + '/ressources/php/getEtuAndUVList.php?search=' + search.replace(/^\s+|\s+$/g, '').replace(/_/g, '').replace(/\s/, '%\\_%\\'), function () {
+    var search = window.toSearch;
+
+    if (begin == undefined)
+      begin = 0;
+
+    $('#searchResult').load('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getEtuAndUVList.php?search=' + search.replace(/^\s+|\s+$/g, '').replace(/_/g, '').replace(/\s/, '%\\_%\\') + '&begin=' + begin, function () {
       endLoading();
     });
   }
@@ -472,61 +478,68 @@ function printEtuAndUVList() {
 
 function askForExchange(idUV, forIdUV) {
   window.click = true;
-  $.get('https://' + window.location.hostname + '/ressources/php/exchange.php?ask=1&idUV=' + idUV + '&for=' + forIdUV, function (info) {
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?ask=1&idUV=' + idUV + '&for=' + forIdUV, function (info) {
     popup(info);
   });
 }
 
 function addExchange(idUV, forIdUV, note) {
-  $.post('https://' + window.location.hostname + '/ressources/php/exchange.php?add=1&idUV=' + idUV + '&for=' + forIdUV, {note: note}, function (info) {
+  $.post('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?add=1&idUV=' + idUV + '&for=' + forIdUV, {note: note}, function (info) {
     newRequest(window.get, '');
+    window.card = '';
     popup(info);
   });
 }
 
 function delExchange(idExchange) {
   window.click = true;
-  $.get('https://' + window.location.hostname + '/ressources/php/exchange.php?del=1&idExchange=' + idExchange, function (info) {
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?del=1&idExchange=' + idExchange, function (info) {
     newRequest(window.get, '');
+    window.idUV = '';
+    window.card = '';
     popup(info);
   });
 }
 
 function infosExchange(idExchange) {
   window.click = true;
-  $.get('https://' + window.location.hostname + '/ressources/php/exchange.php?infos=1&idExchange=' + idExchange, function (info) {
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?infos=1&idExchange=' + idExchange, function (info) {
     popup(info);
   });
 }
 
 function acceptExchange(idExchange) {
-  $.get('https://' + window.location.hostname + '/ressources/php/exchange.php?accept=1&idExchange=' + idExchange, function (info) {
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?accept=1&idExchange=' + idExchange, function (info) {
     newRequest(window.get, '');
     popup(info);
   });
 }
 
 function refuseExchange(idExchange) {
-  $.get('https://' + window.location.hostname + '/ressources/php/exchange.php?refuse=1&idExchange=' + idExchange, function (info) {
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?refuse=1&idExchange=' + idExchange, function (info) {
     newRequest(window.get, '');
     popup(info);
   });
 }
 
-function desinscription() {
-  $.get('https://' + window.location.hostname + '/ressources/php/desinscription.php', function (info) {
+function parameters(param) {
+  var get = '';
+
+  if (param != undefined)
+    get = '?param=' + param;
+
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/parameters.php' + get, function (info) {
     popup(info);
   });
 }
 
-function reinscription() {
-  $.get('https://' + window.location.hostname + '/ressources/php/reinscription.php', function (info) {
-    popup(info);
-  });
-}
+function getICal() {
+  var get = '';
 
-function seeMenu() {
-  $.get('https://' + window.location.hostname + '/ressources/php/parameters.php', function (info) {
-    popup(info);
+  if ($('#alarmICS').val() !== undefined)
+    get = '?alarm=' + $('#alarmICS').val();
+
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getICal.php' + get, function (file) {
+    window.location.href = 'https://' + window.location.hostname + file;
   });
 }

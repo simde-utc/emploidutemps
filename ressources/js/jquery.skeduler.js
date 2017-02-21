@@ -32,8 +32,6 @@ function schedule(tasks) {
           $('#zoneFocus').removeClass('focused');
           window.card = '';
 
-          console.log(0);
-
           seeOthers(card.uv, type, card.idUV);
         }
         else {
@@ -48,7 +46,6 @@ function schedule(tasks) {
             $('#' + card.id + ' .interraction').css('visibility', 'visible');
             $('#zoneGrey').addClass('focused');
             $('#zoneFocus').addClass('focused');
-            console.log(1);
           }
           else if (window.card.id == card.id) {
             if ($('#' + card.id).position().top == 435)
@@ -61,7 +58,6 @@ function schedule(tasks) {
             $('#zoneFocus').removeClass('focused');
 
             window.card = '';
-            console.log(2);
           }
           else {
             if ($('#' + window.card.id).position().top == 435)
@@ -80,7 +76,6 @@ function schedule(tasks) {
 
             $('#' + card.id + ' .interraction').css('opacity', '1');
             $('#' + card.id + ' .interraction').css('visibility', 'visible');
-            console.log(3);
           }
 
           $('#' + card.id).toggleClass('focus');
@@ -176,7 +171,7 @@ function schedule(tasks) {
 
         for (var key in colors) {
           if (colors[key] == task.bgColor)
-            task.interraction += "<button class='colorButton' style='position: relative; top: -2.5px; background-color:" + colors[key] + "; color: " + task.fgColor + "' onClick='changeColor(" + task.idUV + ", \"#NULL\");' ><i class=\"fa fa-times\" aria-hidden=\"true\"></i></button>";
+            task.interraction += "<button class='colorButton' style='position: relative; background-color:" + colors[key] + "; color: " + task.fgColor + "' onClick='changeColor(" + task.idUV + ", \"#NULL\");' ><i class=\"fa fa-times\" aria-hidden=\"true\"></i></button>";
           else
             task.interraction += "<button class='colorButton' style='background-color:" + colors[key] + "' onClick='changeColor(" + task.idUV + ", \"" + colors[key] + "\");'/>";
         }

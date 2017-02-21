@@ -1,4 +1,4 @@
-<?php include($_SERVER['DOCUMENT_ROOT'].'/ressources/class/class.ginger.php'); include($_SERVER['DOCUMENT_ROOT'].'/ressources/class/class.simpleImage.php');
+<?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/class/class.ginger.php'); include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/class/class.simpleImage.php');
 
 class MAJ
 {
@@ -19,16 +19,16 @@ class MAJ
 
 
   public static function isUpdating () {
-    return file_exists($_SERVER['DOCUMENT_ROOT'].self::tempDir.'update');
+    return file_exists($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::tempDir.'update');
   }
 
   public static function checkForUpdate ($curl) {
     if (!self::checkModcasid($curl))
       return FALSE;
 
-    $logsDir = $_SERVER['DOCUMENT_ROOT'].self::tempDir;
-    $edtDir = $_SERVER['DOCUMENT_ROOT'].self::edtDir;
-    $picDir = $_SERVER['DOCUMENT_ROOT'].self::picDir;
+    $logsDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::tempDir;
+    $edtDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::edtDir;
+    $picDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::picDir;
 
     if (file_exists($logsDir.'lastCheck') && time() - file_get_contents($logsDir.'lastCheck') < 900)
       return FALSE;
@@ -65,10 +65,10 @@ class MAJ
 
 
   public static function update ($curl) {
-    $file = $_SERVER['DOCUMENT_ROOT'].self::tempDir.'login';
-    $logsDir = $_SERVER['DOCUMENT_ROOT'].self::tempDir;
-    $edtDir = $_SERVER['DOCUMENT_ROOT'].self::edtDir;
-    $picDir = $_SERVER['DOCUMENT_ROOT'].self::picDir;
+    $file = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::tempDir.'login';
+    $logsDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::tempDir;
+    $edtDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::edtDir;
+    $picDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::picDir;
 
     if (!file_exists($logsDir.'update')) {
       if (!self::checkForUpdate($curl)) {
@@ -129,8 +129,8 @@ class MAJ
 
 
   private static function getEdt ($curl) {
-    $edtDir = $_SERVER['DOCUMENT_ROOT'].self::edtDir;
-    $picDir = $_SERVER['DOCUMENT_ROOT'].self::picDir;
+    $edtDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::edtDir;
+    $picDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::picDir;
 
     if (!file_exists($edtDir)) { mkdir($edtDir, 0777, true); }
     if (!file_exists($picDir)) { mkdir($picDir, 0777, true); }
@@ -145,7 +145,7 @@ class MAJ
       $edt = str_replace('"', '', $edt);
       $login = str_replace('.edt', '', $edt);
 
-      file_put_contents($_SERVER['DOCUMENT_ROOT'].self::tempDir.'update', time().' '.$login);
+      file_put_contents($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::tempDir.'update', time().' '.$login);
 
       if (!file_exists($edtDir.$edt)) {
         $text = $curl->get('http://wwwetu.utc.fr/sme/EDT/'.$edt);
@@ -179,8 +179,8 @@ class MAJ
 
 
   public static function insert () {
-    $dir = $_SERVER['DOCUMENT_ROOT'].self::edtDir;
-    $file = $_SERVER['DOCUMENT_ROOT'].self::tempDir.'login';
+    $dir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::edtDir;
+    $file = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::tempDir.'login';
 
     if (file_exists($file))
       $login = explode(' ', file_get_contents($file))[1].'.edt';
@@ -340,7 +340,7 @@ class MAJ
 
 
   private static function setCurrentLogin ($login) {
-    $file = $_SERVER['DOCUMENT_ROOT'].self::tempDir.'login';
+    $file = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::tempDir.'login';
 
     file_put_contents($file, time().' '.$login);
     return $login;

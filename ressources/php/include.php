@@ -17,15 +17,18 @@
   $uvPic = '<i class="searchImg fa fa-4x fa-graduation-cap" style="padding-left:2px;" aria-hidden="true"></i>';
   $colors = array('#7DC779', '#82A1CA', '#F2D41F', '#457293', '#AB7AC6', '#DF6F53', '#B0CEE9', '#AAAAAA', '#576D7C', '#1C704E', '#F79565');
   $jours = array('lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche');
-  include($_SERVER['DOCUMENT_ROOT'].'/ressources/class/class.bdd.php');
-  include($_SERVER['DOCUMENT_ROOT'].'/ressources/class/class.curl.php');
-  include($_SERVER['DOCUMENT_ROOT'].'/ressources/class/class.cas.php');
+  include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/class/class.bdd.php');
+  include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/class/class.curl.php');
+  include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/class/class.cas.php');
 
   $bdd = new BDD();
   $curl = new CURL(strpos($_SERVER['HTTP_HOST'],'utc') !== false);
   $curl->setCookies('MODCASID='.(isset($_GET['MODCASID']) && is_string($_GET['MODCASID']) ? $_GET['MODCASID'] : ''));
 
   if (!isset($_SESSION['login'])) {
+    if (!isset($_SESSION['_GET']))
+      $_SESSION['_GET'] = $_GET;
+
   	$info = CAS::authenticate();
 
   	if ($info != -1) 	{
@@ -40,12 +43,15 @@
       $query = $bdd->prepare('UPDATE etudiants SET nouveau = 0 WHERE login = ?');
       $bdd->execute($query, array($_SESSION['login']));
 
-      file_put_contents($_SERVER['DOCUMENT_ROOT'].'/logs/connections', date('Y/m/d H:i:s').': '.$_SESSION['login'].PHP_EOL, FILE_APPEND);
+      file_put_contents($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/logs/connections', date('Y/m/d H:i:s').': '.$_SESSION['login'].PHP_EOL, FILE_APPEND);
 
-      $get = substr($_SERVER['REQUEST_URI'], strpos($_SERVER['REQUEST_URI'], "?"));
+      $get = '?';
+      foreach ($_SESSION['_GET'] as $key => $value) {
+        if ($key != 'ticket')
+          $get .= $key.'='.$value.'&';
+      }
 
-
-      header('Location: /');//.substr($get, 0, strpos($_SERVER['REQUEST_URI'], "ticket=") - 2));
+      header('Location: /emploidutemps/'.substr($get, 0, -1));
       exit;
   	}
   	else
@@ -54,7 +60,7 @@
   }
 
   function isUpdating() {
-    return file_exists($_SERVER['DOCUMENT_ROOT'].'/logs/'.'update') || file_exists($_SERVER['DOCUMENT_ROOT'].'/logs/'.'login');
+    return file_exists($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/logs/'.'update') || file_exists($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/logs/'.'login');
   }
 
   function getFgColor($bgColor) {
@@ -94,7 +100,7 @@
   }
 
   function printUV($uv) {
-    echo '<div class="searchCard" style="margin-left: auto;" onClick="edtUV(\'', $uv['uv'], '\')">';
+    echo '<div class="searchCard" onClick="edtUV(\'', $uv['uv'], '\')">';
 
     if (file_exists($pic))
       echo '<img class="searchImg" src="https://'.$_SERVER['SERVER_NAME'].'/pic/'.$etu['login'].'.jpg" alt="photo"/>';
@@ -108,7 +114,7 @@
   }
 
   function printSelf($etu) {
-    $pic = $_SERVER['DOCUMENT_ROOT'].'/pic/'.$_SESSION['login'].'.jpg';
+    $pic = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/pic/'.$_SESSION['login'].'.jpg';
 
     if (!file_exists($pic))
       $pic = 'https://'.$_SERVER['SERVER_NAME'].'/pic/'.$_SESSION['login'].'.jpg';
@@ -150,12 +156,13 @@
     echo '</div>';
   }
 
-  function printEtuAndUVList($search) {
+  function printEtuAndUVList($search, $limit = NULL, $begin = 0) {
     $etus = getEtuListFromSearch($search);
     $uvs = getUVListFromSearch($search);
 
     if (empty($etus) && empty($uvs) && !empty($search)) {
-      echo '<div class="searchCard" style="text-align: center; display: block;"><br/ >Aucun résultat trouvé</div>';
+      echo '<div class="searchCard" style="background-color: #FF0000; color: #FFF; margin: 5px; padding: 5px; height: 100%; width: 100%; text-align: center; display: block;">Aucun résultat trouvé</div>';
+      exit;
     }
 
     $sessionInfo = getEtu($_SESSION['login']);
@@ -163,11 +170,40 @@
     if (in_array($sessionInfo, $etus))
       unset($etus[array_search($sessionInfo, $etus)]);
 
-    foreach ($etus as $etu)
-      printEtu($etu);
+    if ($limit == NULL) {
+      foreach ($etus as $etu)
+        printEtu($etu);
 
-    foreach ($uvs as $uv)
-      printUV($uv);
+      foreach ($uvs as $uv)
+        printUV($uv);
+    }
+    else {
+      $i = 0;
+
+      if ($begin != 0)
+        echo '<div class="searchCard" style="background-color: #0000FF; color: #FFF; padding: 5px; height: 100%; width: 100%; text-align: center; display: block;" onClick="window.search=\'\'; printEtuAndUVList(', $begin - $limit, ');">Cliquez ici pour afficher les résultats précédents</div>';
+
+      foreach ($etus as $etu) {
+        if ($i++ < $begin)
+          continue;
+        else if ($i > $limit + $begin)
+          break;
+
+        printEtu($etu);
+      }
+
+      foreach ($uvs as $uv) {
+        if ($i++ < $begin)
+          continue;
+        else if ($i > $limit + $begin)
+          break;
+
+        printUV($uv);
+      }
+
+      if ($i > $limit + $begin)
+        echo '<div class="searchCard" style="background-color: #0000FF; color: #FFF; padding: 5px; height: 100%; width: 100%; text-align: center; display: block;" onClick="window.search=\'\'; printEtuAndUVList(', $begin + $limit, ');">Cliquez ici pour afficher la suite de la recherche</div>';
+    }
   }
 
   function getRecuesList($login = NULL, $idExchange = NULL, $disponible = NULL, $echange = NULL, $idUV = NULL, $for = NULL) {
@@ -205,9 +241,9 @@
     return $query->fetchAll();
   }
 
-  function getEtuFromIdUV($idUV, $desinscrit = NULL) {
-    $query = $GLOBALS['bdd']->prepare('SELECT etudiants.login, etudiants.semestre, etudiants.mail, etudiants.prenom, etudiants.nom, etudiants.nouveau, etudiants.desinscrit, cours.actuel, cours.echange FROM etudiants, cours WHERE cours.id = ? AND (? IS NULL OR desinscrit = ?) AND etudiants.login = cours.login ORDER BY login');
-    $GLOBALS['bdd']->execute($query, array($idUV, $desinscrit, $desinscrit));
+  function getEtuFromIdUV($idUV, $desinscrit = NULL, $actuel = 1) {
+    $query = $GLOBALS['bdd']->prepare('SELECT etudiants.login, etudiants.semestre, etudiants.mail, etudiants.prenom, etudiants.nom, etudiants.nouveau, etudiants.desinscrit, cours.actuel, cours.echange FROM etudiants, cours WHERE cours.id = ? AND cours.actuel = ? AND (? IS NULL OR desinscrit = ?) AND etudiants.login = cours.login ORDER BY login');
+    $GLOBALS['bdd']->execute($query, array($idUV, $actuel, $desinscrit, $desinscrit));
 
     return $query->fetchAll();
   }
@@ -256,6 +292,37 @@
     $GLOBALS['bdd']->execute($query, array($login));
 
     return $query->rowCount() == 1;
+  }
+
+  function cancelIdExchange($idExchange, $login = NULL) {
+    $query = $GLOBALS['bdd']->prepare('DELETE FROM envoies WHERE idEchange = ? AND login = ?');
+    $GLOBALS['bdd']->execute($query, array($idExchange, $login == NULL ? $_SESSION['login'] : $login));
+
+    // Si on était le seul à demander, on désactive l'annonce
+    if (count(getEnvoiesList(NULL, $idExchange, 1)) == 0) {
+      $query = $GLOBALS['bdd']->prepare('UPDATE echanges SET active = 0 WHERE idEchange = ?');
+      $GLOBALS['bdd']->execute($query, array($idExchange));
+    }
+  }
+
+  function refuseIdExchange($idExchange) {
+    $query = $GLOBALS['bdd']->prepare('UPDATE recues SET disponible = 0, date = NOW() WHERE login = ? AND idEchange = ?');
+    $GLOBALS['bdd']->execute($query, array($_SESSION['login'], $idExchange));
+
+    if (count(getRecuesList(NULL, $idExchange, 1)) == 0) { // On regarde s'il reste encore des propositions non répondus
+      // On annonce que personne n'a accepté la proposition
+      $query = $GLOBALS['bdd']->prepare('UPDATE echanges SET active = 0 WHERE idEchange = ?');
+      $GLOBALS['bdd']->execute($query, array($idExchange));
+      // On indique à tous les demandeurs que tout le monde a refusé
+      $query = $GLOBALS['bdd']->prepare('UPDATE envoies SET disponible = 0, date = NOW() WHERE idEchange = ? AND disponible = 1');
+      $GLOBALS['bdd']->execute($query, array($idExchange));
+
+      $envoies = getEnvoiesList(NULL, $idExchange, 1);
+      foreach ($envoies as $envoie) {
+        $infosLogin = getEtu($envoie['login']);
+        mail($infosLogin['login'], 'Echange refusé', 'Salut !'.PHP_EOL.'Une demande d\'échange a été refusée par tout le monde.'.PHP_EOL.'Tente ta chance avec une autre proposition!', 'From: agendutc@nastuzzi.fr');
+      }
+    }
   }
 
   if (isUpdating()) {

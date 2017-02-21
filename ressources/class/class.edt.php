@@ -1,7 +1,5 @@
 <?php
 $id = 1;
-$voidPic = 'http://'.$_SERVER['SERVER_NAME'].'/ressources/img/noPic.png';
-
 
 function printTimeTaken($logins) {
   foreach ($logins as $login) {
@@ -39,7 +37,6 @@ class ETU {
   private $edt;
   private $pic;
   const picDir = '/pic/';
-  const voidPic = '/ressources/img/noPic.png';
 
   public function __construct ($login, $actuel = 1) {
     $this->login = $login;
@@ -122,12 +119,12 @@ class ETU {
   }
 
   private function setPic() {
-    $picDir = $_SERVER['DOCUMENT_ROOT'].$this::picDir.$this->login.'.jpg';
+    $picDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.$this::picDir.$this->login.'.jpg';
 
     if (file_exists($picDir))
       $this->pic = 'http://'.$_SERVER['SERVER_NAME'].$this::picDir.$this->login.'.jpg';
     else
-      $this->pic = 'http://'.$_SERVER['SERVER_NAME'].$this::voidPic;
+      $this->pic = '';
   }
 
   public function getPic() {

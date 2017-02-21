@@ -9,7 +9,7 @@ html {
 
 body {
   background-color: #384047;
-  padding-top: 150px;
+  padding-top: 135px;
   display: table-cell;
   font-family: Helvetica, ​Arial, ​sans-serif;
   -webkit-print-color-adjust: exact;
@@ -189,7 +189,6 @@ background-color: #FFFFFF;
 }
 
 #popup {
-  display: flex;
   flex-wrap: wrap;
   position: fixed;
   overflow: auto;
@@ -213,7 +212,9 @@ background-color: #FFFFFF;
 }
 
 #popupHead {
-  width: 100%;
+  position: sticky;
+  top: 0;
+  left: 0;
   margin: 0px;
   padding: 10px;
   text-align: center;
@@ -222,12 +223,13 @@ background-color: #FFFFFF;
 }
 
 #noteExchange {
-  margin: 10px;
-  width: 100%;
+  margin: 4.5%;
+  width: 90%;
   max-height: 250px;
 }
 
 #sendExchange {
+  display: block;
   margin-left: auto;
   margin-right: auto;
   margin-bottom: 5px;
@@ -236,18 +238,16 @@ background-color: #FFFFFF;
 #searchResult {
   display: flex;
   flex-wrap: wrap;
-  overflow: auto;
-  width: 100%;
 }
 
 .searchCard {
   display: flex;
   flex-grow: 1;
-  min-width: 250px;
+  min-width: 300px;
   width: 23%;
   margin: 0.5%;
-  margin-top: 5px;
-  padding: 0.25%;
+  margin-top: 2.5px;
+  margin-bottom: 2.5px;
   cursor: pointer;
   height: 75px;
   border: 2px SOLID #CCCCCC;
@@ -303,7 +303,7 @@ background-color: #FFFFFF;
   top: 0;
   left: 0;
   width: 100%;
-  min-height: 135px;
+  height: 125px;
   background-color: #273036;
   text-align: center;
   color: #FFFFFF;
@@ -393,6 +393,7 @@ background-color: #FFFFFF;
   display: flex;
   flex-wrap: nowrap;
   background-color: #273036;
+  z-index: 1;
 }
 
 #option * {
@@ -431,8 +432,9 @@ background-color: #FFFFFF;
 }
 
 #otherDay {
+  display: none;
   position: absolute;
-  top: 150px;
+  top: 135px;
   background-color: transparent;
   border: none;
   height: 30px;
@@ -455,4 +457,30 @@ background-color: #FFFFFF;
   background-color: transparent;
   border: none;
   color: #FFF;
+}
+
+#parameters {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 2px;
+  margin-left: 5px;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  color: #FFF;
+  cursor: pointer;
+  text-align: center
+}
+
+.parameters {
+  padding: 5px;
+}
+
+.parameters button {
+  display: block;
+  width: 80%;
+  margin-left: 10%;
+  height: 25px;
+  margin-bottom: 5px;
 }

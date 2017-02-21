@@ -1,47 +1,41 @@
-<?php include($_SERVER['DOCUMENT_ROOT'].'/ressources/php/include.php');
+<?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/include.php');
 
   $defaultNote = 'Je souhaiterais échanger mon UV contre la tienne.';
 
   function printError($error) {
-    echo '<div style="background-color: #FF0000" id="popupHead">Erreur: ', $error, '.</div>';
+    echo '<div style="background-color: #FF0000" id="popupHead">Erreur: ', $error, '</div>';
     exit;
   }
 
   function printSucces($succes) {
-    echo '<div style="background-color: #00FF00" id="popupHead">', $succes, '.</div>';
+    echo '<div style="background-color: #00FF00" id="popupHead">', $succes, '</div>';
     exit;
   }
 
-  function sendMail($mail, $message) {
+  function sendMail($mail, $subject, $message) {
     $query = $GLOBALS['bdd']->prepare('SELECT desinscrit FROM etudiants WHERE mail = ?');
     $GLOBALS['bdd']->execute($query, array($mail));
+    $data = $query->fetch();
 
-    if ($query->fetch()['desinscrit'] == '0')
-      return mail($mail, $message.PHP_EOL.PHP_EOL.'Pour arrêter de recevoir des mails du service, vous pouvez à tout moment vous désinscrire en cliquant ici: https://agendutc.nastuzzi.fr/desinscription.php', 'FROM: emploidutemps@nastuzzi.fr');
+    return FALSE;
+
+    if ($data['desinscrit'] == '0')
+      return mail($mail, $subject, $message.PHP_EOL.PHP_EOL.'Pour arrêter de recevoir des mails du service, tu peux à tout moment te désinscrire en cliquant ici: https://assos.utc.fr/emploidutemps/?param=sedesinscrire', 'FROM:EmploiD\'UTemps');
 
     return FALSE;
   }
 
+  $query = $GLOBALS['bdd']->prepare('SELECT desinscrit FROM etudiants WHERE login = ?');
+  $GLOBALS['bdd']->execute($query, array($_SESSION['login']));
+
+  $data = $query->fetch();
+
+  if ($data['desinscrit'] == '1')
+    printError('Il est impossible d\'échanger ses UVs lorsqu\'on est désinscrit du service<br /><div class="parameters"><button style="background-color: #00FF00" onClick="parameters(\'reinscription\');"">Se réinscrire au service</button></div>');
+
   if (isset($_GET['idExchange']) && is_string($_GET['idExchange']) && !empty($_GET['idExchange'])) {
     if (isset($_GET['refuse']) && is_string($_GET['refuse']) && $_GET['refuse'] == '1') { // On annonce que la proposition n'est plus dispo = refusée
-      $query = $GLOBALS['bdd']->prepare('UPDATE recues SET disponible = 0, date = NOW() WHERE login = ? AND idEchange = ?');
-      $GLOBALS['bdd']->execute($query, array($_SESSION['login'], $_GET['idExchange']));
-
-      if (count(getRecuesList(NULL, $_GET['idExchange'], 1)) == 0) { // On regarde s'il reste encore des propositions non répondus
-        // On annonce que personne n'a accepté la proposition
-        $query = $GLOBALS['bdd']->prepare('UPDATE echanges SET active = 0 WHERE idEchange = ?');
-        $GLOBALS['bdd']->execute($query, array($_GET['idExchange']));
-        // On indique à tous les demandeurs que tout le monde a refusé
-        $query = $GLOBALS['bdd']->prepare('UPDATE envoies SET disponible = 0, date = NOW() WHERE idEchange = ? AND disponible = 1');
-        $GLOBALS['bdd']->execute($query, array($_GET['idExchange']));
-
-        $envoies = getEnvoiesList(NULL, $_GET['idExchange'], 1);
-        foreach ($envoies as $envoie) {
-          $infosLogin = getEtu($envoie['login']);
-          mail($infosLogin['login'], 'Echange refusé', 'Salut !'.PHP_EOL.'Une demande d\'échange a été refusée par tout le monde.'.PHP_EOL.'Tente ta chance avec une autre proposition!', 'From: agendutc@nastuzzi.fr');
-        }
-      }
-
+      refuseIdExchange($_GET['idExchange']);
       printSucces('Proposition refusée avec succès');
     }
 
@@ -78,16 +72,42 @@
       $query = $GLOBALS['bdd']->prepare('UPDATE cours SET actuel = 0, echange = 1 WHERE login = ? AND id = ?');
       $GLOBALS['bdd']->execute($query, array($_SESSION['login'], $envoies[0]['pour']));
       $GLOBALS['bdd']->execute($query, array($envoies[0]['login'], $envoies[0]['idUV']));
+
+      // On regarde si on a pas déjà été inscrit à l'UV
+      $check = $GLOBALS['bdd']->prepare('SELECT * FROM cours WHERE login = ? AND id = ?');
       // On ajoute aux edt l'UV récupéré
-      $query = $GLOBALS['bdd']->prepare('INSERT INTO cours (login, id, actuel, echange) VALUES (?, ?, 1, 1);');
-      $GLOBALS['bdd']->execute($query, array($_SESSION['login'], $envoies[0]['idUV']));
-      $GLOBALS['bdd']->execute($query, array($envoies[0]['login'], $envoies[0]['pour']));
+      $insert = $GLOBALS['bdd']->prepare('INSERT INTO cours (login, id, actuel, echange) VALUES (?, ?, 1, 1)');
+      $update = $GLOBALS['bdd']->prepare('UPDATE cours SET actuel = 1, echange = 1 WHERE login = ? AND id = ?');
+      $GLOBALS['bdd']->execute($check, array($_SESSION['login'], $envoies[0]['idUV']));
+      $GLOBALS['bdd']->execute(($check->rowCount() == 0) ? $insert : $update, array($_SESSION['login'], $envoies[0]['idUV']));
+      $GLOBALS['bdd']->execute($check, array($envoies[0]['login'], $envoies[0]['pour']));
+      $GLOBALS['bdd']->execute(($check->rowCount() == 0) ? $insert : $update, array($envoies[0]['login'], $envoies[0]['pour']));
+
+      // On supprime toutes les autres demandes
+      $data = getEnvoiesList($envoies[0]['login'], NULL, 1, NULL, $envoies[0]['idUV']);
+      foreach ($data as $envoie)
+        cancelIdExchange($envoie['idEchange'], $envoies[0]['login']);
+
+      $data = getEnvoiesList($_SESSION['login'], NULL, 1, NULL, $envoies[0]['pour']);
+      foreach ($data as $envoie)
+        cancelIdExchange($envoie['idEchange']);
+
+      // Toutes les demandes reçues sur un créneau doivent être attribuées à son possesseur
+      $data = getRecuesList($login, NULL, 1, NULL, NULL, $envoies[0]['idUV']);
+      $query = $GLOBALS['bdd']->prepare('UPDATE recues SET login = ? WHERE idEchange = ? AND login = ?');
+      foreach ($data as $recue)
+        $GLOBALS['bdd']->execute($query, array($_SESSION['login'], $recue['idEchange'], $envoies[0]['login']));
+
+      $data = getRecuesList($_SESSION['login'], NULL, 1, NULL, NULL, $envoies[0]['pour']);
+      $query = $GLOBALS['bdd']->prepare('UPDATE recues SET login = ? WHERE idEchange = ? AND login = ?');
+       foreach ($data as $recue)
+        $GLOBALS['bdd']->execute($query, array($envoies[0]['login'], $recue['idEchange']), $_SESSION['login']);
 
       $infosLogin = getEtu($envoies[0]['login']);
 
       // Envoyer une notif' (à voir)
-      mail($_SESSION['mail'], 'Echange effectué', 'Salut !'.PHP_EOL.'Un échange a été effectué avec succès '.$infosLogin['nom'].' '.$infosLogin['prenom'].' (mail: '.$infosLogin['mail'].') !'.PHP_EOL.'Ton emploi du temps a été mis à jour !', 'From: agendutc@nastuzzi.fr');
-      mail($infosLogin['login'], 'Echange effectué', 'Salut !'.PHP_EOL.'Un échange a été effectué avec succès '.$SESSION['nom'].' '.$SESSION['prenom'].' (mail: '.$SESSION['mail'].') !'.PHP_EOL.'Ton emploi du temps a été mis à jour !', 'From: agendutc@nastuzzi.fr');
+      sendMail($_SESSION['mail'], 'Echange effectué', 'Salut !'.PHP_EOL.'Un échange a été effectué avec '.$infosLogin['nom'].' '.$infosLogin['prenom'].' (mail: '.$infosLogin['mail'].') !'.PHP_EOL.PHP_EOL.'Ton emploi du temps a été mis à jour !');
+      sendMail($infosLogin['login'], 'Echange effectué', 'Salut !'.PHP_EOL.'Un échange a été effectué avec '.$SESSION['nom'].' '.$SESSION['prenom'].' (mail: '.$SESSION['mail'].') !'.PHP_EOL.PHP_EOL.'Ton emploi du temps a été mis à jour !');
       printSucces('Proposition acceptée avec succès. Les emplois du temps ont été mis à jour');
     }
 
@@ -97,14 +117,7 @@
       if (count($envoie) == 0)
         printError('Impossible de retirer la proposition');
       // On la supprime
-      $query = $GLOBALS['bdd']->prepare('DELETE FROM envoies WHERE idEchange = ? AND login = ?');
-      $GLOBALS['bdd']->execute($query, array($_GET['idExchange'], $_SESSION['login']));
-
-      // Si on était le seul à demander, on désactive l'annonce
-      if (count(getEnvoiesList(NULL, $_GET['idExchange'], 1)) == 0) {
-        $query = $GLOBALS['bdd']->prepare('UPDATE echanges SET active = 0 WHERE idEchange = ?');
-        $GLOBALS['bdd']->execute($query, array($_GET['idExchange']));
-      }
+      cancelIdExchange($_GET['idExchange']);
 
       printSucces('Proposition supprimée avec succès');
     }
@@ -173,6 +186,10 @@
 
     // Demander d'ajouter
     if (isset($_GET['ask']) && is_string($_GET['ask']) && !empty($_GET['ask'])) {
+      $dejaRecu = getRecuesList($_SESSION['login'], NULL, 1, NULL, $_GET['for'], $_GET['idUV']);
+      if (count($dejaRecu) != 0)
+        printError('Une demande d\'échange a déjà été réalisée pour ce créneau<br /><button onClick="window.location.href = \'https://\' + window.location.hostname + window.location.pathname + \'?mode=modifier&recu=1&id=r'.$dejaRecu[0]['idEchange'].'\'">Consulter la proposition</button>');
+
       $existedExchange = getEchange($_GET['idUV'], $_GET['for'], 0);
       $etuList = getEtuFromIdUV($_GET['for'], 0);
 
@@ -181,9 +198,10 @@
         // S'il existe déjà, voir si on a pas déjà fait la demande
         if (count($existedExchange) != 0 && count(getEnvoiesList($_SESSION['login'], $existedExchange[0]['idEchange'])) == 1)
           printError('La proposition a déjà été réalisée');
+
         // On vérifie que certains sont inscrits
         if (count($etuList) == 0)
-          printError('Personne ne souhaite recevoir de proposition d\'échange');
+          printError('Personne ne souhaite recevoir de proposition d\'échange pour ce créneau');
       }
       else { // La proposition est inactive
         // On vérifie si tout le monde a refusé la proposition
@@ -201,6 +219,10 @@
     }
 
     elseif (isset($_GET['add']) && is_string($_GET['add']) && !empty($_GET['add']) && isset($_POST['note']) && is_string($_POST['note'])) {
+      $dejaRecu = getRecuesList($_SESSION['login'], NULL, 1, NULL, $_GET['for'], $_GET['idUV']);
+      if (count($dejaRecu) != 0)
+        printError('Une demande d\'échange a déjà été réalisée pour ce créneau<br /><button onClick="window.location.href = \'https://\' + window.location.hostname + window.location.pathname + \'?mode=modifier&recu=1&id=r'.$dejaRecu[0]['idEchange'].'\'">Consulter la proposition</button>');
+
       $note = (empty($_POST['note']) ? $defaultNote : $_POST['note']);
       $existedExchange = getEchange($_GET['idUV'], $_GET['for'], 0);
 
@@ -211,8 +233,9 @@
         if (count(getRecuesList(NULL, $existedExchange['idEchange'])) == 0)
           printError('Cette proposition a déjà été refusée par tout le monde');
         // On réactive la proposition
-        $query = $GLOBALS['bdd']->prepare('UPDATE echanges SET disponible = 1 WHERE idEchange = ?');
-        $GLOBALS['bdd']->execute($query, array($existedExchange['idEchange']));
+
+        $query = $GLOBALS['bdd']->prepare('UPDATE echanges SET active = 1 WHERE idEchange = ?');
+        $GLOBALS['bdd']->execute($query, array($existedExchange[0]['idEchange']));
       }
 
       // On regarde si la proposition n'existe pas
@@ -224,19 +247,18 @@
 
         $query = $GLOBALS['bdd']->prepare('INSERT INTO echanges (idUV, pour) VALUES (?, ?)');
         $GLOBALS['bdd']->execute($query, array($_GET['idUV'], $_GET['for']));
+        $data = getEchange($_GET['idUV'], $_GET['for']);
 
-        $idExchange = getEchange($_GET['idUV'], $_GET['for'])[0]['idEchange'];
+        $idExchange = $data[0]['idEchange'];
 
         // On fait la demande aux personnes inscrites à cet idUV
-        $query = $GLOBALS['bdd']->prepare('INSERT INTO recues (login, idEchange) VALUES (?, ?)');
+        $query = $GLOBALS['bdd']->prepare('INSERT INTO recues (login, date, idEchange) VALUES (?, NOW(), ?)');
 
         // On vérifie que chaque étudiant n'est pas désinscrit au service et qu'il suit toujours cet idUV
         foreach ($etuList as $etu) {
           if ($etu['desinscrit'] == 0 && $etu['actuel'] == 1) {
             $GLOBALS['bdd']->execute($query, array($etu['login'], $idExchange));
-            // On regarde si l'étudiant s'est déjà connecté
-            if ($etu['nouveau'] == 0)
-              mail($etu['mail'], 'Nouvelle demande d\'échange', 'Salut !'.PHP_EOL.'Tu as reçu une nouvelle demande d\'échange !'.PHP_EOL.'Fais attention, cela ce joue au shotgun !', 'From: agendutc@nastuzzi.fr');
+            sendMail($etu['mail'], 'Nouvelle demande d\'échange', 'Salut !'.PHP_EOL.'Tu as reçu une nouvelle demande d\'échange !'.PHP_EOL.'Fais attention, cela ce joue au shotgun !');
           }
         }
       }
@@ -248,10 +270,10 @@
       }
 
       // On insère notre demande
-      $query = $GLOBALS['bdd']->prepare('INSERT INTO envoies (login, idEchange, note) VALUES (?, ?, ?)');
+      $query = $GLOBALS['bdd']->prepare('INSERT INTO envoies (login, idEchange, date, note) VALUES (?, ?, NOW(), ?)');
       $GLOBALS['bdd']->execute($query, array($_SESSION['login'], $idExchange, $note));
 
-      mail($SESSION['mail'], 'Demande d\'échange', 'Salut !'.PHP_EOL.'Ta demande d\'échange a été envoyée avec succès !'.PHP_EOL.'Tu recevras une notification dès la validation d\'un échange !', 'From: agendutc@nastuzzi.fr');
+      sendMail($SESSION['mail'], 'Demande d\'échange', 'Salut !'.PHP_EOL.'Ta demande d\'échange a été envoyée avec succès !'.PHP_EOL.'Tu recevras une notification dès la validation d\'un échange !');
       printSucces('Votre proposition d\'échange a été ajoutée avec succès');
     }
     else

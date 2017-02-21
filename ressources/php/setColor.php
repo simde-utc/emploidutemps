@@ -8,7 +8,7 @@
     else
       $color = '#'.$_GET['color'];
 
-    include($_SERVER['DOCUMENT_ROOT'].'/ressources/class/class.bdd.php');
+    include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/class/class.bdd.php');
     $bdd = new BDD();
 
     $query = $bdd->prepare('UPDATE cours SET color = ? WHERE login = ? AND id = ?;');

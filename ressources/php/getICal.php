@@ -1,56 +1,58 @@
-<?php include($_SERVER['DOCUMENT_ROOT'].'/ressources/php/include.php');
+<?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps'.'/ressources/php/include.php');
 
-  function createEvent($jourStart, $heureStart, $jourEnd, $heureEnd, $summary, $description, $location) {
-    echo '
-    BEGIN:VEVENT<br />
-    DTSTAMP:'.$GLOBALS['date'].'<br />
-    UID:'.$GLOBALS['date'].'-'.$GLOBALS['id']++.'-'.$_SESSION['login'].'@nastuzzi.fr<br />
-    DTSTART;TZID="Europe/Berlin":'.$jourStart.'T'.$heureStart.'<br />
-    DTEND;TZID="Europe/Berlin":'.$jourEnd.'T'.$heureEnd.'<br />
-    SUMMARY:'.$summary.'<br />', ($description != NULL ? '
-    DESCRIPTION:'.$description.'<br />' : ''), ($location != NULL ? '
-    LOCATION:'.$location.'<br />' : ''), ($GLOBALS['alarm'] != -1 ? '
-    BEGIN:VALARM<br />
-    ACTION:DISPLAY<br />
-    DESCRIPTION:'.$summary.($description != NULL ? ' - '.$description : '').'<br />
-    TRIGGER:-PT'.$GLOBALS['alarm'].'M<br />
-    END:VALARM<br />' : ''),'
-    END:VEVENT<br />';
+  //mkdir($_SERVER['DOCUMENT_ROOT'].'/emploidutemps'.'/ical/');
+  $file = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps'.'/ical/'.$_SESSION['login'].'.ics';
+
+  function createEvent($jourStart, $heureStart, $jourEnd, $heureEnd, $summary, $description, $location, $alarm) {
+    $GLOBALS['toWrite'] .= '
+BEGIN:VEVENT
+DTSTAMP:'.$GLOBALS['date'].'
+UID:'.$GLOBALS['date'].'-'.$GLOBALS['id']++.'-'.$_SESSION['login'].'@nastuzzi.fr
+DTSTART;TZID="Europe/Berlin":'.$jourStart.'T'.$heureStart.'
+DTEND;TZID="Europe/Berlin":'.$jourEnd.'T'.$heureEnd.'
+SUMMARY:'.$summary.''.($description != NULL ? '
+DESCRIPTION:'.$description.'' : '').($location != NULL ? '
+LOCATION:'.$location.'' : '').($alarm != 0 ? '
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:'.$summary.($description != NULL ? ' - '.$description : '').'
+TRIGGER:-PT'.$alarm.'M
+END:VALARM' : '').'
+END:VEVENT';
   }
 
-  echo 'BEGIN:VCALENDAR<br />
-  PRODID: Emploi d\'UTemps - UTC - SIMDE/BDE<br />
-  VERSION:2.0<br />
-  CALSCALE:GREGORIAN<br />
-  METHOD:PUBLISH<br />
-  X-WR-CALNAME: ', $_SESSION['mail'], '<br />
-  X-WR-TIMEZONE:Europe/Paris<br />
-  BEGIN:VTIMEZONE<br />
-  TZID:Europe/Paris<br />
-  X-LIC-LOCATION:Europe/Paris<br />
-  BEGIN:DAYLIGHT<br />
-  TZOFFSETFROM:+0100<br />
-  TZOFFSETTO:+0200<br />
-  TZNAME:CEST<br />
-  DTSTART:19700329T020000<br />
-  RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU<br />
-  END:DAYLIGHT<br />
-  BEGIN:STANDARD<br />
-  TZOFFSETFROM:+0200<br />
-  TZOFFSETTO:+0100<br />
-  TZNAME:CET<br />
-  DTSTART:19701025T030000<br />
-  RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU<br />
-  END:STANDARD<br />
-  END:VTIMEZONE<br />';
+  $toWrite = 'BEGIN:VCALENDAR
+PRODID: Emploi d\'UTemps - UTC - SIMDE/BDE
+VERSION:2.0
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME: '.$_SESSION['mail'].'
+X-WR-TIMEZONE:Europe/Paris
+BEGIN:VTIMEZONE
+TZID:Europe/Paris
+X-LIC-LOCATION:Europe/Paris
+BEGIN:DAYLIGHT
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+TZNAME:CEST
+DTSTART:19700329T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+TZNAME:CET
+DTSTART:19701025T030000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
+END:STANDARD
+END:VTIMEZONE';
 
   $edt = getEdtEtu($_SESSION['login']);
 
   $date = date('Ymd').'T'.date('His').'Z';
   $id = 0;
 
-  $alarm = -1; // Désactiver l'alarme
-  $alarm = 30;
+  $alarm = (isset($_GET['alarm']) && $_GET['alarm'] > 0 ? $_GET['alarm'] : 0); // 0 désactive l'alarme
 
   $jours = $GLOBALS['bdd']->prepare('SELECT * FROM jours ORDER BY jour');
   $GLOBALS['bdd']->execute($jours, array());
@@ -125,7 +127,7 @@
         else
           continue;
 
-        createEvent($jourStart, $debut, $jourEnd, $fin, $summary, $description, $uv['salle']);
+        createEvent($jourStart, $debut, $jourEnd, $fin, $summary, $description, $uv['salle'], $alarm);
       }
 
       // Afficher pour chaque TPs et TDs aussi
@@ -149,10 +151,12 @@
       $description = (isset($split[1]) ? $split[1] : NULL);
       $location = (isset($split[2]) ? $split[2] : NULL);
 
-      createEvent($jourStart, $heureStart, $jourEnd, $heureEnd, $summary, $description, $location);
+      createEvent($jourStart, $heureStart, $jourEnd, $heureEnd, $summary, $description, $location, 0);
     }
   }
 
-  echo 'END:VCALENDAR';
+  file_put_contents($file, $toWrite.'
+  END:VCALENDAR');
 
+  echo '/emploidutemps'.'/ical/'.$_SESSION['login'].'.ics';
 ?>

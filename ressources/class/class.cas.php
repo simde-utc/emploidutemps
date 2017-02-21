@@ -1,5 +1,5 @@
 <?php
-include($_SERVER['DOCUMENT_ROOT'].'/ressources/class/class.xmlToArrayParser.php');
+include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/class/class.xmlToArrayParser.php');
 
 class CAS
 {
