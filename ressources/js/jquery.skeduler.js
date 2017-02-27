@@ -38,8 +38,8 @@ function schedule(tasks) {
           if (window.card === '') {
             window.card = card;
 
-            if ($('#' + card.id).position().top > 435) // Détecter si la tache ne dépasse pas le calendrier en s'ouvrant
-              $('#' + card.id).css('top', 435);
+            if (Math.ceil($('#' + card.id).position().top) > 430) // Détecter si la tache ne dépasse pas le calendrier en s'ouvrant
+              $('#' + card.id).css('top', 430);
             $('#' + card.id).height(150);
 
             $('#' + card.id + ' .interraction').css('opacity', '1');
@@ -48,9 +48,10 @@ function schedule(tasks) {
             $('#zoneFocus').addClass('focused');
           }
           else if (window.card.id == card.id) {
-            if ($('#' + card.id).position().top == 435)
-              $('#' + card.id).css('top', getCardTopPosition(window.card.startTime));
-            $('#' + card.id).height(getCardHeight(window.card.duration) - 2).css('z-index: 99'); // Je sais pas pourquoi mais ici height rajoute 2
+            if (Math.ceil($('#' + card.id).position().top) >= 430)
+              $('#' + card.id).css('top', Math.ceil(getCardTopPosition(window.card.startTime)));
+
+            $('#' + card.id).height(Math.ceil(getCardHeight(window.card.duration)) - 2).css('z-index: 99'); // Je sais pas pourquoi mais ici height rajoute 2
 
             $('#' + card.id + ' .interraction').css('opacity', '0');
             $('#' + card.id + ' .interraction').css('visibility', 'hidden');
@@ -60,9 +61,9 @@ function schedule(tasks) {
             window.card = '';
           }
           else {
-            if ($('#' + window.card.id).position().top == 435)
-              $('#' + window.card.id).css('top', getCardTopPosition(window.card.startTime));
-            $('#' + window.card.id).height(getCardHeight(window.card.duration) - 2).css('z-index: 99');
+            if (Math.ceil($('#' + window.card.id).position().top) >= 430)
+              $('#' + window.card.id).css('top', Math.ceil(getCardTopPosition(window.card.startTime)));
+            $('#' + window.card.id).height(Math.ceil(getCardHeight(window.card.duration)) - 2).css('z-index: 99');
 
             $('#' + window.card.id).toggleClass('focus');
             $('#' + window.card.id + ' .interraction').css('opacity', '0');
@@ -70,8 +71,8 @@ function schedule(tasks) {
 
             window.card = card;
 
-            if ($('#' + card.id).position().top > 435)
-              $('#' + card.id).css('top', 435);
+            if (Math.ceil($('#' + card.id).position().top) > 430)
+              $('#' + card.id).css('top', 430);
             $('#' + card.id).height(150);
 
             $('#' + card.id + ' .interraction').css('opacity', '1');
@@ -142,8 +143,8 @@ function schedule(tasks) {
     tasks.forEach(function(task) {
       var card = '';
       var classCard = '';
-      var top = getCardTopPosition(task.startTime);
-      var height = getCardHeight(task.duration);
+      var top = Math.ceil(getCardTopPosition(task.startTime));
+      var height = Math.ceil(getCardHeight(task.duration));
       var style = 'top: ' + top + 'px; height: ' + height + 'px';
 
       if (typeof task.interraction == 'undefined') {
@@ -167,16 +168,16 @@ function schedule(tasks) {
         else
           type = 'C';
 
-        task.interraction += "<button class='option' style='color:" + task.fgColor + "; background-color:" + task.bgColor + ";' onClick='seeOthers(\"" + task.uv + "\", \"" + type + "\", " + task.idUV + ");'><i class='fa fa-info' aria-hidden='true'></i> Autres " + (task.type == 'Cours' ? task.type.toLowerCase() : task.type + 's') + "</button>";
+        task.interraction += "<button class='option' style='color:" + task.fgColor + "; background-color:" + task.bgColor + ";' onClick='seeOthers(\"" + task.uv + "\", \"" + type + "\", " + task.idUV + ");'><i class='fa fa-info' aria-hidden='true'></i> Echanger son " + (task.type == 'Cours' ? task.type.toLowerCase() : task.type) + "</button>";
 
         for (var key in colors) {
           if (colors[key] == task.bgColor)
-            task.interraction += "<button class='colorButton' style='position: relative; background-color:" + colors[key] + "; color: " + task.fgColor + "' onClick='changeColor(" + task.idUV + ", \"#NULL\");' ><i class=\"fa fa-times\" aria-hidden=\"true\"></i></button>";
+            task.interraction += "<button class='colorButton' style='background-color:" + colors[key] + "; color: " + task.fgColor + "' onClick='changeColor(" + task.idUV + ", \"#NULL\");' ><i class=\"fa fa-times\" aria-hidden=\"true\"></i></button>";
           else
-            task.interraction += "<button class='colorButton' style='background-color:" + colors[key] + "' onClick='changeColor(" + task.idUV + ", \"" + colors[key] + "\");'/>";
+            task.interraction += "<button class='colorButton' style='background-color:" + colors[key] + "; color: " + colors[key] + "' onClick='changeColor(" + task.idUV + ", \"" + colors[key] + "\");'>0</button>";
         }
 
-        task.interraction += "<i onClick='$(this).next().click();' class='colorButton fa fa-pencil-square-o' style='position: relative; height: 10px; width: 10px; color:" + task.fgColor + "' aria-hidden='true'></i><input class='colorButton' style='display: none;' onChange='changeColor(" + task.idUV + ", this.value);' type='color'/>";
+        task.interraction += "<i onClick='$(this).next().click();' class='colorButton fa fa-pencil-square-o' style='height: 10px; width: 10px; color:" + task.fgColor + "' aria-hidden='true'></i><input class='colorButton' style='display: none;' onChange='changeColor(" + task.idUV + ", this.value);' type='color'/>";
       }
 
       if (window.idUV == task.idUV) {

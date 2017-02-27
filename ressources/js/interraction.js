@@ -32,6 +32,362 @@ function newRequest(get, tab) {
   });
 }
 
+function selectMode(get, mode) {
+  if (mode !== '')
+    window.mode = mode;
+
+  if (window.mode == 'afficher') {
+    window.columnPerDay = 1;
+    window.compare = 0;
+    window.idUV = '';
+
+    newRequest('&login=' + window.login + '&uv=' + window.uv + get, '');
+  }
+  else if (window.mode == 'comparer') {
+    window.columnPerDay = 2;
+    window.compare = 1;
+    window.idUV = '';
+
+    newRequest('&login=' + window.login + '&uv=' + window.uv + get, '');
+
+    setTimeout(function () {
+      if ($('#menu button').length === 1)
+        searchTab();
+      else if (window.login == '')
+        $('#menu button')[1].click();
+    }, 500);
+  }
+  else if (window.mode == 'modifier') {
+    window.columnPerDay = 2;
+    window.compare = 0;
+
+    newRequest(get, '');
+  }
+  else if (window.mode == 'organiser') {
+    window.columnPerDay = 1;
+    window.compare = 1;
+    window.idUV = '';
+
+    newRequest(get, '');
+
+    setTimeout(function () {
+      if ($('#menu button').length === 1)
+        searchTab();
+    }, 500);
+  }
+  else
+    selectMode('', 'afficher');
+  /*
+  else if (mode == 'planifier') {
+    window.columnPerDay = 2;
+    window.compare = 0;
+  }*/
+}
+
+function loading() {
+  var img = document.createElement('img');
+  img.id = 'loading';
+  img.src = 'https://' + window.location.hostname + '/emploidutemps' + '/ressources/img/loading.gif';
+
+  var src = document.getElementById('skeduler-container');
+  src.appendChild(img);
+}
+
+function endLoading() {
+  document.getElementById('loading').remove();
+}
+
+function addTab() {
+  newRequest(window.get, '&addTab=' + document.getElementById('addTabText').value);
+}
+
+function delTab(toDel) {
+  // Redirection vers son edt si on supprime un onglet alors qu'on est dessus
+  if (window.login == toDel)
+    window.login = '';
+  else if (window.uv == toDel)
+    window.uv = '';
+
+  newRequest(window.get.replace('&login=' + toDel, '').replace('&uv=' + toDel, '').replace('&addTab=' + toDel, ''), '&delTab=' + toDel);
+}
+
+function addEtuActive(login) {
+  newRequest(window.get, '&addEtuActive=' + login);
+}
+
+function delEtuActive(login) {
+  newRequest(window.get, '&delEtuActive=' + login);
+}
+
+function seeOthers(uv, type, idUV) {
+  window.uv = '';
+  window.login = '';
+  window.idUV = idUV;
+
+  selectMode('&uv=' + uv + '&type=' + type, 'modifier');
+}
+
+function changeColor(idUV, color) {
+  setTimeout(function () { // Attendre la fin de l'animation pour actualisr la couleur ^^'
+    $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/setColor.php?idUV=' + idUV + '&color=' + color.substr(1), function () {
+      newRequest(window.get, '');
+    });
+  }, 200);
+}
+
+function edtUV(uv) {
+  window.uv = uv;
+  window.idUV = '';
+  window.login = '';
+
+  if (window.mode != 'comparer') {
+    window.mode = 'afficher';
+    window.columnPerDay = 1;
+  }
+
+  setTimeout(function () {
+    unFocus();
+    popupClose(); }, 100);
+  newRequest('&uv=' + uv, '&addTab=' + uv);
+}
+
+function edtEtu(login) {
+  window.uv = '';
+  window.idUV = '';
+  window.login = login;
+
+  unFocus();
+  popupClose();
+  newRequest('&login=' + login, '&addTab=' + login);
+}
+
+function compareEtu(login) {
+  window.uv = '';
+  window.login = login;
+  newRequest('&login=' + login, '');
+}
+
+function compareUV(uv) {
+  window.uv = uv;
+  window.login = '';
+  newRequest('&uv=' + uv, '');
+}
+
+function seeOriginal() {
+  window.idUV = '';
+  window.columnPerDay = 1;
+  window.compare = 0;
+  newRequest('&original=1', '');
+}
+
+function seeChangement() {
+  window.idUV = '';
+  window.columnPerDay = 2;
+  window.compare = 0;
+  newRequest('&changement=1', '');
+}
+
+function seeRecues() {
+  window.idUV = '';
+  window.columnPerDay = 2;
+  window.compare = 0;
+  newRequest('&recu=1', '');
+}
+
+function seeEnvoies() {
+  window.idUV = '';
+  window.columnPerDay = 2;
+  window.compare = 0;
+  newRequest('&envoi=1', '');
+}
+
+function uvWeb(uv) {
+  window.click = true;
+  window.open('https://assos.utc.fr/uvweb/uv/' + uv);
+}
+
+function uvMoodle(uv) {
+  window.click = true;
+  window.open('http://moodle.utc.fr/course/search.php?search=' + uv);
+}
+
+function popup(info) {
+  window.click = true;
+  $('#popup').html(info);
+  $('#popup').css('visibility', 'visible');
+  $('#popup').css('opacity', '1');
+  $('#zonePopup').addClass('focused');
+
+  if ($('.focusedInput').length != 0)
+    $('.focusedInput')[0].focus();
+
+  if ($(".submitedInput").length != 0 && $(".submitedButton").length != 0)
+    $(".submitedInput").last().keyup(function (event) {
+      code = event.keyCode || event.which;
+      if(code == 27 || code == 32|| code == 13 || code == 188 || code == 186)
+        $(".submitedButton")[0].click();
+    });
+}
+
+function popupInfo(info) {
+  newRequest(window.get, '');
+  window.card = '';
+  popup(info);
+}
+
+function popupClose() {
+  window.click = false;
+
+  $('#popup').css('visibility', 'hidden');
+  $('#popup').css('opacity', '0');
+
+  $('#zonePopup').removeClass('focused');
+}
+
+function unFocus() {
+  window.click = false;
+
+  $('#zoneGrey').removeClass('focused');
+  $('#zoneFocus').removeClass('focused');
+
+  $('#' + window.card.id).click();
+}
+
+function seeEtu(idUV) {
+  window.click = true;
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getEtuList.php?idUV=' + idUV, function (etus) {
+    popup(etus);
+  });
+}
+
+function searchTab() {
+  window.tab = 0;
+
+  if (!$('#addTab').hasClass("blocked")) {
+    popup("<div id='popupHead'>\
+      <div style='margin-bottom: 2px;'>Chercher un étudiant ou une UV pour l'ajouter</div>\
+      <input type='text' autofocus='autofocus'' onInput='checkEtuAndUVList(this.value);' id='addTabText' />\
+      <button onClick='printEtuAndUVList();'>Chercher</button>\
+    </div>\
+    <div id='searchResult'></div>");
+
+    $("#addTabText").keyup(function (event) {
+      if(event.keyCode == 13){
+        printEtuAndUVList();
+      }
+    });
+
+    setTimeout(function () { // La fonction ne marche pas sans Timeout..
+      $("#addTabText").focus();
+    }, 100);
+  }
+}
+
+function checkEtuAndUVList(search) {
+  var text = search.replace(/\s+/g, ' ').replace(/^\s+/g, '').replace(/(\s.+)\s$/g, '$1');
+  $('#addTabText').val(text);
+
+  window.toSearch = text;
+}
+
+function printEtuAndUVList(begin) {
+  if (window.toSearch != window.search) {
+    loading();
+
+    window.search = window.toSearch;
+
+    searchTab();
+    checkEtuAndUVList(window.search);
+    $('#popup').scrollTop(0);
+
+    var search = window.toSearch;
+
+    if (begin == undefined)
+      begin = 0;
+
+    $('#searchResult').load('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getEtuAndUVList.php?search=' + search.replace(/^\s+|\s+$/g, '').replace(/_/g, '').replace(/\s/, '%\\_%\\') + '&begin=' + begin, function () {
+      endLoading();
+    });
+  }
+}
+
+function askForExchange(idUV, forIdUV) {
+  window.click = true;
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?ask=1&idUV=' + idUV + '&for=' + forIdUV, function (info) {
+    popup(info);
+  });
+}
+
+function addExchange(idUV, forIdUV, note) {
+  $.post('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?add=1&idUV=' + idUV + '&for=' + forIdUV, {note: note}, function (info) {
+    popupInfo(info);
+  });
+}
+
+function delExchange(idExchange) {
+  window.click = true;
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?del=1&idExchange=' + idExchange, function (info) {
+    popupInfo(info);
+  });
+}
+
+function cancelExchange(idExchange, confirm) {
+  window.click = true;
+  if (confirm === undefined) {
+    popup("<div id='popupHead'>Annuler un échange</div>\
+    <div class='parameters'>En annulant un échange effectué, un mail de demande d\'annulation sera envoyé à la personne ayant échangé ce créneau. Tant que celle-ci n'a pas accepté l'annulation, les emplois du temps reste inchangés<br /> \
+      Lorsque l'annulation sera effective, des demandes d'échange pour le créneau pourront être reçues et envoyées\
+      <button style='background-color: #F00' onClick='cancelExchange(" + idExchange + ", 1);'>Demander l'annulation</button>\
+    </div>");
+  }
+  else {
+    $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?cancel=' + confirm + '&idExchange=' + idExchange, function (info) {
+      popupInfo(info);
+    });
+  }
+}
+
+function infosExchange(idExchange) {
+  window.click = true;
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?infos=1&idExchange=' + idExchange, function (info) {
+    popup(info);
+  });
+}
+
+function acceptExchange(idExchange) {
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?accept=1&idExchange=' + idExchange, function (info) {
+    popupInfo(info);
+  });
+}
+
+function refuseExchange(idExchange) {
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?refuse=1&idExchange=' + idExchange, function (info) {
+    popupInfo(info);
+  });
+}
+
+function parameters(param) {
+  var get = '';
+
+  if (param != undefined)
+    get = '?param=' + param;
+
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/parameters.php' + get, function (info) {
+    popup(info);
+  });
+}
+
+function getICal() {
+  var get = '';
+
+  if ($('#alarmICS').val() !== undefined)
+    get = '?alarm=' + $('#alarmICS').val();
+
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getICal.php' + get, function (file) {
+    window.location.href = 'https://' + window.location.hostname + file;
+  });
+}
+
 function setSkeduler(day) {
   var headers = $('.skeduler-headers div');
   var days = $('.skeduler-main-body .days');
@@ -218,328 +574,4 @@ function setSkeduler(day) {
       }
     }
   }
-}
-
-function selectMode(get, mode) {
-  if (mode !== '')
-    window.mode = mode;
-
-  if (window.mode == 'afficher') {
-    window.columnPerDay = 1;
-    window.compare = 0;
-    window.idUV = '';
-
-    newRequest('&login=' + window.login + '&uv=' + window.uv, '');
-  }
-  else if (window.mode == 'comparer') {
-    window.columnPerDay = 2;
-    window.compare = 1;
-    window.idUV = '';
-
-    newRequest('&login=' + window.login + '&uv=' + window.uv, '');
-
-    setTimeout(function () {
-      if ($('#menu button').length === 1)
-        searchTab();
-      else if (window.login == '')
-        $('#menu button')[1].click();
-    }, 500);
-  }
-  else if (window.mode == 'modifier') {
-    window.columnPerDay = 2;
-    window.compare = 0;
-
-    newRequest(get, '');
-  }
-  else if (window.mode == 'organiser') {
-    window.columnPerDay = 1;
-    window.compare = 1;
-    window.idUV = '';
-
-    newRequest(get, '');
-  }
-  else
-    selectMode('', 'afficher');
-  /*
-  else if (mode == 'planifier') {
-    window.columnPerDay = 2;
-    window.compare = 0;
-  }*/
-}
-
-function loading() {
-  var img = document.createElement('img');
-  img.id = 'loading';
-  img.src = 'https://' + window.location.hostname + '/emploidutemps' + '/ressources/img/loading.gif';
-
-  var src = document.getElementById('skeduler-container');
-  src.appendChild(img);
-}
-
-function endLoading() {
-  document.getElementById('loading').remove();
-}
-
-function addTab() {
-  newRequest(window.get, '&addTab=' + document.getElementById('addTabText').value);
-}
-
-function delTab(toDel) {
-  // Redirection vers son edt si on supprime un onglet alors qu'on est dessus
-  if (window.login == toDel)
-    window.login = '';
-  else if (window.uv == toDel)
-    window.uv = '';
-
-  newRequest(window.get.replace('&login=' + toDel, '').replace('&uv=' + toDel, '').replace('&addTab=' + toDel, ''), '&delTab=' + toDel);
-}
-
-function addEtuActive(login) {
-  newRequest(window.get, '&addEtuActive=' + login);
-}
-
-function delEtuActive(login) {
-  newRequest(window.get, '&delEtuActive=' + login);
-}
-
-function seeOthers(uv, type, idUV) {
-  window.uv = '';
-  window.login = '';
-  window.idUV = idUV;
-
-  selectMode('&uv=' + uv + '&type=' + type, 'modifier');
-}
-
-function changeColor(idUV, color) {
-  setTimeout(function () { // Attendre la fin de l'animation pour actualisr la couleur ^^'
-    $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/setColor.php?idUV=' + idUV + '&color=' + color.substr(1), function () {
-      newRequest(window.get, '');
-    });
-  }, 200);
-}
-
-function edtUV(uv) {
-  window.uv = uv;
-  window.idUV = '';
-  window.login = '';
-
-  if (window.mode != 'comparer')
-    window.mode = 'afficher';
-
-  setTimeout(function () {
-    unFocus();
-    popupClose(); }, 100);
-  newRequest('&uv=' + uv, '&addTab=' + uv);
-}
-
-function edtEtu(login) {
-  window.uv = '';
-  window.idUV = '';
-  window.login = login;
-
-  unFocus();
-  popupClose();
-  newRequest('&login=' + login, '&addTab=' + login);
-}
-
-function compareEtu(login) {
-  window.uv = '';
-  window.login = login;
-  newRequest('&login=' + login, '');
-}
-
-function compareUV(uv) {
-  window.uv = uv;
-  window.login = '';
-  newRequest('&uv=' + uv, '');
-}
-
-function seeOriginal() {
-  window.idUV = '';
-  window.columnPerDay = 1;
-  window.compare = 0;
-  newRequest('&original=1', '');
-}
-
-function seeChangement() {
-  window.idUV = '';
-  window.columnPerDay = 2;
-  window.compare = 0;
-  newRequest('&changement=1', '');
-}
-
-function seeRecues() {
-  window.idUV = '';
-  window.columnPerDay = 2;
-  window.compare = 0;
-  newRequest('&recu=1', '');
-}
-
-function seeEnvoies() {
-  window.idUV = '';
-  window.columnPerDay = 2;
-  window.compare = 0;
-  newRequest('&envoi=1', '');
-}
-
-function uvWeb(uv) {
-  window.click = true;
-  window.open('https://assos.utc.fr/uvweb/uv/' + uv);
-}
-
-function uvMoodle(uv) {
-  window.click = true;
-  window.open('http://moodle.utc.fr/course/search.php?search=' + uv);
-}
-
-function popup(info) {
-  window.click = true;
-  $('#popup').html(info);
-  $('#popup').css('visibility', 'visible');
-  $('#popup').css('opacity', '1');
-  $('#zonePopup').addClass('focused');
-}
-
-function popupClose() {
-  window.click = false;
-
-  $('#popup').css('visibility', 'hidden');
-  $('#popup').css('opacity', '0');
-
-  $('#zonePopup').removeClass('focused');
-}
-
-function unFocus() {
-  window.click = false;
-
-  $('#zoneGrey').removeClass('focused');
-  $('#zoneFocus').removeClass('focused');
-
-  $('#' + window.card.id).click();
-}
-
-function seeEtu(idUV) {
-  window.click = true;
-  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getEtuList.php?idUV=' + idUV, function (etus) {
-    popup(etus);
-  });
-}
-
-function searchTab() {
-  window.tab = 0;
-
-  if (!$('#addTab').hasClass("blocked")) {
-    popup("<div id='popupHead'>\
-      <div style='margin-bottom: 2px;'>Chercher un étudiant ou une UV pour l'ajouter</div>\
-      <input type='text' autofocus='autofocus'' onInput='checkEtuAndUVList(this.value);' id='addTabText' />\
-      <button onClick='printEtuAndUVList();'>Chercher</button>\
-    </div>\
-    <div id='searchResult'></div>");
-
-    $("#addTabText").keyup(function (event) {
-      if(event.keyCode == 13){
-        printEtuAndUVList();
-      }
-    });
-
-    setTimeout(function () { // La fonction ne marche pas sans Timeout..
-      $("#addTabText").focus();
-    }, 100);
-  }
-}
-
-function checkEtuAndUVList(search) {
-  var text = search.replace(/\s+/g, ' ').replace(/^\s+/g, '').replace(/(\s.+)\s$/g, '$1');
-  $('#addTabText').val(text);
-
-  window.toSearch = text;
-}
-
-function printEtuAndUVList(begin) {
-  if (window.toSearch != window.search) {
-    loading();
-
-    window.search = window.toSearch;
-
-    searchTab();
-    checkEtuAndUVList(window.search);
-    $('#popup').scrollTop(0);
-
-    var search = window.toSearch;
-
-    if (begin == undefined)
-      begin = 0;
-
-    $('#searchResult').load('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getEtuAndUVList.php?search=' + search.replace(/^\s+|\s+$/g, '').replace(/_/g, '').replace(/\s/, '%\\_%\\') + '&begin=' + begin, function () {
-      endLoading();
-    });
-  }
-}
-
-function askForExchange(idUV, forIdUV) {
-  window.click = true;
-  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?ask=1&idUV=' + idUV + '&for=' + forIdUV, function (info) {
-    popup(info);
-  });
-}
-
-function addExchange(idUV, forIdUV, note) {
-  $.post('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?add=1&idUV=' + idUV + '&for=' + forIdUV, {note: note}, function (info) {
-    newRequest(window.get, '');
-    window.card = '';
-    popup(info);
-  });
-}
-
-function delExchange(idExchange) {
-  window.click = true;
-  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?del=1&idExchange=' + idExchange, function (info) {
-    newRequest(window.get, '');
-    window.idUV = '';
-    window.card = '';
-    popup(info);
-  });
-}
-
-function infosExchange(idExchange) {
-  window.click = true;
-  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?infos=1&idExchange=' + idExchange, function (info) {
-    popup(info);
-  });
-}
-
-function acceptExchange(idExchange) {
-  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?accept=1&idExchange=' + idExchange, function (info) {
-    newRequest(window.get, '');
-    popup(info);
-  });
-}
-
-function refuseExchange(idExchange) {
-  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?refuse=1&idExchange=' + idExchange, function (info) {
-    newRequest(window.get, '');
-    popup(info);
-  });
-}
-
-function parameters(param) {
-  var get = '';
-
-  if (param != undefined)
-    get = '?param=' + param;
-
-  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/parameters.php' + get, function (info) {
-    popup(info);
-  });
-}
-
-function getICal() {
-  var get = '';
-
-  if ($('#alarmICS').val() !== undefined)
-    get = '?alarm=' + $('#alarmICS').val();
-
-  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getICal.php' + get, function (file) {
-    window.location.href = 'https://' + window.location.hostname + file;
-  });
 }

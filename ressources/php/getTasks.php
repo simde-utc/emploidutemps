@@ -39,9 +39,10 @@
   }
 
   function printRecues($login) {
-    $recues = getRecuesList($login, NULL, 1);
+    $recues = getRecuesList($login, NULL, 1, 0);
     $recuesRefused = getRecuesList($login, NULL, 0, 0);
     $recuesAccepted = getRecuesList($login, NULL, 0, 1);
+    $recuesCanceled = getRecuesList($login, NULL, 1, 1);
     $arraydemande = array();
     $passed = array();
 
@@ -60,18 +61,26 @@
       array_push($passed, array($recueInfo['jour'], $recueInfo['debut'], $recueInfo['fin']));
     }
 
+    foreach ($recuesCanceled as $recue) {
+      $recueInfo = getUVFromIdUV($recue['idUV']);
+      array_push($passed, array($recueInfo['jour'], $recueInfo['debut'], $recueInfo['fin']));
+    }
+
     foreach ($recues as $recue) {
       if ($recue['active'] == 1)
-        array_push($arraydemande, arrayRecue($login, $recue, $passed, '#0000FF', '<button class="option" style="width: 59px; height: 15px" onClick=\'acceptExchange('.$recue['idEchange'].');\'>Accepter</button><button class="option" style="width: 59px; height: 15px" onClick=\'refuseExchange('.$recue['idEchange'].');\'>Refuser</button>'));
+        array_push($arraydemande, arrayRecue($login, $recue, $passed, '#0000FF', '<button class="option" style="width: 59px; height: 15px" onClick=\'acceptExchange('.$recue['idEchange'].');\'>Accepter</button><button class="option" style="width: 59px; height: 15px" onClick=\'refuseExchange('.$recue['idEchange'].');\'>Refuser la demande</button>'));
       else
         array_push($arraydemande, arrayRecue($login, $recue, $passed, '#FF0000', '<button class="option" onClick=\'askForExchange('.$recue['pour'].', '.$recue['idUV'].');\'>Faire la proposition</button>'));
     }
 
     foreach ($recuesRefused as $recue)
-      array_push($arraydemande, arrayRecue($login, $recue, $passed, '#FF0000', '<button class="option" style="background-color: #777777; color: #FFFFFF" disabled\'>Proposition réfusée</button>'));
+      array_push($arraydemande, arrayRecue($login, $recue, $passed, '#FF0000', '<button class="option" style="background-color: #777777; color: #FFFFFF" disabled>Proposition réfusée</button>'));
 
     foreach ($recuesAccepted as $recue)
-      array_push($arraydemande, arrayRecue($login, $recue, $passed, '#00FF00', '<button class="option" style="background-color: #777777; color: #FFFFFF" disabled\'>Proposition acceptée</button>'));
+      array_push($arraydemande, arrayRecue($login, $recue, $passed, '#00FF00', '<button class="option" onClick=\'cancelExchange('.$recue['idEchange'].');\'>Annuler l\'échange</button>'));
+
+    foreach ($recuesCanceled as $recue)
+      array_push($arraydemande, arrayRecue($login, $recue, $passed, '#555555', '<button class="option" style="background-color: #777777; color: #FFFFFF" disabled>Annulation demandée</button>'));
 
     return $arraydemande;
   }
@@ -113,9 +122,10 @@
   }
 
   function printEnvoies($login) {
-    $envoies = getEnvoiesList($login, NULL, 1);
+    $envoies = getEnvoiesList($login, NULL, 1, 0);
     $envoiesRefused = getEnvoiesList($login, NULL, 0, 0);
     $envoiesAccepted = getEnvoiesList($login, NULL, 0, 1);
+    $envoiesCanceled = getEnvoiesList($login, NULL, 1, 1);
     $arraydemande = array();
     $passed = array();
 
@@ -134,14 +144,22 @@
       array_push($passed, array($envoieInfo['jour'], $envoieInfo['debut'], $envoieInfo['fin']));
     }
 
+    foreach ($envoiesCanceled as $envoie) {
+      $envoieInfo = getUVFromIdUV($envoie['idUV']);
+      array_push($passed, array($envoieInfo['jour'], $envoieInfo['debut'], $envoieInfo['fin']));
+    }
+
     foreach ($envoies as $envoie)
       array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#0000FF', '<button class="option" onClick=\'delExchange('.$envoie['idEchange'].');\'>Retirer la proposition</button>'));
 
     foreach ($envoiesRefused as $envoie)
-      array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#FF0000', '<button class="option" disabled\'>Proposition réfusée</button>'));
+      array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#FF0000', '<button class="option" disabled>Proposition réfusée</button>'));
 
     foreach ($envoiesAccepted as $envoie)
-      array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#00FF00', '<button class="option" disabled\'>Proposition acceptée</button>'));
+      array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#00FF00', '<button class="option" onClick=\'cancelExchange('.$envoie['idEchange'].');\'>Annuler l\'échange</button>'));
+
+    foreach ($envoiesCanceled as $envoie)
+      array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#555555', '<button class="option" style="background-color: #777777; color: #FFFFFF" disabled>Annulation demandée</button>'));
 
     return $arraydemande;
   }

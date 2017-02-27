@@ -34,9 +34,10 @@
       ?>
 
       $("body").keyup(function (event) {
-        if(event.keyCode == 27)
-            popupClose();
-            window.search = '';
+        if(event.keyCode == 27) {
+          popupClose();
+          window.search = '';
+        }
       });
     }
 
@@ -55,13 +56,13 @@
       location.reload();
     });
   </script>
-  <title>Emploi d'UTemps Beta 1.5</title>
+  <title>Emploi d'UTemps</title>
 </head>
 
 <body onLoad='main()'>
   <div id='header'>
     <button id='parameters' onClick="parameters();"><i class="fa fa-2x fa-bars" aria-hidden="true"></i></button>
-    <a id='title' href='/emploidutemps'>Emploi d'UTemps Beta 1.5</a>
+    <a id='title' href='/emploidutemps'>Emploi d'UTemps Beta 1.6</a>
     <div id='sTitle'></div>
     <div id='bar'></div>
   </div>

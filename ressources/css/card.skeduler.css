@@ -198,7 +198,7 @@
 .card2.nbr30.focus, .card2.nbr31.focus, .card2.nbr32.focus,
 .card2.nbr40.focus, .card2.nbr41.focus, .card2.nbr42.focus, .card2.nbr43.focus {
   width: 132px;
-  z-index: 9999;
+  z-index: 30;
   left: 0px;
   opacity: 1;
   cursor: default;

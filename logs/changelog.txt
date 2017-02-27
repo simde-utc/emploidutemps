@@ -143,3 +143,13 @@ Beta 1.5: 2017-02-21
   - Gestion de l'impossibilité d'accéder à une page par un simple réfréchissement de la page (CAS par exemple)
   - Ajout de la gestion des informations get avant et après le CAS
   - Amélioration du système d'échange (suppression des autres demandes, changement des demandes etc)
+  - Ajout de l'annulation d'échange (restaure l'état précédent)
+
+Beta 1.6: 2017-02-23
+  - Correction de bugs (décallage des couleurs, déplacements du calendrier, recherche trombi, affichage de l'edt d'une UV, texte dépassant des boutons, position().top renvoi du décimal: très chelou)
+  - Correction de textes (formulations, fautes, vouvoiement => tutoiement)
+  - Demande automatique d'ajout dans l'onglet organiser
+  - Correction de certaines icônes
+  - Retravaille des paramètres
+  - Ajout de l'info rentrée + déplacement des pdf dans ressources/pdf
+  - Mise en place du protocole de mise à jour (en attente de réponse de la DSI)

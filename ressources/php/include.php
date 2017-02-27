@@ -3,16 +3,8 @@
   mb_internal_encoding("UTF-8");
   session_start();
 
-  /*
+  // ini_set('display_errors', 1);  ini_set('display_startup_errors', 1);  error_reporting(E_ALL);
 
-  ini_set('display_errors', 1);
-  ini_set('display_startup_errors', 1);
-  error_reporting(E_ALL);
-
-  */
-
-  //$voidPic = 'https://'.$_SERVER['SERVER_NAME'].'/ressources/img/noPic.png';
-  //$uvPic = 'https://'.$_SERVER['SERVER_NAME'].'/ressources/img/uv.png';
   $etuPic = '<i class="searchImg fa fa-4x fa-user-o" style="padding-left:2px;" aria-hidden="true"></i>';
   $uvPic = '<i class="searchImg fa fa-4x fa-graduation-cap" style="padding-left:2px;" aria-hidden="true"></i>';
   $colors = array('#7DC779', '#82A1CA', '#F2D41F', '#457293', '#AB7AC6', '#DF6F53', '#B0CEE9', '#AAAAAA', '#576D7C', '#1C704E', '#F79565');
@@ -21,9 +13,13 @@
   include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/class/class.curl.php');
   include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/class/class.cas.php');
 
+  if (isset($_GET['MODCASID']) && is_string($_GET['MODCASID']))
+    $_SESSION['MODCASID'] = $_GET['MODCASID'];
+
   $bdd = new BDD();
   $curl = new CURL(strpos($_SERVER['HTTP_HOST'],'utc') !== false);
-  $curl->setCookies('MODCASID='.(isset($_GET['MODCASID']) && is_string($_GET['MODCASID']) ? $_GET['MODCASID'] : ''));
+  if (isset($_SESSION['MODCASID']))
+    $curl->setCookies('MODCASID='.$_SESSION['MODCASID']);
 
   if (!isset($_SESSION['login'])) {
     if (!isset($_SESSION['_GET']))
@@ -43,8 +39,6 @@
       $query = $bdd->prepare('UPDATE etudiants SET nouveau = 0 WHERE login = ?');
       $bdd->execute($query, array($_SESSION['login']));
 
-      file_put_contents($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/logs/connections', date('Y/m/d H:i:s').': '.$_SESSION['login'].PHP_EOL, FILE_APPEND);
-
       $get = '?';
       foreach ($_SESSION['_GET'] as $key => $value) {
         if ($key != 'ticket')
@@ -59,8 +53,25 @@
 
   }
 
+  function sendMail($mail, $subject, $message, $from = 'emploidutemps@assos.utc.fr') {
+    $query = $GLOBALS['bdd']->prepare('SELECT desinscrit FROM etudiants WHERE mail = ?');
+    $GLOBALS['bdd']->execute($query, array($mail));
+    $data = $query->fetch();
+
+    return FALSE;
+
+    if ($data['desinscrit'] == '0')
+      return mail($mail, $subject, $message.PHP_EOL.PHP_EOL.'Pour arrêter de recevoir des mails du service, tu peux à tout moment te désinscrire en cliquant ici: https://assos.utc.fr/emploidutemps/?param=sedesinscrire'.PHP_EOL.PHP_EOL.'En cas d\'erreur ou de bug, contacte-nous à cette adresse: simde@assos.utc.fr'.PHP_EOL.PHP_EOL.'Il y a une vie après les cours,'.PHP_EOL.'Le SiMDE', 'FROM:'.$from);
+
+    return FALSE;
+  }
+
   function isUpdating() {
     return file_exists($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/logs/'.'update') || file_exists($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/logs/'.'login');
+  }
+
+  function getARandomColor() {
+    return $GLOBALS['colors'][mt_rand(1, count($GLOBALS['colors'])) - 1];
   }
 
   function getFgColor($bgColor) {
@@ -206,9 +217,9 @@
     }
   }
 
-  function getRecuesList($login = NULL, $idExchange = NULL, $disponible = NULL, $echange = NULL, $idUV = NULL, $for = NULL) {
-    $query = $GLOBALS['bdd']->prepare('SELECT recues.idEchange, echanges.idUV, echanges.pour, recues.date, recues.disponible, recues.echange, echanges.active FROM recues, echanges WHERE (? IS NULL OR recues.login = ?) AND (? IS NULL OR echanges.idUV = ?) AND (? IS NULL OR echanges.pour = ?) AND (? IS NULL OR recues.idEchange = ?) AND (? IS NULL OR recues.disponible = ?) AND (? IS NULL OR recues.echange = ?) AND echanges.idEchange = recues.idEchange');
-    $GLOBALS['bdd']->execute($query, array($login, $login, $idUV, $idUV, $for, $for, $idExchange, $idExchange, $disponible, $disponible, $echange, $echange));
+  function getRecuesList($login = NULL, $idExchange = NULL, $disponible = NULL, $echange = NULL, $idUV = NULL, $for = NULL, $date = NULL) {
+    $query = $GLOBALS['bdd']->prepare('SELECT recues.idEchange, echanges.idUV, echanges.pour, recues.date, recues.disponible, recues.echange, echanges.active FROM recues, echanges WHERE (? IS NULL OR recues.login = ?) AND (? IS NULL OR echanges.idUV = ?) AND (? IS NULL OR echanges.pour = ?) AND (? IS NULL OR recues.idEchange = ?) AND (? IS NULL OR recues.disponible = ?) AND (? IS NULL OR recues.echange = ?) AND (? IS NULL OR recues.date = ?) AND echanges.idEchange = recues.idEchange');
+    $GLOBALS['bdd']->execute($query, array($login, $login, $idUV, $idUV, $for, $for, $idExchange, $idExchange, $disponible, $disponible, $echange, $echange, $date, $date));
 
     return $query->fetchAll();
   }
@@ -220,9 +231,9 @@
     return $query->fetchAll();
   }
 
-  function getEnvoiesList($login = NULL, $idExchange = NULL, $disponible = NULL, $echange = NULL, $idUV = NULL, $for = NULL) {
-    $query = $GLOBALS['bdd']->prepare('SELECT login, envoies.idEchange, idUV, pour, date, note, envoies.disponible, envoies.echange FROM echanges, envoies WHERE (? IS NULL OR echanges.idEchange = ?) AND (? IS NULL OR envoies.login = ?) AND (? IS NULL OR envoies.disponible = ?) AND (? IS NULL OR envoies.echange = ?) AND (? IS NULL OR echanges.idUV = ?) AND (? IS NULL OR echanges.pour = ?) AND echanges.idEchange = envoies.idEchange ORDER BY date');
-    $GLOBALS['bdd']->execute($query, array($idExchange, $idExchange, $login, $login, $disponible, $disponible, $echange, $echange, $idUV, $idUV, $for, $for));
+  function getEnvoiesList($login = NULL, $idExchange = NULL, $disponible = NULL, $echange = NULL, $idUV = NULL, $for = NULL, $date = NULL) {
+    $query = $GLOBALS['bdd']->prepare('SELECT login, envoies.idEchange, idUV, pour, date, note, envoies.disponible, envoies.echange FROM echanges, envoies WHERE (? IS NULL OR echanges.idEchange = ?) AND (? IS NULL OR envoies.login = ?) AND (? IS NULL OR envoies.disponible = ?) AND (? IS NULL OR envoies.echange = ?) AND (? IS NULL OR echanges.idUV = ?) AND (? IS NULL OR echanges.pour = ?) AND (? IS NULL OR envoies.date = ?) AND echanges.idEchange = envoies.idEchange ORDER BY date');
+    $GLOBALS['bdd']->execute($query, array($idExchange, $idExchange, $login, $login, $disponible, $disponible, $echange, $echange, $idUV, $idUV, $for, $for, $date, $date));
 
     return $query->fetchAll();
   }
@@ -326,9 +337,9 @@
   }
 
   if (isUpdating()) {
-    echo 'Agend\'UTC est en cours de mise à jour, veuillez patienter. La page se lancera d\'elle-même lorsque la mise à jour sera terminée
+    echo 'Emploi d\'UTemps est en cours de mise à jour, veuillez patienter. La page se relancera d\'elle-même lorsque la mise à jour sera terminée
     <script>
-    setTimeout(function(){ window.location.replace("https://" + window.location.hostname + "/"); }, 10000);
+    setTimeout(function(){ window.reload(); }, 5000);
     </script>';
     exit;
   }

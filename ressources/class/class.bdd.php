@@ -24,8 +24,8 @@ class BDD extends PDO {
 
 	private static function meurt($type, PDOException $e)	{
 		$signature = date('Y/m/d H:i:s').'	'.$_SERVER['REMOTE_ADDR'];
-		file_put_contents($_SERVER['DOCUMENT_ROOT'].'/emploidutemps'.'/logs/bdd.exception.txt',$signature.'	'.$type.'	'.$e->getMessage()."\r\n", FILE_APPEND);
-		die('SQL Error loged : '.$signature);
+    sendMail('simde@assos.utc.fr', 'Erreur dans la BDD', $signature.'	'.$type.'	'.$e->getMessage(), $from = 'emploidutemps@assos.utc.fr');
+		die('Une erreur a été détectée et a été signalée.');
 	}
 }
 ?>

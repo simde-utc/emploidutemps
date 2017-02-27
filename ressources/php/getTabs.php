@@ -95,7 +95,7 @@ foreach ($_SESSION['tab']['uv'] as $uv) {
 <div id='option'>
   <button id='addTab' onClick='searchTab();'<?php
     if ($mode == 'modifier')
-    echo 'class="blocked"'; ?>><i class="fa fa-plus" aria-hidden="true"></i></button>
+    echo 'class="blocked"'; ?>><i class="fa fa-search" aria-hidden="true"></i></button>
 
   <select id='mode' onChange="selectMode('', this.options[this.selectedIndex].value);">
   <?php

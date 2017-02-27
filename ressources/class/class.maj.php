@@ -7,22 +7,18 @@ class MAJ
   const picDir = '/pic/';
   const format1 = '/^(.*)([T|D|C])([ |0-9]{1,2}) ([ |A|B])';
   const format2 = '([A-Z]+)\.*\s*([0-9]{2}:[0-9]{2})-([0-9]{2}:[0-9]{2}),F(.),S=(.{0,8}).*$/';
-  const format = self::format1.'\s*'.self::format2;
-  const formatDouble = self::format1.'.*\/'.self::format2;
   const alignement = '\\1 \\2 \\3 \\5 \\6 \\7 \\9 \\8 \\4';
-  const colors = array('#7DC779', '#AB7AC6', '#82A1CA', '#F2D41F', '#457293', '#DF6F53', '#B0CEE9', '#576D7C', '#1C704E');
-
 
   public static function checkModcasid ($curl) {
-    return !empty($curl->get('http://wwwetu.utc.fr/sme/'));
+    $result = $curl->get('http://wwwetu.utc.fr/sme/'); // Vive le php 5
+    return !empty($result);
   }
-
 
   public static function isUpdating () {
     return file_exists($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::tempDir.'update');
   }
 
-  public static function checkForUpdate ($curl) {
+  public static function checkUpdate ($curl) {
     if (!self::checkModcasid($curl))
       return FALSE;
 
@@ -30,7 +26,7 @@ class MAJ
     $edtDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::edtDir;
     $picDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::picDir;
 
-    if (file_exists($logsDir.'lastCheck') && time() - file_get_contents($logsDir.'lastCheck') < 900)
+    if (file_exists($logsDir.'lastCheck') && time() - file_get_contents($logsDir.'lastCheck') < 60)
       return FALSE;
 
     if (!file_exists($edtDir) || !file_exists($picDir))
@@ -71,7 +67,7 @@ class MAJ
     $picDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::picDir;
 
     if (!file_exists($logsDir.'update')) {
-      if (!self::checkForUpdate($curl)) {
+      if (!self::checkUpdate($curl)) {
         echo 'Aucune mise à jour disponible';
         exit;
       }
@@ -182,15 +178,18 @@ class MAJ
     $dir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::edtDir;
     $file = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::tempDir.'login';
 
-    if (file_exists($file))
-      $login = explode(' ', file_get_contents($file))[1].'.edt';
+    if (file_exists($file)) {
+      $data = explode(' ', file_get_contents($file));
+      $login = $data[1].'.edt';
+    }
     else {
       self::resetBDD();
       touch($file);
       $login = NULL;
     }
 
-    if (is_dir($dir) && !!(new \FilesystemIterator($dir))->valid()) {
+//    if (is_dir($dir) && !!(new \FilesystemIterator($dir))->valid()) { Je sais plus pourquoi j'avais fait ça mais marche pas sur PHP 5 x)
+    if (is_dir($dir)) {
       if ($handle = opendir($dir)) {
         readdir($handle); readdir($handle);
 
@@ -278,7 +277,7 @@ class MAJ
 
     if ($queryIsColor->rowCount() == 0) {
       $queryAddColor = $GLOBALS['bdd']->prepare('INSERT INTO couleurs(uv, color) VALUES(?, ?)');
-      $color = self::colors[mt_rand(1, count(self::colors)) - 1];
+      $color = getRandomColor();
 
       return $GLOBALS['bdd']->execute($queryAddColor, array($uv, $color));
     }
@@ -298,13 +297,15 @@ class MAJ
       }
     }
     $GLOBALS['bdd']->execute($queryIsUV, $elem);
-    $id = $queryIsUV->fetch()['id'];
+    $data = $queryIsUV->fetch();
+    $id = $data['id'];
 
     if (empty($id)) {
       $queryAddUV = $GLOBALS['bdd']->prepare('INSERT INTO uvs(uv, type, groupe, jour, debut, fin, salle, frequence, semaine) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)');
       $GLOBALS['bdd']->execute($queryAddUV, $elem);
       $GLOBALS['bdd']->execute($queryIsUV, $elem);
-      return $queryIsUV->fetch()['id'];
+      $data = $queryIsUV->fetch();
+      return $data['id'];
     }
     else {
       $queryIncUV = $GLOBALS['bdd']->prepare('UPDATE uvs SET nbrEtu = nbrEtu + 1 WHERE id = ?');
@@ -321,7 +322,7 @@ class MAJ
 
 
   private static function parseLine ($login, $lineToParse) {
-    $elem = array_values(array_filter(explode(' ', preg_replace(self::format, self::alignement, $lineToParse))));
+    $elem = array_values(array_filter(explode(' ', preg_replace(self::format1.'\s*'.self::format2, self::alignement, $lineToParse))));
 
     if (!isset($elem[8])) {
       $elem[7] = $elem[6];
@@ -335,7 +336,7 @@ class MAJ
     self::insertCours($login, self::insertUV($elem));
 
     if (preg_match('/\//', $lineToParse))
-      self::parseLine($login, preg_replace(self::formatDouble, self::alignement, $lineToParse));
+      self::parseLine($login, preg_replace(self::format1.'.*\/'.self::format2, self::alignement, $lineToParse));
   }
 
 

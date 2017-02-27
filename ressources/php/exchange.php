@@ -12,19 +12,6 @@
     exit;
   }
 
-  function sendMail($mail, $subject, $message) {
-    $query = $GLOBALS['bdd']->prepare('SELECT desinscrit FROM etudiants WHERE mail = ?');
-    $GLOBALS['bdd']->execute($query, array($mail));
-    $data = $query->fetch();
-
-    return FALSE;
-
-    if ($data['desinscrit'] == '0')
-      return mail($mail, $subject, $message.PHP_EOL.PHP_EOL.'Pour arrêter de recevoir des mails du service, tu peux à tout moment te désinscrire en cliquant ici: https://assos.utc.fr/emploidutemps/?param=sedesinscrire', 'FROM:EmploiD\'UTemps');
-
-    return FALSE;
-  }
-
   $query = $GLOBALS['bdd']->prepare('SELECT desinscrit FROM etudiants WHERE login = ?');
   $GLOBALS['bdd']->execute($query, array($_SESSION['login']));
 
@@ -48,11 +35,11 @@
         printError('Personne n\'est disponible pour l\'échange');
 
       // On annonce que la personne a validé la proposition
-      $query = $GLOBALS['bdd']->prepare('UPDATE recues SET disponible = 0, echange = 1 WHERE login = ? AND idEchange = ?');
+      $query = $GLOBALS['bdd']->prepare('UPDATE recues SET date = NOW(), disponible = 0, echange = 1 WHERE login = ? AND idEchange = ?');
       $GLOBALS['bdd']->execute($query, array($_SESSION['login'], $_GET['idExchange']));
 
       // On annonce au plus tôt demandeur que son échange a été accepté
-      $query = $GLOBALS['bdd']->prepare('UPDATE envoies SET disponible = 0, echange = 1, date = NOW() WHERE login = ? AND idEchange = ?');
+      $query = $GLOBALS['bdd']->prepare('UPDATE envoies SET date = NOW(), disponible = 0, echange = 1, date = NOW() WHERE login = ? AND idEchange = ?');
       $GLOBALS['bdd']->execute($query, array($envoies[0]['login'], $_GET['idExchange']));
 
       // S'il n'y avait qu'un seul (dernier) demandeur, on désactive l'annonce puisque plus personne d'autre demande l'échange
@@ -84,21 +71,21 @@
       $GLOBALS['bdd']->execute(($check->rowCount() == 0) ? $insert : $update, array($envoies[0]['login'], $envoies[0]['pour']));
 
       // On supprime toutes les autres demandes
-      $data = getEnvoiesList($envoies[0]['login'], NULL, 1, NULL, $envoies[0]['idUV']);
+      $data = getEnvoiesList($envoies[0]['login'], NULL, 1, 0, $envoies[0]['idUV']);
       foreach ($data as $envoie)
         cancelIdExchange($envoie['idEchange'], $envoies[0]['login']);
 
-      $data = getEnvoiesList($_SESSION['login'], NULL, 1, NULL, $envoies[0]['pour']);
+      $data = getEnvoiesList($_SESSION['login'], NULL, 1, 0, $envoies[0]['pour']);
       foreach ($data as $envoie)
         cancelIdExchange($envoie['idEchange']);
 
       // Toutes les demandes reçues sur un créneau doivent être attribuées à son possesseur
-      $data = getRecuesList($login, NULL, 1, NULL, NULL, $envoies[0]['idUV']);
+      $data = getRecuesList($login, NULL, 1, 0, NULL, $envoies[0]['idUV']);
       $query = $GLOBALS['bdd']->prepare('UPDATE recues SET login = ? WHERE idEchange = ? AND login = ?');
       foreach ($data as $recue)
         $GLOBALS['bdd']->execute($query, array($_SESSION['login'], $recue['idEchange'], $envoies[0]['login']));
 
-      $data = getRecuesList($_SESSION['login'], NULL, 1, NULL, NULL, $envoies[0]['pour']);
+      $data = getRecuesList($_SESSION['login'], NULL, 1, 0, NULL, $envoies[0]['pour']);
       $query = $GLOBALS['bdd']->prepare('UPDATE recues SET login = ? WHERE idEchange = ? AND login = ?');
        foreach ($data as $recue)
         $GLOBALS['bdd']->execute($query, array($envoies[0]['login'], $recue['idEchange']), $_SESSION['login']);
@@ -122,11 +109,114 @@
       printSucces('Proposition supprimée avec succès');
     }
 
+    elseif (isset($_GET['cancel']) && $_GET['cancel'] == '1' && isset($_GET['idExchange']) && is_string($_GET['idExchange'])) {
+      $envoi = getEnvoiesList($_SESSION['login'], $_GET['idExchange'], 0, 1);
+      $recu = getRecuesList($_SESSION['login'], $_GET['idExchange'], 0, 1);
+
+      if (count($envoi) == 1) {
+        // On récupère avec qui on a échangé
+        $recu = getRecuesList(NULL, $_GET['idExchange'], NULL, 1, NULL, NULL, $envoi[0]['date']);
+
+        if (count($recu) == 1) {
+          $etuInfo = getEtu($recu[0]['login']);
+          // On indique la demande d'annulation
+          $query = $GLOBALS['bdd']->prepare('UPDATE envoies SET disponible = 1 WHERE idEchange = ? AND login = ?');
+          $GLOBALS['bdd']->execute($query, array($_GET['idExchange'], $_SESSION['login']));
+          // Si on est le premier à demander l'annulation
+          if ($recu[0]['disponible'] == 0) {
+            sendMail($etuInfo['mail'], 'Demande d\'annulation', 'Salut !'.PHP.EOF.$_SESSION['nom'].' '.$_SESSION['prenom'].'souhaiterais annuler l\'échange que vous avez effectué ensemble'.PHP_EOF.'Pour annuler: https://assos.utc.fr/?mode=modifier&recu=1&id=r'.$_GET['idEchange'], $_SESSION['mail']);
+            printSucces('Demande d\'annulation envoyée avec succès !');
+          }
+          else { // On effectue l'annulation
+            // On supprime la demande d'envoi
+            $query = $GLOBALS['bdd']->prepare('DELETE FROM envoies WHERE disponible = 1 AND echange = 1 AND idEchange = ? AND login = ?');
+            $GLOBALS['bdd']->execute($query, array($_GET['idExchange'], $_SESSION['login']));
+            // On réinitialise la demande d'échange reçu
+            $query = $GLOBALS['bdd']->prepare('UPDATE recues SET disponible = 1, echange = 0 WHERE idEchange = ? AND login = ?');
+            $GLOBALS['bdd']->execute($query, array($_GET['idExchange'], $recu[0]['login']));
+            // On redonne les créneaux de chacun
+            $query = $GLOBALS['bdd']->prepare('UPDATE cours SET actuel = 1, echange = 0 WHERE id = ? AND login = ?');
+            $GLOBALS['bdd']->execute($query, array($envoi[0]['idUV'], $_SESSION['login']));
+            $GLOBALS['bdd']->execute($query, array($envoi[0]['pour'], $recu[0]['login']));
+            // On supprime les créneaux échangés
+            $query = $GLOBALS['bdd']->prepare('DELETE FROM cours WHERE actuel = 1 AND echange = 1 AND id = ? AND login = ?');
+            $GLOBALS['bdd']->execute($query, array($envoi[0]['pour'], $_SESSION['login']));
+            $GLOBALS['bdd']->execute($query, array($envoi[0]['idUV'], $recu[0]['login']));
+            // On réatribue les annonces à l'un et à l'autres parce que toutes les demandes reçues sur un créneau doivent être attribuées à son possesseur
+            $data = getRecuesList($recu[0]['login'], NULL, 1, 0, NULL, $envoi[0]['idUV']);
+            $query = $GLOBALS['bdd']->prepare('UPDATE recues SET login = ? WHERE idEchange = ? AND login = ?');
+            foreach ($data as $recue)
+              $GLOBALS['bdd']->execute($query, array($_SESSION['login'], $recue['idEchange'], $recu[0]['login']));
+            $data = getRecuesList($_SESSION['login'], NULL, 1, 0, NULL, $envoi[0]['pour']);
+            $query = $GLOBALS['bdd']->prepare('UPDATE recues SET login = ? WHERE idEchange = ? AND login = ?');
+             foreach ($data as $recue)
+              $GLOBALS['bdd']->execute($query, array($recu[0]['login'], $recue['idEchange'], $_SESSION['login']));
+
+            sendMail($_SESSION['mail'], 'Annulation d\'échange', 'Salut !'.PHP.EOF.'Ton échange avec '.$etuInfo['nom'].' '.$etuInfo['prenom'].', a été annulé'.$_GET['idEchange']);
+            sendMail($etuInfo['mail'], 'Annulation d\'échange', 'Salut !'.PHP.EOF.'Ton échange avec '.$_SESSION['nom'].' '.$_SESSION['prenom'].', a été annulé'.$_GET['idEchange']);
+            printSucces('Les deux emplois du temps ont été restaurés. L\'échange a été annulé avec succès !');
+          }
+        }
+        else
+          printError('Bizarrement, personne n\'a echangé cette UV.... #Improbable');
+      }
+      elseif (count($recu) == 1) {
+        // On récupère avec qui on a échangé
+        $envoi = getEnvoiesList(NULL, $_GET['idExchange'], NULL, 1, NULL, NULL, $recu[0]['date']);
+
+        if (count($envoi) == 1) {
+          $etuInfo = getEtu($envoi[0]['login']);
+          // On indique la demande d'annulation
+          $query = $GLOBALS['bdd']->prepare('UPDATE recues SET disponible = 1 WHERE idEchange = ? AND login = ?');
+          $GLOBALS['bdd']->execute($query, array($_GET['idExchange'], $_SESSION['login']));
+          // Si on est le premier à demander l'annulation
+          if ($envoi[0]['disponible'] == 0) {
+            sendMail($etuInfo['mail'], 'Demande d\'annulation', 'Salut !'.PHP.EOF.$_SESSION['nom'].' '.$_SESSION['prenom'].'souhaiterais annuler l\'échange que vous avez effectué ensemble'.PHP_EOF.'Pour annuler: https://assos.utc.fr/?mode=modifier&envoi=1&id=e'.$_GET['idEchange'], $_SESSION['mail']);
+            printSucces('Demande d\'annulation envoyée avec succès !');
+          }
+          else { // On effectue l'annulation
+            // On supprime la demande d'envoi
+            $query = $GLOBALS['bdd']->prepare('DELETE FROM envoies WHERE disponible = 1 AND echange = 1 AND idEchange = ? AND login = ?');
+            $GLOBALS['bdd']->execute($query, array($_GET['idExchange'], $envoi[0]['login']));
+            // On réinitialise la demande d'échange reçu
+            $query = $GLOBALS['bdd']->prepare('UPDATE recues SET disponible = 1, echange = 0 WHERE idEchange = ? AND login = ?');
+            $GLOBALS['bdd']->execute($query, array($_GET['idExchange'], $_SESSION['login']));
+            // On redonne les créneaux de chacun
+            $query = $GLOBALS['bdd']->prepare('UPDATE cours SET actuel = 1, echange = 0 WHERE id = ? AND login = ?');
+            $GLOBALS['bdd']->execute($query, array($recu[0]['pour'], $_SESSION['login']));
+            $GLOBALS['bdd']->execute($query, array($recu[0]['idUV'], $envoi[0]['login']));
+            // On supprime les créneaux échangés
+            $query = $GLOBALS['bdd']->prepare('DELETE FROM cours WHERE actuel = 1 AND echange = 1 AND id = ? AND login = ?');
+            $GLOBALS['bdd']->execute($query, array($recu[0]['idUV'], $_SESSION['login']));
+            $GLOBALS['bdd']->execute($query, array($recu[0]['pour'], $envoi[0]['login']));
+            // On réatribue les annonces à l'un et à l'autres parce que toutes les demandes reçues sur un créneau doivent être attribuées à son possesseur
+            $data = getRecuesList($_SESSION['login'], NULL, 1, 0, NULL, $recu[0]['idUV']);
+            $query = $GLOBALS['bdd']->prepare('UPDATE recues SET login = ? WHERE idEchange = ? AND login = ?');
+            foreach ($data as $recue)
+              $GLOBALS['bdd']->execute($query, array($envoi[0]['login'], $recue['idEchange'], $_SESSION['login']));
+            $data = getRecuesList($envoi[0]['login'], NULL, 1, 0, NULL, $recu[0]['pour']);
+            $query = $GLOBALS['bdd']->prepare('UPDATE recues SET login = ? WHERE idEchange = ? AND login = ?');
+             foreach ($data as $recue)
+              $GLOBALS['bdd']->execute($query, array($_SESSION['login'], $recue['idEchange'], $envoi[0]['login']));
+
+            sendMail($_SESSION['mail'], 'Annulation d\'échange', 'Salut !'.PHP.EOF.'Ton échange avec '.$etuInfo['nom'].' '.$etuInfo['prenom'].', a été annulé'.$_GET['idEchange']);
+            sendMail($etuInfo['mail'], 'Annulation d\'échange', 'Salut !'.PHP.EOF.'Ton échange avec '.$_SESSION['nom'].' '.$_SESSION['prenom'].', a été annulé'.$_GET['idEchange']);
+            printSucces('Les deux emplois du temps ont été restaurés. L\'échange a été annulé avec succès !');
+          }
+        }
+        else
+          printError('Bizarrement, personne n\'a echangé cette UV.... #Improbable');
+      }
+      else
+        printError('Impossible d\'annuler');
+      printError('Pas fini');
+    }
+
     elseif (isset($_GET['infos']) && is_string($_GET['infos']) && $_GET['infos'] == '1') {
       $envoies = getEnvoiesList(NULL, $_GET['idExchange']);
       // On vérifie bien que la proposition a déjà été demandée
       if (count($envoies) == 0)
-        printError('Impossible de trouver une information concernant la proposition');
+        printError('Aucune offre n\'est disponible');
       // On récup les infos concernant les idUVs
       $idUV = getUVFromIdUV($envoies[0]['idUV']);
       $for = getUVFromIdUV($envoies[0]['pour']);
@@ -135,23 +225,23 @@
       echo '<div id="searchResult">';
 
       foreach ($envoies as $envoie) { // Afficher la demande en fonction de son état
-        if ($envoie['disponible'] == 1) {
+        if ($envoie['disponible'] == 1 && $envoie['echange'] == 0) {
           $bgColor = '#0000FF';
-          $note = '';
+          $note = 'Demande en cours';
         }
         elseif ($envoie['disponible'] == 0 && $envoie['echange'] == 1) {
           $bgColor = '#00FF00';
-          $note = ' (échangé le '.$envoie['date'].')';
+          $note = 'Echangé le '.$envoie['date'];
         }
         else {
           $bgColor = '#FF0000';
-          $note = ' (refusé)';
+          $note = 'Refusé';
         }
 
         $fgColor = getFgColor($bgColor);
 
         echo '<div class="searchCard" style="width: 100%; background-color: ', $bgColor, '; color: ', $fgColor, '">',
-        '<div class="nameCard">', $envoie['login'], $note, '</div>',
+        '<div class="nameCard">', $note, '</div>',
         '<div class="noteCard">', $envoie['note'], '</div></div>';
       }
 
@@ -186,9 +276,18 @@
 
     // Demander d'ajouter
     if (isset($_GET['ask']) && is_string($_GET['ask']) && !empty($_GET['ask'])) {
+      // On vérifie qu'on nous a pas déjà demandé d'échanger avant de refaire une demande
       $dejaRecu = getRecuesList($_SESSION['login'], NULL, 1, NULL, $_GET['for'], $_GET['idUV']);
-      if (count($dejaRecu) != 0)
+      if (count($dejaRecu) == 1 && count(getEchange($dejaRecu[0]['idUV'], $dejaRecu[0]['pour'], 1)) == 1)
         printError('Une demande d\'échange a déjà été réalisée pour ce créneau<br /><button onClick="window.location.href = \'https://\' + window.location.hostname + window.location.pathname + \'?mode=modifier&recu=1&id=r'.$dejaRecu[0]['idEchange'].'\'">Consulter la proposition</button>');
+
+      // On vérifie qu'on a pas déjà changer nos deux créneaux, et rediriger vers l'annulation de changement
+      $checkEnvoi = getEnvoiesList($_SESSION['login'], NULL, NULL, NULL, $_GET['for'], $_GET['idUV']);
+      $checkRecu = getRecuesList($_SESSION['login'], NULL, NULL, NULL, $_GET['idUV'], $_GET['for']);
+      if (count($checkEnvoi) == 1)
+          printError('Ces deux créneaux ont déjà été interchangés. Il est possible de demander d\'annuler un échange<br /><button onClick="window.location.href = \'https://\' + window.location.hostname + window.location.pathname + \'?mode=modifier&envoi=1&id=e'.$checkEnvoi[0]['idEchange'].'\'">Annuler l\'échange</button>');
+      elseif (count($checkRecu) == 1)
+          printError('Ces deux créneaux ont déjà été interchangés. Il est possible de demander d\'annuler un échange<br /><button onClick="window.location.href = \'https://\' + window.location.hostname + window.location.pathname + \'?mode=modifier&recu=1&id=r'.$checkRecu[0]['idEchange'].'\'">Annuler l\'échange</button>');
 
       $existedExchange = getEchange($_GET['idUV'], $_GET['for'], 0);
       $etuList = getEtuFromIdUV($_GET['for'], 0);
@@ -219,9 +318,18 @@
     }
 
     elseif (isset($_GET['add']) && is_string($_GET['add']) && !empty($_GET['add']) && isset($_POST['note']) && is_string($_POST['note'])) {
+      // On vérifie qu'on nous a pas déjà demandé d'échanger avant de refaire une demande
       $dejaRecu = getRecuesList($_SESSION['login'], NULL, 1, NULL, $_GET['for'], $_GET['idUV']);
-      if (count($dejaRecu) != 0)
+      if (count($dejaRecu) == 1 && count(getEchange($dejaRecu[0]['idUV'], $dejaRecu[0]['pour'], 1)) == 1)
         printError('Une demande d\'échange a déjà été réalisée pour ce créneau<br /><button onClick="window.location.href = \'https://\' + window.location.hostname + window.location.pathname + \'?mode=modifier&recu=1&id=r'.$dejaRecu[0]['idEchange'].'\'">Consulter la proposition</button>');
+
+      // On vérifie qu'on a pas déjà changer nos deux créneaux, et rediriger vers l'annulation de changement
+      $checkEnvoi = getEnvoiesList($_SESSION['login'], NULL, NULL, NULL, $_GET['for'], $_GET['idUV']);
+      $checkRecu = getRecuesList($_SESSION['login'], NULL, NULL, NULL, $_GET['idUV'], $_GET['for']);
+      if (count($checkEnvoi) == 1)
+          printError('Ces deux créneaux ont déjà été interchangés. Il est possible de demander d\'annuler un échange<br /><button onClick="window.location.href = \'https://\' + window.location.hostname + window.location.pathname + \'?mode=modifier&envoi=1&id=e'.$checkEnvoi[0]['idEchange'].'\'">Annuler l\'échange</button>');
+      elseif (count($checkRecu) == 1)
+          printError('Ces deux créneaux ont déjà été interchangés. Il est possible de demander d\'annuler un échange<br /><button onClick="window.location.href = \'https://\' + window.location.hostname + window.location.pathname + \'?mode=modifier&recu=1&id=r'.$checkRecu[0]['idEchange'].'\'">Annuler l\'échange</button>');
 
       $note = (empty($_POST['note']) ? $defaultNote : $_POST['note']);
       $existedExchange = getEchange($_GET['idUV'], $_GET['for'], 0);
