@@ -6,7 +6,7 @@ Le code exportable et utilisable de cette manière:
  - Faire un clone du git
  - Créer la base de données en se basant sur le db.sql
  - Créer un fichier qui contiendra toutes les infos d'accès ici: /ressouces/mdp.php
-```php
+```
 <?php if($_SERVER['SCRIPT_NAME'] == '/emploidutemps/ressources/mdp.php') { header('Location: /emploidutemps/'); exit; }
   const DB_HOST = 'sql.mde.utc';
   const DB_NAME = 'emploidutemps';
