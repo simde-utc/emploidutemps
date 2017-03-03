@@ -153,3 +153,16 @@ Beta 1.6: 2017-02-23
   - Retravaille des paramètres
   - Ajout de l'info rentrée + déplacement des pdf dans ressources/pdf
   - Mise en place du protocole de mise à jour (en attente de réponse de la DSI)
+
+Beta 1.7: 2017-02-28
+  - Correction de bugs (mauvais alignement pour l'affichage des étudiants, ordre nom prenom login plutôt que par login)
+  - Amélioration de la confidentialité (redirection lors d'un accès au mdp.php, plus de logs d'erreurs BDD => envoe d'un mail direct)
+  - Mise à jour du système de mise à jour
+  - Modification de la gestion des photos (directement importées par un simple img src. Sinon on met une icone: plus rien de témécharger en local)
+  - Création d'une BDD type
+
+Beta 1.8: 2017-03-02
+  - Blocage du protocole d'échange
+  - Modification des mails envoyés
+  - Ajout d'un message de non disponibilité
+  - Préparation pour la version alpha

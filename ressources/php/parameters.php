@@ -140,6 +140,17 @@
       <button onClick="window.open(\'mailto:simde@assos.utc.fr\');">Contacter le SIMDE</button>
       <button onClick="window.open(\'mailto:samy.nastuzzi@etu.utc.fr\');">Contacter le créateur de la page</button></div>';
   }
+  elseif ($_GET['param'] == 'probleme') {
+    echo '<div onClick="parameters()" style="cursor: pointer" id="popupHead">Problème technique</div>
+    <div class="parameters">
+      Salut ! Si tu viens consulter cette page c\'est à coup sûr pour échanger ton emploi du temps mais malheuresement il y a un problème pour récupérer les nouveaux emplois du temps auprès de la DSI<br /><br />
+      Va falloir être patient(e)... Mais ça devrait être dispo aujoud\'hui<br />
+      <br />
+      Je posterai un message sur le groupe UTC =) dès que c\'est dispo !<br />
+      La bise,<br />
+      Samy
+    </div>';
+  }
   else
     echo '<div onClick="parameters()" style="cursor: pointer" id="popupHead">Cliquez ici pour retourner au menu</div>
     <div class="parameters" style="background-color: #FF0000">Erreur: impossible de trouver l\'information voulue</div>';

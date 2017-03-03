@@ -5,7 +5,7 @@
 
   // ini_set('display_errors', 1);  ini_set('display_startup_errors', 1);  error_reporting(E_ALL);
 
-  $etuPic = '<i class="searchImg fa fa-4x fa-user-o" style="padding-left:2px;" aria-hidden="true"></i>';
+  $etuPic = '<i class="searchImg fa fa-4x fa-user-o" style="padding-left: 1px; padding-top: 3px;" aria-hidden="true"></i>';
   $uvPic = '<i class="searchImg fa fa-4x fa-graduation-cap" style="padding-left:2px;" aria-hidden="true"></i>';
   $colors = array('#7DC779', '#82A1CA', '#F2D41F', '#457293', '#AB7AC6', '#DF6F53', '#B0CEE9', '#AAAAAA', '#576D7C', '#1C704E', '#F79565');
   $jours = array('lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche');
@@ -58,8 +58,6 @@
     $GLOBALS['bdd']->execute($query, array($mail));
     $data = $query->fetch();
 
-    return FALSE;
-
     if ($data['desinscrit'] == '0')
       return mail($mail, $subject, $message.PHP_EOL.PHP_EOL.'Pour arrêter de recevoir des mails du service, tu peux à tout moment te désinscrire en cliquant ici: https://assos.utc.fr/emploidutemps/?param=sedesinscrire'.PHP_EOL.PHP_EOL.'En cas d\'erreur ou de bug, contacte-nous à cette adresse: simde@assos.utc.fr'.PHP_EOL.PHP_EOL.'Il y a une vie après les cours,'.PHP_EOL.'Le SiMDE', 'FROM:'.$from);
 
@@ -95,14 +93,9 @@
       $name = $etu['nom'].' '.$etu['prenom'];
     }
 
-    echo '<div class="searchCard" onClick="edtEtu(\'', $etu['login'], '\')">';
-
-    if (file_exists($pic))
-      echo '<img class="searchImg" src="https://'.$_SERVER['SERVER_NAME'].'/pic/'.$etu['login'].'.jpg" alt="photo"/>';
-    else
-      echo $GLOBALS['etuPic'];
-
-    echo '<div>
+    echo '<div class="searchCard" onClick="edtEtu(\'', $etu['login'], '\')">
+      '.$GLOBALS['etuPic'].'<img class="searchImg" src="https://demeter.utc.fr/pls/portal30/portal30.get_photo_utilisateur?username='.$etu['login'].'" alt="" />
+      <div>
         <div>', $name, '</div>
         <div>', $etu['semestre'], '</div>
         <div>', $mail, '</div>
@@ -111,14 +104,9 @@
   }
 
   function printUV($uv) {
-    echo '<div class="searchCard" onClick="edtUV(\'', $uv['uv'], '\')">';
-
-    if (file_exists($pic))
-      echo '<img class="searchImg" src="https://'.$_SERVER['SERVER_NAME'].'/pic/'.$etu['login'].'.jpg" alt="photo"/>';
-    else
-      echo $GLOBALS['uvPic'];
-
-    echo '<div>
+    echo '<div class="searchCard" onClick="edtUV(\'', $uv['uv'], '\')">
+    ', $GLOBALS['uvPic'], '
+      <div>
         <div>', $uv['uv'], '</div>
       </div>
     </div>';
@@ -132,33 +120,35 @@
     else
       $pic = $GLOBALS['voidPic'];
 
-    echo '<div class="searchCard" style="width: 100%" onClick="popupClose(); window.login = \'\'; window.uv = \'\'; selectMode("", window.mode);">';
-
-    if (file_exists($pic))
-      echo '<img class="searchImg" src="https://'.$_SERVER['SERVER_NAME'].'/pic/'.$etu['login'].'.jpg" alt="photo"/>';
-    else
-      echo $GLOBALS['voidPic'];
-
-    echo '<div>
-        <div>', $_SESSION['nom'], ' ', $_SESSION['prenom'], '</div>
-        <div>', $etu['semestre'], '</div>
-        <div>', $_SESSION['mail'], '</div>
+    echo '<div class="searchCard" style="width: 100%;" onClick="popupClose(); window.login = \'\'; window.uv = \'\'; selectMode("", window.mode);">
+      <div style="margin: auto;">
+        <img class="searchImg" style="top: 55px" src="https://demeter.utc.fr/pls/portal30/portal30.get_photo_utilisateur?username='.$etu['login'].'" alt="" />
+        <div>
+          <div>', $_SESSION['nom'], ' ', $_SESSION['prenom'], '</div>
+          <div>', $etu['semestre'], '</div>
+          <div>', $_SESSION['mail'], '</div>
+        </div>
       </div>
     </div>';
   }
 
-  function printEtuList($idUV, $edt = NULL) {
+  function printEtuList($idUV) {
     $etus = getEtuFromIdUV($idUV);
     $uv = getUVFromIdUV($idUV);
 
     echo '<div id="popupHead">Liste des ', $uv['nbrEtu'], ' étudiants en ', ($uv['type'] == 'D' ? $uv['type'] = 'TD' : ($uv['type'] == 'C' ? $uv['type'] = 'cours' : $uv['type'] = 'TP')), ' de ', $uv['uv'], ' chaque ', $GLOBALS['jours'][$uv['jour']],' de ', $uv['debut'], ' à ', $uv['fin'], ($uv['semaine'] == '' ? '' : ' chaque semaine '.$uv['semaine']), '</div><div id="searchResult">';
 
-    if ($edt != NULL) {
-      $where = array_search($edt, $etus);
-      if ($where != FALSE) {
-        printSelf($etus[$where]);
-        unset($etus[$where]);
+    $where = FALSE;
+    foreach ($etus as $key => $etu) {
+      if($etu['login'] == $_SESSION['login']) {
+        $where = $key;
+        break;
       }
+    }
+
+    if ($where != FALSE) {
+      printSelf($etus[$where]);
+      unset($etus[$where]);
     }
 
     foreach ($etus as $etu)
@@ -253,7 +243,7 @@
   }
 
   function getEtuFromIdUV($idUV, $desinscrit = NULL, $actuel = 1) {
-    $query = $GLOBALS['bdd']->prepare('SELECT etudiants.login, etudiants.semestre, etudiants.mail, etudiants.prenom, etudiants.nom, etudiants.nouveau, etudiants.desinscrit, cours.actuel, cours.echange FROM etudiants, cours WHERE cours.id = ? AND cours.actuel = ? AND (? IS NULL OR desinscrit = ?) AND etudiants.login = cours.login ORDER BY login');
+    $query = $GLOBALS['bdd']->prepare('SELECT etudiants.login, etudiants.semestre, etudiants.mail, etudiants.prenom, etudiants.nom, etudiants.nouveau, etudiants.desinscrit, cours.actuel, cours.echange FROM etudiants, cours WHERE cours.id = ? AND cours.actuel = ? AND (? IS NULL OR desinscrit = ?) AND etudiants.login = cours.login ORDER BY nom, prenom, login');
     $GLOBALS['bdd']->execute($query, array($idUV, $actuel, $desinscrit, $desinscrit));
 
     return $query->fetchAll();

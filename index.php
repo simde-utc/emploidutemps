@@ -39,6 +39,8 @@
           window.search = '';
         }
       });
+
+      parameters('probleme');
     }
 
     $(window).resize(function() {
@@ -62,7 +64,7 @@
 <body onLoad='main()'>
   <div id='header'>
     <button id='parameters' onClick="parameters();"><i class="fa fa-2x fa-bars" aria-hidden="true"></i></button>
-    <a id='title' href='/emploidutemps'>Emploi d'UTemps Beta 1.6</a>
+    <a id='title' href='/emploidutemps'>Emploi d'UTemps Beta 1.8</a>
     <div id='sTitle'></div>
     <div id='bar'></div>
   </div>

@@ -4,7 +4,6 @@ class MAJ
 {
   const tempDir = '/logs/';
   const edtDir = '/edt/';
-  const picDir = '/pic/';
   const format1 = '/^(.*)([T|D|C])([ |0-9]{1,2}) ([ |A|B])';
   const format2 = '([A-Z]+)\.*\s*([0-9]{2}:[0-9]{2})-([0-9]{2}:[0-9]{2}),F(.),S=(.{0,8}).*$/';
   const alignement = '\\1 \\2 \\3 \\5 \\6 \\7 \\9 \\8 \\4';
@@ -24,12 +23,11 @@ class MAJ
 
     $logsDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::tempDir;
     $edtDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::edtDir;
-    $picDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::picDir;
 
     if (file_exists($logsDir.'lastCheck') && time() - file_get_contents($logsDir.'lastCheck') < 60)
       return FALSE;
 
-    if (!file_exists($edtDir) || !file_exists($picDir))
+    if (!file_exists($edtDir))
       return TRUE;
 
     $list = $curl->get('http://wwwetu.utc.fr/sme/EDT/');
@@ -80,13 +78,6 @@ class MAJ
         array_map('unlink', glob("$edtDir/*.*"));
         rmdir($edtDir);
       }
-
-      if (!file_exists($picDir))
-        mkdir($picDir, 0777, true);
-      else {
-        array_map('unlink', glob("$picDir/*.*"));
-        rmdir($picDir);
-      }
       touch($logsDir.'update');
     }
 
@@ -126,10 +117,8 @@ class MAJ
 
   private static function getEdt ($curl) {
     $edtDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::edtDir;
-    $picDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::picDir;
 
     if (!file_exists($edtDir)) { mkdir($edtDir, 0777, true); }
-    if (!file_exists($picDir)) { mkdir($picDir, 0777, true); }
 
     $list = $curl->get('http://wwwetu.utc.fr/sme/EDT/');
     preg_match_all('/"([a-z]{4,16}.edt)"/', $list, $temp);
@@ -148,20 +137,9 @@ class MAJ
         if (empty($text)) die('MODCASID erroné ou expiré..');
         file_put_contents($edtDir.$edt, $text);
 
-        $pic = $curl->get('https://demeter.utc.fr/pls/portal30/portal30.get_photo_utilisateur?username='.$login);
-        if (empty($pic)) die('MODCASID erroné ou expiré..');
-        if (!preg_match('/^PHOTO/', $pic)) {
-          $picName = $picDir.$login.'.jpg';
-          file_put_contents($picName, $pic);
-          $image = new SimpleImage();
-          $image->load($picName);
-          $image->resizeToHeight(240);
-          $image->save($picName);
-        }
-
         $new += 1;
         if ($new >= 10) {
-          echo ($j+1), ' emplois du temps et photos téléchargés sur ', count($edts);
+          echo ($j+1), ' emplois du temps téléchargés sur ', count($edts);
           return FALSE;
         }
       }
