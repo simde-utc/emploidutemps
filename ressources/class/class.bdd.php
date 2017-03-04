@@ -24,7 +24,7 @@ class BDD extends PDO {
 
 	private static function meurt($type, PDOException $e)	{
 		$signature = date('Y/m/d H:i:s').'	'.$_SERVER['REMOTE_ADDR'];
-    sendMail('simde@assos.utc.fr', 'Erreur dans la BDD', $signature.'	'.$type.'	'.$e->getMessage(), $from = 'emploidutemps@assos.utc.fr');
+    mail('simde@assos.utc.fr', 'Erreur dans la BDD', $signature.'	'.$type.'	'.$e->getMessage());
 		die('Une erreur a été détectée et a été signalée.');
 	}
 }

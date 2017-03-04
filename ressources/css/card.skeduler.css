@@ -228,6 +228,16 @@
   cursor: pointer;
 }
 
+.infosExchange {
+  color: #000000;
+  font-size: 11px;
+  background-color: #CCCCCC;
+  opacity: 0.75;
+  margin-left: 4px;
+  margin-right: 4px;
+  padding: 1px;
+}
+
 .option {
   text-align: center;
   font-size: 11px;
@@ -236,6 +246,7 @@
   width: 120px;
   border: none;
   cursor: pointer;
+  overflow: auto;
 }
 
 .option:hover {

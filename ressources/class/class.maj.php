@@ -3,7 +3,7 @@
 class MAJ
 {
   const tempDir = '/logs/';
-  const edtDir = '/edt/';
+  const edtDir = '/ressources/edt/';
   const format1 = '/^(.*)([T|D|C])([ |0-9]{1,2}) ([ |A|B])';
   const format2 = '([A-Z]+)\.*\s*([0-9]{2}:[0-9]{2})-([0-9]{2}:[0-9]{2}),F(.),S=(.{0,8}).*$/';
   const alignement = '\\1 \\2 \\3 \\5 \\6 \\7 \\9 \\8 \\4';
@@ -121,7 +121,7 @@ class MAJ
     if (!file_exists($edtDir)) { mkdir($edtDir, 0777, true); }
 
     $list = $curl->get('http://wwwetu.utc.fr/sme/EDT/');
-    preg_match_all('/"([a-z]{4,16}.edt)"/', $list, $temp);
+    preg_match_all('/"([a-z0-9]{4,16}.edt)"/', $list, $temp);
     $edts = $temp[0];
     if (empty($edts)) die('MODCASID erroné ou expiré..');
 
@@ -207,7 +207,7 @@ class MAJ
   }
 
 
-  private static function insertEdt ($edt) {
+  public static function insertEdt ($edt) {
     $edtFile = fopen($edt, 'r');
     if ($edtFile) {
         if (fgets($edtFile) !== false && ($line = fgets($edtFile)) !== false) {
@@ -236,7 +236,7 @@ class MAJ
       if (preg_match('/Non trouvé/', $e))
         $infoFromGinger = array('nom' => NULL, 'prenom' => NULL, 'mail' => NULL);
       else {
-        echo 'Une erreur a été détectée au sein de Ginger: ', $e, '<script type="text/javascript">function refresh() { window.location.href=window.location.href } setTimeout("refresh()", 1000);</script>';
+        echo 'Une erreur a été détectée au sein de Ginger: ', $e;
         exit;
       }
     }
@@ -255,7 +255,7 @@ class MAJ
 
     if ($queryIsColor->rowCount() == 0) {
       $queryAddColor = $GLOBALS['bdd']->prepare('INSERT INTO couleurs(uv, color) VALUES(?, ?)');
-      $color = getRandomColor();
+      $color = getARandomColor();
 
       return $GLOBALS['bdd']->execute($queryAddColor, array($uv, $color));
     }
@@ -325,8 +325,8 @@ class MAJ
     return $login;
   }
 
-  private static function resetBdd () {
-    $GLOBALS['bdd']->query('TRUNCATE TABLE cours; TRUNCATE TABLE uvs; TRUNCATE TABLE etudiants; TRUNCATE TABLE couleurs; TRUNCATE TABLE echanges;');
+  public static function resetBdd () {
+    $GLOBALS['bdd']->query('TRUNCATE TABLE cours; TRUNCATE TABLE uvs; TRUNCATE TABLE etudiants; TRUNCATE TABLE couleurs; TRUNCATE TABLE echanges; TRUNCATE TABLE envoies; TRUNCATE TABLE recues;  TRUNCATE TABLE uvs;');
   }
 }
 ?>

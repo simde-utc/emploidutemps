@@ -44,7 +44,7 @@ echo $_SESSION['nom'], ' ', $_SESSION['prenom'], '</button>';
 
 if ($mode == 'modifier') {
   if ($nbrRecu != 0)
-    echo '<button class="', (isset($_GET['recu']) && $_GET['recu'] == '1' ? 'active' : 'notActive'), '" onClick="seeRecues();">', $nbrRecu, ' proposition', ($nbrRecu > 1 ? 's': ''), ' récue', ($nbrRecu > 1 ? 's': ''), '</button>';
+    echo '<button class="', (isset($_GET['recu']) && $_GET['recu'] == '1' ? 'active' : 'notActive'), '" onClick="seeRecues();">', $nbrRecu, ' proposition', ($nbrRecu > 1 ? 's': ''), ' reçue', ($nbrRecu > 1 ? 's': ''), '</button>';
   if ($nbrEnvoi != 0)
     echo '<button class="', (isset($_GET['envoi']) && $_GET['envoi'] == '1' ? 'active' : 'notActive'), '" onClick="seeEnvoies();">', $nbrEnvoi, ' proposition', ($nbrEnvoi > 1 ? 's': ''), ' envoyée', ($nbrEnvoi > 1 ? 's': ''), '</button>';
 

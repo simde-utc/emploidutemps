@@ -12,6 +12,7 @@
   <script type="text/javascript" src="ressources/js/jquery.skeduler.js"></script>
   <script type="text/javascript" src="ressources/js/jquery.print.js"></script>
   <script type="text/javascript" src="ressources/js/jquery.touchSwipe.min.js"></script>
+  <script type="text/javascript" src="ressources/js/xepOnline.jqPlugin.js"></script>
   <script type="text/javascript">
     function main () {
       <?php
@@ -23,6 +24,9 @@
         else
           $mode = (isset($_GET['mode']) && is_string($_GET['mode']) && !empty($_GET['mode']) ? $_GET['mode'] : '');
 
+        if (isset($_GET['mode']))
+          echo 'phpGet = true;';
+
         echo 'selectMode(\'', (substr($_SERVER['REQUEST_URI'], strpos($_SERVER['REQUEST_URI'], "?") + 1) == '' ? '' : '&'), substr($_SERVER['REQUEST_URI'], strpos($_SERVER['REQUEST_URI'], "?") + 1), '\', \'', $mode, "');";
 
         // Lance le paramètre demander (désinscription par exemple)
@@ -31,6 +35,13 @@
         //  Animer l'affichage d'une UV à échanger lors de la réception du mail
         else if (isset($_GET['id']) && is_string($_GET['id']) && !empty($_GET['id']))
           echo 'setTimeout(function () { $("#', $_GET['id'], '").click(); }, 1000);';
+
+        $query = $GLOBALS['bdd']->prepare('SELECT nouveau FROM etudiants WHERE login = ?');
+        $GLOBALS['bdd']->execute($query, array($_SESSION['login']));
+        $data = $query->fetch();
+/*
+        if ($data['nouveau'] == '1')
+          echo 'setTimeout(function () { parameters("nouveau"); }, 1500);';*/
       ?>
 
       $("body").keyup(function (event) {
@@ -39,8 +50,6 @@
           window.search = '';
         }
       });
-
-      parameters('probleme');
     }
 
     $(window).resize(function() {
@@ -64,7 +73,7 @@
 <body onLoad='main()'>
   <div id='header'>
     <button id='parameters' onClick="parameters();"><i class="fa fa-2x fa-bars" aria-hidden="true"></i></button>
-    <a id='title' href='/emploidutemps'>Emploi d'UTemps Beta 1.8</a>
+    <a id='title' href='/emploidutemps'>Emploi d'UTemps</a>
     <div id='sTitle'></div>
     <div id='bar'></div>
   </div>

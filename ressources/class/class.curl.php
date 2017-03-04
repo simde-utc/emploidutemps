@@ -11,7 +11,9 @@ class CURL
 		curl_setopt($this->ch, CURLOPT_FOLLOWLOCATION, true);
 		curl_setopt($this->ch, CURLOPT_SSLVERSION, 3);
 		curl_setopt($this->ch, CURLOPT_SSL_VERIFYPEER, false);
-		//hcurl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, 2);
+		//curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, 2);
+		curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, 0);
+		curl_setopt($this->ch, CURLOPT_SSL_VERIFYPEER, 0);
 
 		if ($proxy)
 		{
@@ -43,7 +45,7 @@ class CURL
 		return curl_exec($this->ch);
 	}
 
-	
+
 	public function error()
 	{
 		return curl_error($this->ch);

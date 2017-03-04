@@ -33,7 +33,7 @@
       'bgColor' => $bgColor,
       'nbrSameTime' => $nbrSameTime,
       'columnPerDay' => 2,
-      'interraction' => '<div onClick=\'infosExchange('.$recue['idEchange'].');\'>En échange avec le vôtre du '.$GLOBALS['jours'][$exchange['jour']].' de '.$exchange['debut'].' à '.$exchange['fin'].' en '.$exchange['salle'].(($exchange['semaine'] == '') ? '' : ' chaque semaine '.$exchange['semaine']).'</div>'.$interraction,
+      'interraction' => '<div class="infosExchange" onClick=\'infosExchange('.$recue['idEchange'].');\'>En échange avec le vôtre du '.$GLOBALS['jours'][$exchange['jour']].' de '.$exchange['debut'].' à '.$exchange['fin'].' en '.$exchange['salle'].(($exchange['semaine'] == '') ? '' : ' chaque semaine '.$exchange['semaine']).'</div>'.$interraction,
       'session' => 0
     );
   }
@@ -68,13 +68,13 @@
 
     foreach ($recues as $recue) {
       if ($recue['active'] == 1)
-        array_push($arraydemande, arrayRecue($login, $recue, $passed, '#0000FF', '<button class="option" style="width: 59px; height: 15px" onClick=\'acceptExchange('.$recue['idEchange'].');\'>Accepter</button><button class="option" style="width: 59px; height: 15px" onClick=\'refuseExchange('.$recue['idEchange'].');\'>Refuser la demande</button>'));
+        array_push($arraydemande, arrayRecue($login, $recue, $passed, '#0000FF', '<button class="option" style="width: 59px; height: 15px" onClick=\'acceptExchange('.$recue['idEchange'].');\'>Accepter</button><button class="option" style="width: 59px; height: 15px" onClick=\'refuseExchange('.$recue['idEchange'].');\'>Refuser</button>'));
       else
-        array_push($arraydemande, arrayRecue($login, $recue, $passed, '#FF0000', '<button class="option" onClick=\'askForExchange('.$recue['pour'].', '.$recue['idUV'].');\'>Faire la proposition</button>'));
+        array_push($arraydemande, arrayRecue($login, $recue, $passed, '#FF0000', '<button class="option" style="width: 59px; height: 15px" onClick=\'askForExchange('.$recue['pour'].', '.$recue['idUV'].');\'>Proposer</button><button class="option" style="width: 59px; height: 15px" onClick=\'delRefuse('.$recue['idEchange'].');\'>Supprimer</button>'));
     }
 
     foreach ($recuesRefused as $recue)
-      array_push($arraydemande, arrayRecue($login, $recue, $passed, '#FF0000', '<button class="option" style="background-color: #777777; color: #FFFFFF" disabled>Proposition réfusée</button>'));
+      array_push($arraydemande, arrayRecue($login, $recue, $passed, '#FF0000', '<button class="option" onClick=\'delRefuse('.$recue['idEchange'].');\'>Supprimer la proposition</button>'));
 
     foreach ($recuesAccepted as $recue)
       array_push($arraydemande, arrayRecue($login, $recue, $passed, '#00FF00', '<button class="option" onClick=\'cancelExchange('.$recue['idEchange'].');\'>Annuler l\'échange</button>'));
@@ -116,7 +116,7 @@
       'bgColor' => $bgColor,
       'nbrSameTime' => $nbrSameTime,
       'columnPerDay' => 2,
-      'interraction' => '<div onClick=\'infosExchange('.$envoie['idEchange'].');\'>En échange avec celui du '.$GLOBALS['jours'][$exchange['jour']].' de '.$exchange['debut'].' à '.$exchange['fin'].' en '.$exchange['salle'].(($exchange['semaine'] == '') ? '' : ' chaque semaine '.$exchange['semaine']).'</div>'.$interraction,
+      'interraction' => '<div class="infosExchange" onClick=\'infosExchange('.$envoie['idEchange'].');\'>En échange avec celui du '.$GLOBALS['jours'][$exchange['jour']].' de '.$exchange['debut'].' à '.$exchange['fin'].' en '.$exchange['salle'].(($exchange['semaine'] == '') ? '' : ' chaque semaine '.$exchange['semaine']).'</div>'.$interraction,
       'session' => 0
     );
   }

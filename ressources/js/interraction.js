@@ -1,4 +1,5 @@
 var get = '';
+var phpGet = false;
 var card = '';
 var columnPerDay = 1;
 var mode = 'afficher';
@@ -40,6 +41,9 @@ function selectMode(get, mode) {
     window.columnPerDay = 1;
     window.compare = 0;
     window.idUV = '';
+
+    if (window.phpGet)
+      window.location.href = 'https://' + window.location.hostname + '/emploidutemps/';
 
     newRequest('&login=' + window.login + '&uv=' + window.uv + get, '');
   }
@@ -362,6 +366,13 @@ function acceptExchange(idExchange) {
 
 function refuseExchange(idExchange) {
   $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?refuse=1&idExchange=' + idExchange, function (info) {
+    popupInfo(info);
+  });
+}
+
+function delRefuse(idExchange) {
+  window.click = true;
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?delRefuse=1&idExchange=' + idExchange, function (info) {
     popupInfo(info);
   });
 }

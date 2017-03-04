@@ -60,6 +60,11 @@ function schedule(tasks) {
 
             window.card = '';
           }
+          else if ($('#' + window.card.id).length === 0) {
+            window.card = '';
+            $('#' + card.id).addClass('focus');
+            $('#' + card.id).click();
+          }
           else {
             if (Math.ceil($('#' + window.card.id).position().top) >= 430)
               $('#' + window.card.id).css('top', Math.ceil(getCardTopPosition(window.card.startTime)));

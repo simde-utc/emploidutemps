@@ -102,7 +102,7 @@ class KoalaClient {
       CURLOPT_RETURNTRANSFER => true,
       CURLOPT_CUSTOMREQUEST => $method,
       CURLOPT_SSL_VERIFYPEER => true,
-      CURLOPT_CAINFO => __DIR__."\ssl.pem",
+//      CURLOPT_CAINFO => __DIR__."\ssl.pem",
   	/*	CURLOPT_PROXY => 'proxyweb.utc.fr',
   		CURLOPT_PROXYPORT => '3128'*/
     );

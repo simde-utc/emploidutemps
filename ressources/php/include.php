@@ -45,12 +45,13 @@
           $get .= $key.'='.$value.'&';
       }
 
+      unset($_SESSION['_GET']);
+
       header('Location: /emploidutemps/'.substr($get, 0, -1));
       exit;
   	}
   	else
       CAS::login();
-
   }
 
   function sendMail($mail, $subject, $message, $from = 'emploidutemps@assos.utc.fr') {
@@ -65,7 +66,7 @@
   }
 
   function isUpdating() {
-    return file_exists($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/logs/'.'update') || file_exists($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/logs/'.'login');
+    return $_SERVER['SCRIPT_NAME'] != '/emploidutemps/ressources/php/maj.php' && (file_exists($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/logs/'.'update') || file_exists($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/logs/'.'login'));
   }
 
   function getARandomColor() {
@@ -208,7 +209,7 @@
   }
 
   function getRecuesList($login = NULL, $idExchange = NULL, $disponible = NULL, $echange = NULL, $idUV = NULL, $for = NULL, $date = NULL) {
-    $query = $GLOBALS['bdd']->prepare('SELECT recues.idEchange, echanges.idUV, echanges.pour, recues.date, recues.disponible, recues.echange, echanges.active FROM recues, echanges WHERE (? IS NULL OR recues.login = ?) AND (? IS NULL OR echanges.idUV = ?) AND (? IS NULL OR echanges.pour = ?) AND (? IS NULL OR recues.idEchange = ?) AND (? IS NULL OR recues.disponible = ?) AND (? IS NULL OR recues.echange = ?) AND (? IS NULL OR recues.date = ?) AND echanges.idEchange = recues.idEchange');
+    $query = $GLOBALS['bdd']->prepare('SELECT login, recues.idEchange, echanges.idUV, echanges.pour, recues.date, recues.disponible, recues.echange, echanges.active FROM recues, echanges WHERE (? IS NULL OR recues.login = ?) AND (? IS NULL OR echanges.idUV = ?) AND (? IS NULL OR echanges.pour = ?) AND (? IS NULL OR recues.idEchange = ?) AND (? IS NULL OR recues.disponible = ?) AND (? IS NULL OR recues.echange = ?) AND (? IS NULL OR recues.date = ?) AND echanges.idEchange = recues.idEchange');
     $GLOBALS['bdd']->execute($query, array($login, $login, $idUV, $idUV, $for, $for, $idExchange, $idExchange, $disponible, $disponible, $echange, $echange, $date, $date));
 
     return $query->fetchAll();

@@ -166,3 +166,15 @@ Beta 1.8: 2017-03-02
   - Modification des mails envoyés
   - Ajout d'un message de non disponibilité
   - Préparation pour la version alpha
+
+Stable 1.0: 2017-03-03
+  - Réparation de l'export Ical/.ics
+  - Résolution du bug d'envoi de confirmation d'échange
+  - Ajout de l'option de suppression d'un échange qui a été refusé
+  - Finalisation de l'annulation d'échange
+  - Redirection faire l'affichage classique si un mode est défini dans le get et qu'on souhaite retourner à l'affichager classique
+  - Amélioration des boutons de modification d'UVs
+  - Modification de l'information affichée sur les UVs => Devenu un semi-bouton remarquable
+  - Résolution du problème de non-envoi de problème lié à la BDD
+  - Correction de l'acceptation d'échange et donc du mauvais échange de propositions
+  - Réparation de la déconnexion

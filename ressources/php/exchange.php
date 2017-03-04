@@ -20,8 +20,11 @@
   if ($data['desinscrit'] == '1')
     printError('Il est impossible d\'échanger ses UVs lorsqu\'on est désinscrit du service<br /><div class="parameters"><button style="background-color: #00FF00" onClick="parameters(\'reinscription\');"">Se réinscrire au service</button></div>');
 //
-  printError('Impossible d\'échanger, le service d\'échange est temporairement suspendu');
+  if (isUpdating())
+    printError('Impossible d\'échanger, le service d\'échange est temporairement suspendu');
 //
+  //printError('Impossible d\'échanger, le service d\'échange est temporairement suspendu. Un bug bloque l\'envoie du mail de confirmation. Désolé je fais ca au plus vite');
+
   if (isset($_GET['idExchange']) && is_string($_GET['idExchange']) && !empty($_GET['idExchange'])) {
     if (isset($_GET['refuse']) && is_string($_GET['refuse']) && $_GET['refuse'] == '1') { // On annonce que la proposition n'est plus dispo = refusée
       refuseIdExchange($_GET['idExchange']);
@@ -57,6 +60,12 @@
         $GLOBALS['bdd']->execute($query, array($_GET['idExchange']));
       }
 
+      $infosLogin = getEtu($envoies[0]['login']);
+      $infosIdUV = getUVFromIdUV($envoies[0]['idUV']);
+
+      sendMail($_SESSION['mail'], 'Echange effectué', 'Salut !'.PHP_EOL.'Un échange a été effectué avec '.$infosLogin['nom'].' '.$infosLogin['prenom'].' (mail: '.$infosLogin['mail'].') concernant le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' !'.PHP_EOL.'Il est nécessaire de tenir au courant les responsables et chargés de l\'UV'.PHP_EOL.PHP_EOL.'Ton emploi du temps a été mis à jour (uniquement sur le site) !');
+      sendMail($infosLogin['mail'], 'Echange effectué', 'Salut !'.PHP_EOL.'Un échange a été effectué avec '.$_SESSION['nom'].' '.$_SESSION['prenom'].' (mail: '.$_SESSION['mail'].') concernant le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' !'.PHP_EOL.'Il est nécessaire de tenir au courant les responsables et chargés de l\'UV'.PHP_EOL.PHP_EOL.'Ton emploi du temps a été mis à jour (uniquement sur le site) !');
+
       // On rend les UVs échangées non actuel
       $query = $GLOBALS['bdd']->prepare('UPDATE cours SET actuel = 0, echange = 1 WHERE login = ? AND id = ?');
       $GLOBALS['bdd']->execute($query, array($_SESSION['login'], $envoies[0]['pour']));
@@ -90,26 +99,32 @@
       $data = getRecuesList($_SESSION['login'], NULL, 1, 0, NULL, $envoies[0]['pour']);
       $query = $GLOBALS['bdd']->prepare('UPDATE recues SET login = ? WHERE idEchange = ? AND login = ?');
        foreach ($data as $recue)
-        $GLOBALS['bdd']->execute($query, array($envoies[0]['login'], $recue['idEchange']), $_SESSION['login']);
+        $GLOBALS['bdd']->execute($query, array($envoies[0]['login'], $recue['idEchange'], $_SESSION['login']));
 
-      $infosLogin = getEtu($envoies[0]['login']);
-      $infosIdUV = getUVFromIdUV($envoies[0]['idUV']);
-
-      // Envoyer une notif' (à voir)
-      sendMail($_SESSION['mail'], 'Echange effectué', 'Salut !'.PHP_EOL.'Un échange a été effectué avec '.$infosLogin['nom'].' '.$infosLogin['prenom'].' (mail: '.$infosLogin['mail'].') concernant le '.($infosIdUV['type'] == 'D' ? $infosIdUV['type'] = 'TD' : ($infosIdUV['type'] == 'C' ? $infosIdUV['type'] = 'cours' : $infosIdUV['type'] = 'TP')).' de '.$infosIdUV['uv'].' !'.PHP_EOL.'Il est nécessaire de tenir au courant les responsables et chargés de l\'UV'.PHP_EOL.PHP_EOL.'Ton emploi du temps a été mis à jour !');
-      sendMail($infosLogin['login'], 'Echange effectué', 'Salut !'.PHP_EOL.'Un échange a été effectué avec '.$SESSION['nom'].' '.$SESSION['prenom'].' (mail: '.$SESSION['mail'].') concernant le '.($infosIdUV['type'] == 'D' ? $infosIdUV['type'] = 'TD' : ($infosIdUV['type'] == 'C' ? $infosIdUV['type'] = 'cours' : $infosIdUV['type'] = 'TP')).' de '.$infosIdUV['uv'].' !'.PHP_EOL.'Il est nécessaire de tenir au courant les responsables et chargés de l\'UV'.PHP_EOL.PHP_EOL.'Ton emploi du temps a été mis à jour !');
-      printSucces('Proposition acceptée avec succès. Les emplois du temps ont été mis à jour');
+      printSucces('Proposition acceptée avec succès. Les emplois du temps ont été mis à jour (uniquement sur le site)');
     }
 
     elseif (isset($_GET['del']) && is_string($_GET['del']) && $_GET['del'] == '1') {
       $envoie = getEnvoiesList($_SESSION['login'], $_GET['idExchange'], 1);
       // On vérifie bien que notre demande est active
       if (count($envoie) == 0)
-        printError('Impossible de retirer la proposition');
+        printError('Impossible de supprimer la proposition');
       // On la supprime
       cancelIdExchange($_GET['idExchange']);
 
       printSucces('Proposition supprimée avec succès');
+    }
+    // Si on souhaite supprimer la notification de refus
+    elseif (isset($_GET['delRefuse']) && is_string($_GET['delRefuse']) && $_GET['delRefuse'] == '1') {
+    $recu = getRecuesList($_SESSION['login'], $_GET['idExchange'], NULL, 0);
+      // On vérifie bien que notre demande est active
+      if (count($recu) == 0)
+        printError('Impossible de retirer la proposition');
+      // On la supprime
+      $query = $GLOBALS['bdd']->prepare('DELETE FROM recues WHERE idEchange = ? AND login = ?');
+      $GLOBALS['bdd']->execute($query, array($_GET['idExchange'], $_SESSION['login']));
+
+      printSucces('Proposition retirée avec succès');
     }
 
     elseif (isset($_GET['cancel']) && $_GET['cancel'] == '1' && isset($_GET['idExchange']) && is_string($_GET['idExchange'])) {
@@ -128,7 +143,10 @@
           $GLOBALS['bdd']->execute($query, array($_GET['idExchange'], $_SESSION['login']));
           // Si on est le premier à demander l'annulation
           if ($recu[0]['disponible'] == 0) {
-            sendMail($etuInfo['mail'], 'Demande d\'annulation', 'Salut !'.PHP.EOF.$_SESSION['nom'].' '.$_SESSION['prenom'].'souhaiterait annuler le '.($infosIdUV['type'] == 'D' ? $infosIdUV['type'] = 'TD' : ($infosIdUV['type'] == 'C' ? $infosIdUV['type'] = 'cours' : $infosIdUV['type'] = 'TP')).' de '.$infosIdUV['uv'].' l\'échange que vous avez effectué ensemble'.PHP_EOF.'Pour annuler: https://assos.utc.fr/?mode=modifier&recu=1&id=r'.$_GET['idEchange'], $_SESSION['mail']);
+            echo 'a';
+            print_r($etuInfo);
+            sendMail($_SESSION['mail'], 'Votre demande d\'annulation', 'Salut !'.PHP_EOL.'Tu as demandé d\'annuler le changement du '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].'. Un mail a déjà été envoyé mais tu peux le/la contacter directement si besoin: '.$etuInfo['mail']);
+            sendMail($etuInfo['mail'], 'Demande d\'annulation', 'Salut !'.PHP_EOL.$_SESSION['nom'].' '.$_SESSION['prenom'].' souhaiterait annuler le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' l\'échange que vous avez effectué ensemble'.PHP_EOL.'Pour annuler: https://assos.utc.fr/emploidutemps/?mode=modifier&recu=1&id=r'.$_GET['idExchange'], $_SESSION['mail']);
             printSucces('Demande d\'annulation envoyée avec succès !');
           }
           else { // On effectue l'annulation
@@ -156,8 +174,8 @@
              foreach ($data as $recue)
               $GLOBALS['bdd']->execute($query, array($recu[0]['login'], $recue['idEchange'], $_SESSION['login']));
 
-            sendMail($_SESSION['mail'], 'Annulation d\'échange', 'Salut !'.PHP.EOF.'Ton échange avec '.$etuInfo['nom'].' '.$etuInfo['prenom'].' pour le '.($infosIdUV['type'] == 'D' ? $infosIdUV['type'] = 'TD' : ($infosIdUV['type'] == 'C' ? $infosIdUV['type'] = 'cours' : $infosIdUV['type'] = 'TP')).' de '.$infosIdUV['uv'].' a été annulé'.$_GET['idEchange']);
-            sendMail($etuInfo['mail'], 'Annulation d\'échange', 'Salut !'.PHP.EOF.'Ton échange avec '.$_SESSION['nom'].' '.$_SESSION['prenom'].' pour le '.($infosIdUV['type'] == 'D' ? $infosIdUV['type'] = 'TD' : ($infosIdUV['type'] == 'C' ? $infosIdUV['type'] = 'cours' : $infosIdUV['type'] = 'TP')).' de '.$infosIdUV['uv'].' a été annulé'.$_GET['idEchange']);
+            sendMail($_SESSION['mail'], 'Annulation d\'échange', 'Salut !'.PHP_EOL.'Ton échange avec '.$etuInfo['nom'].' '.$etuInfo['prenom'].' pour le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' a été annulé'.$_GET['idExchange']);
+            sendMail($etuInfo['mail'], 'Annulation d\'échange', 'Salut !'.PHP_EOL.'Ton échange avec '.$_SESSION['nom'].' '.$_SESSION['prenom'].' pour le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' a été annulé'.$_GET['idExchange']);
             printSucces('Les deux emplois du temps ont été restaurés. L\'échange a été annulé avec succès !');
           }
         }
@@ -176,7 +194,9 @@
           $GLOBALS['bdd']->execute($query, array($_GET['idExchange'], $_SESSION['login']));
           // Si on est le premier à demander l'annulation
           if ($envoi[0]['disponible'] == 0) {
-            sendMail($etuInfo['mail'], 'Demande d\'annulation', 'Salut !'.PHP.EOF.$_SESSION['nom'].' '.$_SESSION['prenom'].'souhaiterait annuler le '.($infosIdUV['type'] == 'D' ? $infosIdUV['type'] = 'TD' : ($infosIdUV['type'] == 'C' ? $infosIdUV['type'] = 'cours' : $infosIdUV['type'] = 'TP')).' de '.$infosIdUV['uv'].' l\'échange que vous avez effectué ensemble'.PHP_EOF.'Pour annuler: https://assos.utc.fr/?mode=modifier&recu=1&id=r'.$_GET['idEchange'], $_SESSION['mail']);
+            sendMail($_SESSION['mail'], 'Votre demande d\'annulation', 'Salut !'.PHP_EOL.'Tu as demandé d\'annuler le changement du '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].'. Un mail a déjà été envoyé mais tu peux le/la contacter directement si besoin: '.$etuInfo['mail']);
+            sendMail($etuInfo['mail'], 'Demande d\'annulation', 'Salut !'.PHP_EOL.$_SESSION['nom'].' '.$_SESSION['prenom'].' souhaiterait annuler le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' l\'échange que vous avez effectué ensemble'.PHP_EOL.'Pour annuler: https://assos.utc.fr/emploidutemps/?mode=modifier&envoi=1&id=e'.$_GET['idExchange'], $_SESSION['mail']);
+            printSucces('Demande d\'annulation envoyée avec succès !');
           }
           else { // On effectue l'annulation
             // On supprime la demande d'envoi
@@ -203,8 +223,8 @@
              foreach ($data as $recue)
               $GLOBALS['bdd']->execute($query, array($_SESSION['login'], $recue['idEchange'], $envoi[0]['login']));
 
-            sendMail($_SESSION['mail'], 'Annulation d\'échange', 'Salut !'.PHP.EOF.'Ton échange avec '.$etuInfo['nom'].' '.$etuInfo['prenom'].' pour le '.($infosIdUV['type'] == 'D' ? $infosIdUV['type'] = 'TD' : ($infosIdUV['type'] == 'C' ? $infosIdUV['type'] = 'cours' : $infosIdUV['type'] = 'TP')).' de '.$infosIdUV['uv'].' a été annulé'.$_GET['idEchange']);
-            sendMail($etuInfo['mail'], 'Annulation d\'échange', 'Salut !'.PHP.EOF.'Ton échange avec '.$_SESSION['nom'].' '.$_SESSION['prenom'].' pour le '.($infosIdUV['type'] == 'D' ? $infosIdUV['type'] = 'TD' : ($infosIdUV['type'] == 'C' ? $infosIdUV['type'] = 'cours' : $infosIdUV['type'] = 'TP')).' de '.$infosIdUV['uv'].' a été annulé'.$_GET['idEchange']);
+            sendMail($_SESSION['mail'], 'Annulation d\'échange', 'Salut !'.PHP_EOL.'Ton échange avec '.$etuInfo['nom'].' '.$etuInfo['prenom'].' pour le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' a été annulé');
+            sendMail($etuInfo['mail'], 'Annulation d\'échange', 'Salut !'.PHP_EOL.'Ton échange avec '.$_SESSION['nom'].' '.$_SESSION['prenom'].' pour le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' a été annulé');
             printSucces('Les deux emplois du temps ont été restaurés. L\'échange a été annulé avec succès !');
           }
         }
@@ -213,7 +233,6 @@
       }
       else
         printError('Impossible d\'annuler');
-      printError('Pas fini');
     }
 
     elseif (isset($_GET['infos']) && is_string($_GET['infos']) && $_GET['infos'] == '1') {
@@ -371,7 +390,7 @@
         foreach ($etuList as $etu) {
           if ($etu['desinscrit'] == 0 && $etu['actuel'] == 1) {
             $GLOBALS['bdd']->execute($query, array($etu['login'], $idExchange));
-            sendMail($etu['mail'], 'Nouvelle demande d\'échange', 'Salut !'.PHP_EOL.'Tu as reçu une nouvelle demande d\'échange pour le '.($infosIdUV['type'] == 'D' ? $infosIdUV['type'] = 'TD' : ($infosIdUV['type'] == 'C' ? $infosIdUV['type'] = 'cours' : $infosIdUV['type'] = 'TP')).' de '.$infosIdUV['uv'].' !'.PHP_EOL.'Fais attention, cela ce joue au shotgun !');
+            sendMail($etu['mail'], 'Nouvelle demande d\'échange', 'Salut !'.PHP_EOL.'Tu as reçu une nouvelle demande d\'échange pour le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' !'.PHP_EOL.'Tu peux consulter la proposition ici: https://assos.utc.fr/emploidutemps/?mode=modifier&recu=1&id=r'.$idExchange.PHP_EOL.'Fais attention, cela ce joue au shotgun !');
           }
         }
       }
@@ -386,7 +405,7 @@
       $query = $GLOBALS['bdd']->prepare('INSERT INTO envoies (login, idEchange, date, note) VALUES (?, ?, NOW(), ?)');
       $GLOBALS['bdd']->execute($query, array($_SESSION['login'], $idExchange, $note));
 
-      sendMail($SESSION['mail'], 'Demande d\'échange', 'Salut !'.PHP_EOL.'Ta demande d\'échange a été envoyée avec succès pour le '.($infosIdUV['type'] == 'D' ? $infosIdUV['type'] = 'TD' : ($infosIdUV['type'] == 'C' ? $infosIdUV['type'] = 'cours' : $infosIdUV['type'] = 'TP')).' de '.$infosIdUV['uv'].' !'.PHP_EOL.'Tu recevras une notification dès que quelqu\'un a validé l\'échange !');
+      sendMail($SESSION['mail'], 'Demande d\'échange', 'Salut !'.PHP_EOL.'Ta demande d\'échange a été envoyée avec succès pour le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' !'.PHP_EOL.'Tu recevras une notification dès que quelqu\'un a validé l\'échange !');
       printSucces('Votre proposition d\'échange a été ajoutée avec succès');
     }
     else

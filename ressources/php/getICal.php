@@ -22,11 +22,11 @@ END:VEVENT';
   }
 
   $toWrite = 'BEGIN:VCALENDAR
-PRODID: Emploi d\'UTemps - UTC - SIMDE/BDE
+PRODID:Emploi d\'UTemps - UTC - SIMDE/BDE
 VERSION:2.0
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
-X-WR-CALNAME: '.$_SESSION['mail'].'
+X-WR-CALNAME:'.$_SESSION['mail'].'
 X-WR-TIMEZONE:Europe/Paris
 BEGIN:VTIMEZONE
 TZID:Europe/Paris
@@ -156,7 +156,7 @@ END:VTIMEZONE';
   }
 
   file_put_contents($file, $toWrite.'
-  END:VCALENDAR');
+END:VCALENDAR');
 
   echo '/emploidutemps'.'/ical/'.$_SESSION['login'].'.ics';
 ?>

@@ -40,7 +40,8 @@
       <div class="parameters" style="text-align: center;">
         Etre prévenu <input class="focusedInput submitedInput" type="number" step="1" min="0" max="1440" id="alarmICS" placeholder="0" /> min avant l\'évènement (cours, TD, TP)<br />
         <button class="submitedButton" onClick="getICal();">Son calendrier sous format ICal (.ics) pour son agenda Android/Google ou iOS/Apple</button>
-        <button onClick="getPDF();">Son calendrier sous format PDF</button>
+        <button onClick="return xepOnline.Formatter.Format(\'skeduler-container\',
+            {render:\'download\', pageWidth:\'216mm\', pageHeight:\'279mm\'});">Son calendrier sous format PDF (pas fini)</button>
         <button onClick="window.location.href = \'https://\' + window.location.hostname + \'/emploidutemps\' + \'/ressources/pdf/alternances.pdf\';">Obtenir le calendrier des alternances</button>
         <button onClick="window.location.href = \'https://\' + window.location.hostname + \'/emploidutemps\' + \'/ressources/pdf/infosRentree.pdf\';">Obtenir les infos de rentrée</button>
         <button>Bientôt d\'autres options</button>
@@ -144,11 +145,21 @@
     echo '<div onClick="parameters()" style="cursor: pointer" id="popupHead">Problème technique</div>
     <div class="parameters">
       Salut ! Si tu viens consulter cette page c\'est à coup sûr pour échanger ton emploi du temps mais malheuresement il y a un problème pour récupérer les nouveaux emplois du temps auprès de la DSI<br /><br />
-      Va falloir être patient(e)... Mais ça devrait être dispo aujoud\'hui<br />
+      <br />
+      <span style="color: #FF0000;">Je viens de tout recevoir, je met à jour dans les heures à venir (nouveau format de données)</span><br />
       <br />
       Je posterai un message sur le groupe UTC =) dès que c\'est dispo !<br />
       La bise,<br />
       Samy
+    </div>';
+  }
+  elseif ($_GET['param'] == 'nouveau') {
+    echo '<div onClick="parameters()" style="cursor: pointer" id="popupHead">Bienvenu</div>
+    <div class="parameters">
+      N\'oubliez pas qu\'il y a un mode d\'affichage (en haut à droite de la page)<br />
+      <br />
+      Le service n\'est pas encore totalement au point, il est possible que des bugs arrivent (mais c\'est rare).<br />
+      Dans ce cas, merci de nous le signaler directement <a href="https://gitlab.utc.fr/simde/emploidutemps/issues">ici</a> ou <a href="mailto:simde@assos.utc.fr">par mail</a>
     </div>';
   }
   else
