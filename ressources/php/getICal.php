@@ -4,12 +4,18 @@
   $file = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps'.'/ical/'.$_SESSION['login'].'.ics';
 
   function createEvent($jourStart, $heureStart, $jourEnd, $heureEnd, $summary, $description, $location, $alarm) {
+    if ($heureStart != '')
+      $jourStart .= 'T'.$heureStart;
+
+    if ($heureEnd != '')
+      $jourEnd .= 'T'.$heureEnd;
+
     $GLOBALS['toWrite'] .= '
 BEGIN:VEVENT
 DTSTAMP:'.$GLOBALS['date'].'
 UID:'.$GLOBALS['date'].'-'.$GLOBALS['id']++.'-'.$_SESSION['login'].'@nastuzzi.fr
-DTSTART;TZID="Europe/Berlin":'.$jourStart.'T'.$heureStart.'
-DTEND;TZID="Europe/Berlin":'.$jourEnd.'T'.$heureEnd.'
+DTSTART;TZID="Europe/Paris":'.$jourStart.'
+DTEND;TZID="Europe/Paris":'.$jourEnd.'
 SUMMARY:'.$summary.''.($description != NULL ? '
 DESCRIPTION:'.$description.'' : '').($location != NULL ? '
 LOCATION:'.$location.'' : '').($alarm != 0 ? '
@@ -139,9 +145,6 @@ END:VTIMEZONE';
       $td = FALSE;
       $tp = FALSE;
 
-      $heureStart = '000000';
-      $heureEnd = '000000';
-
       $temp = date_create($jourEnd);
       date_add($temp, date_interval_create_from_date_string($type.' days'));
       $jourEnd = date_format($temp, 'Ymd');
@@ -151,7 +154,7 @@ END:VTIMEZONE';
       $description = (isset($split[1]) ? $split[1] : NULL);
       $location = (isset($split[2]) ? $split[2] : NULL);
 
-      createEvent($jourStart, $heureStart, $jourEnd, $heureEnd, $summary, $description, $location, 0);
+      createEvent($jourStart, '', $jourEnd, '', $summary, $description, $location, 0);
     }
   }
 

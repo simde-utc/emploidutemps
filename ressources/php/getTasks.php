@@ -38,13 +38,29 @@
     );
   }
 
-  function printRecues($login) {
-    $recues = getRecuesList($login, NULL, 1, 0);
-    $recuesRefused = getRecuesList($login, NULL, 0, 0);
-    $recuesAccepted = getRecuesList($login, NULL, 0, 1);
-    $recuesCanceled = getRecuesList($login, NULL, 1, 1);
+  function printRecues($login, $stat = '1') {
+    $recues = array();
+    $recuesRefused = array();
+    $recuesAccepted = array();
+    $recuesCanceled = array();
     $arraydemande = array();
     $passed = array();
+
+    if ($stat == '1') {
+      $recues = getRecuesList($login, NULL, 1, 0);
+      $recuesRefused = getRecuesList($login, NULL, 0, 0);
+      $recuesAccepted = getRecuesList($login, NULL, 0, 1);
+      $recuesCanceled = getRecuesList($login, NULL, 1, 1);
+    }
+    elseif ($stat == 'nouveau')
+      $recues = getRecuesList($login, NULL, 1, 0);
+    elseif ($stat == 'accepte') {
+      $recuesAccepted = getRecuesList($login, NULL, 0, 1);
+      $recuesCanceled = getRecuesList($login, NULL, 1, 1);
+    }
+    elseif ($stat == 'refuse')
+      $recuesRefused = getRecuesList($login, NULL, 0, 0);
+
 
     foreach ($recues as $recue) {
       $recueInfo = getUVFromIdUV($recue['idUV']);
@@ -70,11 +86,11 @@
       if ($recue['active'] == 1)
         array_push($arraydemande, arrayRecue($login, $recue, $passed, '#0000FF', '<button class="option" style="width: 59px; height: 15px" onClick=\'acceptExchange('.$recue['idEchange'].');\'>Accepter</button><button class="option" style="width: 59px; height: 15px" onClick=\'refuseExchange('.$recue['idEchange'].');\'>Refuser</button>'));
       else
-        array_push($arraydemande, arrayRecue($login, $recue, $passed, '#FF0000', '<button class="option" style="width: 59px; height: 15px" onClick=\'askForExchange('.$recue['pour'].', '.$recue['idUV'].');\'>Proposer</button><button class="option" style="width: 59px; height: 15px" onClick=\'delRefuse('.$recue['idEchange'].');\'>Supprimer</button>'));
+        array_push($arraydemande, arrayRecue($login, $recue, $passed, '#FFFF00', '<button class="option" onClick=\'askForExchange('.$recue['pour'].', '.$recue['idUV'].');\'>Plus dispo. Proposer</button>'));
     }
 
     foreach ($recuesRefused as $recue)
-      array_push($arraydemande, arrayRecue($login, $recue, $passed, '#FF0000', '<button class="option" onClick=\'delRefuse('.$recue['idEchange'].');\'>Supprimer la proposition</button>'));
+      array_push($arraydemande, arrayRecue($login, $recue, $passed, '#FF0000', '<button class="option" disabled>Proposition refusée</button>'));
 
     foreach ($recuesAccepted as $recue)
       array_push($arraydemande, arrayRecue($login, $recue, $passed, '#00FF00', '<button class="option" onClick=\'cancelExchange('.$recue['idEchange'].');\'>Annuler l\'échange</button>'));
@@ -121,13 +137,28 @@
     );
   }
 
-  function printEnvoies($login) {
-    $envoies = getEnvoiesList($login, NULL, 1, 0);
-    $envoiesRefused = getEnvoiesList($login, NULL, 0, 0);
-    $envoiesAccepted = getEnvoiesList($login, NULL, 0, 1);
-    $envoiesCanceled = getEnvoiesList($login, NULL, 1, 1);
+  function printEnvoies($login, $stat = '1') {
+    $envoies = array();
+    $envoiesRefused = array();
+    $envoiesAccepted = array();
+    $envoiesCanceled = array();
     $arraydemande = array();
     $passed = array();
+
+    if ($stat == '1') {
+      $envoies = getEnvoiesList($login, NULL, 1, 0);
+      $envoiesRefused = getEnvoiesList($login, NULL, 0, 0);
+      $envoiesAccepted = getEnvoiesList($login, NULL, 0, 1);
+      $envoiesCanceled = getEnvoiesList($login, NULL, 1, 1);
+    }
+    elseif ($stat == 'nouveau')
+      $envoies = getEnvoiesList($login, NULL, 1, 0);
+    elseif ($stat == 'accepte') {
+      $envoiesAccepted = getEnvoiesList($login, NULL, 0, 1);
+      $envoiesCanceled = getEnvoiesList($login, NULL, 1, 1);
+    }
+    elseif ($stat == 'refuse')
+      $envoiesRefused = getEnvoiesList($login, NULL, 0, 0);
 
     foreach ($envoies as $envoie) {
       $envoieInfo = getUVFromIdUV($envoie['idUV']);
@@ -150,13 +181,38 @@
     }
 
     foreach ($envoies as $envoie)
-      array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#0000FF', '<button class="option" onClick=\'delExchange('.$envoie['idEchange'].');\'>Retirer la proposition</button>'));
+      array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#0000FF', '<button class="option" onClick=\'delExchange('.$envoie['idEchange'].');\'>Annuler la proposition</button>'));
 
     foreach ($envoiesRefused as $envoie)
       array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#FF0000', '<button class="option" disabled>Proposition réfusée</button>'));
 
     foreach ($envoiesAccepted as $envoie)
       array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#00FF00', '<button class="option" onClick=\'cancelExchange('.$envoie['idEchange'].');\'>Annuler l\'échange</button>'));
+
+    foreach ($envoiesCanceled as $envoie)
+      array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#555555', '<button class="option" style="background-color: #777777; color: #FFFFFF" disabled>Annulation demandée</button>'));
+
+    return $arraydemande;
+  }
+
+  function printAnnulees($login) {
+    $recuesCanceled = getRecuesList($login, NULL, 1, 1);
+    $envoiesCanceled = getEnvoiesList($login, NULL, 1, 1);
+    $arraydemande = array();
+    $passed = array();
+
+    foreach ($recuesCanceled as $recue) {
+      $recueInfo = getUVFromIdUV($recue['idUV']);
+      array_push($passed, array($recueInfo['jour'], $recueInfo['debut'], $recueInfo['fin']));
+    }
+
+    foreach ($envoiesCanceled as $envoie) {
+      $envoieInfo = getUVFromIdUV($envoie['idUV']);
+      array_push($passed, array($envoieInfo['jour'], $envoieInfo['debut'], $envoieInfo['fin']));
+    }
+
+    foreach ($recuesCanceled as $recue)
+      array_push($arraydemande, arrayRecue($login, $recue, $passed, '#555555', '<button class="option" style="background-color: #777777; color: #FFFFFF" disabled>Annulation demandée</button>'));
 
     foreach ($envoiesCanceled as $envoie)
       array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#555555', '<button class="option" style="background-color: #777777; color: #FFFFFF" disabled>Annulation demandée</button>'));
@@ -340,13 +396,17 @@
       $all = array_merge($all, printEdtEtu($_SESSION['login'], 2, 0, 1));
       $all = array_merge($all, printEdtEtu($_SESSION['login'], 2, 1, 1));
     }
-    elseif (isset($_GET['recu']) && is_string($_GET['recu']) && $_GET['recu'] == '1') {
+    elseif (isset($_GET['recu']) && is_string($_GET['recu'])) {
       $all = array_merge($all, printEdtEtu($_SESSION['login'], 1));
-      $all = array_merge($all, printRecues($_SESSION['login']));
+      $all = array_merge($all, printRecues($_SESSION['login'], $_GET['recu']));
     }
-    elseif (isset($_GET['envoi']) && is_string($_GET['envoi']) && $_GET['envoi'] == '1') {
+    elseif (isset($_GET['envoi']) && is_string($_GET['envoi'])) {
       $all = array_merge($all, printEdtEtu($_SESSION['login'], 1));
-      $all = array_merge($all, printEnvoies($_SESSION['login']));
+      $all = array_merge($all, printEnvoies($_SESSION['login'], $_GET['envoi']));
+    }
+    elseif (isset($_GET['annule']) && is_string($_GET['annule']) && $_GET['annule'] == '1') {
+      $all = array_merge($all, printEdtEtu($_SESSION['login'], 1));
+      $all = array_merge($all, printAnnulees($_SESSION['login']));
     }
     else {
       $all = array_merge($all, printEdtEtu($_SESSION['login'], 1));

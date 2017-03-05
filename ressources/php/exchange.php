@@ -114,18 +114,6 @@
 
       printSucces('Proposition supprimée avec succès');
     }
-    // Si on souhaite supprimer la notification de refus
-    elseif (isset($_GET['delRefuse']) && is_string($_GET['delRefuse']) && $_GET['delRefuse'] == '1') {
-    $recu = getRecuesList($_SESSION['login'], $_GET['idExchange'], NULL, 0);
-      // On vérifie bien que notre demande est active
-      if (count($recu) == 0)
-        printError('Impossible de retirer la proposition');
-      // On la supprime
-      $query = $GLOBALS['bdd']->prepare('DELETE FROM recues WHERE idEchange = ? AND login = ?');
-      $GLOBALS['bdd']->execute($query, array($_GET['idExchange'], $_SESSION['login']));
-
-      printSucces('Proposition retirée avec succès');
-    }
 
     elseif (isset($_GET['cancel']) && $_GET['cancel'] == '1' && isset($_GET['idExchange']) && is_string($_GET['idExchange'])) {
       $envoi = getEnvoiesList($_SESSION['login'], $_GET['idExchange'], 0, 1);
@@ -250,7 +238,8 @@
       foreach ($envoies as $envoie) { // Afficher la demande en fonction de son état
         if ($envoie['disponible'] == 1 && $envoie['echange'] == 0) {
           $bgColor = '#0000FF';
-          $note = 'Demande en cours';
+          $etuInfos = getEtu($envoie['login']);
+          $note = 'Demande de '.$etuInfos['nom'].' '.$etuInfos['prenom'];
         }
         elseif ($envoie['disponible'] == 0 && $envoie['echange'] == 1) {
           $bgColor = '#00FF00';
@@ -390,7 +379,7 @@
         foreach ($etuList as $etu) {
           if ($etu['desinscrit'] == 0 && $etu['actuel'] == 1) {
             $GLOBALS['bdd']->execute($query, array($etu['login'], $idExchange));
-            sendMail($etu['mail'], 'Nouvelle demande d\'échange', 'Salut !'.PHP_EOL.'Tu as reçu une nouvelle demande d\'échange pour le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' !'.PHP_EOL.'Tu peux consulter la proposition ici: https://assos.utc.fr/emploidutemps/?mode=modifier&recu=1&id=r'.$idExchange.PHP_EOL.'Fais attention, cela ce joue au shotgun !');
+            sendMail($etu['mail'], 'Nouvelle demande d\'échange', 'Salut !'.PHP_EOL.'Tu as reçu une nouvelle demande d\'échange pour le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' !'.PHP_EOL.'Tu peux consulter la proposition ici: https://assos.utc.fr/emploidutemps/?mode=modifier&recu=nouveau&id=r'.$idExchange.PHP_EOL.'Fais attention, cela ce joue au shotgun !');
           }
         }
       }

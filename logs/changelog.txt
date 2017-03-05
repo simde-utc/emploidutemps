@@ -178,3 +178,14 @@ Stable 1.0: 2017-03-03
   - Résolution du problème de non-envoi de problème lié à la BDD
   - Correction de l'acceptation d'échange et donc du mauvais échange de propositions
   - Réparation de la déconnexion
+
+Stable 1.1: 2017-03-05
+  - Suppression du mode de suppression des refus d'échange
+  - Changement de l'affichage des onglets du mode modifier
+  - Distinction maintenant possible entre les différents "types" de demandes (acceptée/refusée/en cours)
+  - Modification de la page d'accueil
+  - Amélioration de la gestion de nouvelles connexions
+  - Correction de l'export .ics (mauvais UTC, amélioration pour les évènements sur un ou plusieurs jours entiers)
+  - Amélioration du Trombi (les recherches avec accents ne marchaient pas => conversion en ASCII)
+  - Réaffichage des noms prénoms dans la liste des demandeurs
+  - C'EST MON ANNIV' LES BBS <3

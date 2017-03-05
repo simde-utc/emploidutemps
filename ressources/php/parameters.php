@@ -49,7 +49,8 @@
   }
   elseif ($_GET['param'] == 'aide') {
     echo '<div onClick="parameters()" style="cursor: pointer" id="popupHead">Aide</div>
-    <div class="parameters">Prochainement, un formulaire d\aide sera créé pour faciliter la navigation sur le site</div>';
+    <div class="parameters">Prochainement, un formulaire d\'aide sera créé pour faciliter la navigation sur le site<br />
+    <button onClick="parameters(\'nouveau\')">Consulter le mot de bienvenu</button></div>';
   }
   elseif ($_GET['param'] == 'sedesinscrire') {
     $query = $GLOBALS['bdd']->prepare('SELECT desinscrit FROM etudiants WHERE login = ?');
@@ -154,12 +155,22 @@
     </div>';
   }
   elseif ($_GET['param'] == 'nouveau') {
-    echo '<div onClick="parameters()" style="cursor: pointer" id="popupHead">Bienvenu</div>
+    echo '<div onClick="parameters()" style="cursor: pointer" id="popupHead">Bienvenu sur Emploi d\'UTemps</div>
     <div class="parameters">
-      N\'oubliez pas qu\'il y a un mode d\'affichage (en haut à droite de la page)<br />
+      Salut ! Bienvenu sur le service qui va te permettre de gérer ton emploi du temps, de le modifier, de l\'exporter et encore plein d\'autres choses que je te laisse découvrir<br />
       <br />
-      Le service n\'est pas encore totalement au point, il est possible que des bugs arrivent (mais c\'est rare).<br />
-      Dans ce cas, merci de nous le signaler directement <a href="https://gitlab.utc.fr/simde/emploidutemps/issues">ici</a> ou <a href="mailto:simde@assos.utc.fr">par mail</a>
+      Pour rapidement t\'aider à te repérer: il y a plusieurs modes d\'affichage que tu peux choisir en cliquant en haut à droite<br />
+      En haut à gauche, tu as le menu avec pleins d\'options et surtout la possibilité d\'exporter ton emploi du temps sur ton calendrier perso !<br />
+      <br />
+      N\'oublie pas que les modifications faites sont uniquement faites sur le site, par conséquent, il est impératif de prévenir les responsables UV d\'un changement. Vous en êtes les unique responsables<br />
+      <br />
+      N\'hésite pas à farfouiller le site et si tu rencontres un problème, prends un screen et signale le nous <a href="https://gitlab.utc.fr/simde/emploidutemps/issues">ici</a> ou <a href="mailto:simde@assos.utc.fr">par mail</a><br />
+      Le service est encore tout neuf et subit encore des améliorations, mais est totalement utilisable<br />
+      <br /><br />
+      PS: N\'oubliez pas qu\'il y a une vie après les cours<br />
+      <br />
+      La bise,<br />
+      Samy et le SiMDE
     </div>';
   }
   else

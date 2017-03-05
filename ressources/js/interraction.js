@@ -191,6 +191,13 @@ function seeChangement() {
   newRequest('&changement=1', '');
 }
 
+function seeExchanges(type, stat) {
+  window.idUV = '';
+  window.columnPerDay = 2;
+  window.compare = 0;
+  newRequest('&' + type + '=' + stat, '');
+}
+
 function seeRecues() {
   window.idUV = '';
   window.columnPerDay = 2;
@@ -366,13 +373,6 @@ function acceptExchange(idExchange) {
 
 function refuseExchange(idExchange) {
   $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?refuse=1&idExchange=' + idExchange, function (info) {
-    popupInfo(info);
-  });
-}
-
-function delRefuse(idExchange) {
-  window.click = true;
-  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?delRefuse=1&idExchange=' + idExchange, function (info) {
     popupInfo(info);
   });
 }

@@ -39,9 +39,12 @@
         $query = $GLOBALS['bdd']->prepare('SELECT nouveau FROM etudiants WHERE login = ?');
         $GLOBALS['bdd']->execute($query, array($_SESSION['login']));
         $data = $query->fetch();
-/*
-        if ($data['nouveau'] == '1')
-          echo 'setTimeout(function () { parameters("nouveau"); }, 1500);';*/
+
+        if ($data['nouveau'] == '1') {
+          $query = $bdd->prepare('UPDATE etudiants SET nouveau = 0 WHERE login = ?');
+          $bdd->execute($query, array($_SESSION['login']));
+          echo 'setTimeout(function () { parameters("nouveau"); }, 1500);';
+        }
       ?>
 
       $("body").keyup(function (event) {

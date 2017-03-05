@@ -6,12 +6,14 @@
 // Créer un affichage si nouvel utilisateur
 // Si on veut échanger A avec B et aussi A avec C, si A est échangé avec B faut supprimer la demande de A vers C
 // Supprier la case nouveau dans étudiants et eniyer des mails quand même mais donner le lien pour se désinscrire => useless
-// TODO: finir le protocole d'échanges, ajouter l'option se désinscrire du service,
-// Contacter la DSI pour l'edt + téléchargement direct des edts
+// TODO: finir le protocole d'échanges, ajouter l'option se désinscrire du service
+// Supprimer la suppression
+// Afficher un nouvel onglet avec uniquement les demandes non répondus / ceux répondus
 
-/Permettre uniquement la màj à une seule personne (donc vérifier son Modcasid)
+/ Permettre uniquement la màj à une seule personne (donc vérifier son Modcasid)
 /Si MODCASID périmé, supprimer de update et permettre un nouveau login à faire la màj (logs/update)
 / Améliorer l'affichage de màj (index et maj)
+/ Contacter la DSI pour l'edt + téléchargement direct des edts
 
 
 Utiliser $.param({elem: text});
@@ -38,8 +40,7 @@ Problème de déplacement du calendrier (nous sommes samedi et le lundi bug) ??
 
 Checker les bugs: Demander l'annulation de changement
 
-Supprimer la suppression
-Afficher un nouvel onglet avec uniquement les demandes non répondus / ceux répondus
+
 Modifier exchange pour utuliser à la place de $_SESSION => $envoie[0] au cas où on débug
 Ajouter un mode d'affichage avec l'emploi du temps actuel
 Ajouter la possibilité d'ajoutr un créneau

@@ -36,9 +36,6 @@
       $_SESSION['tab'] = array('uv' => array(), 'etu' => array());
       $_SESSION['etuActive'] = array();
 
-      $query = $bdd->prepare('UPDATE etudiants SET nouveau = 0 WHERE login = ?');
-      $bdd->execute($query, array($_SESSION['login']));
-
       $get = '?';
       foreach ($_SESSION['_GET'] as $key => $value) {
         if ($key != 'ticket')
