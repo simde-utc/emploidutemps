@@ -134,7 +134,7 @@
             echo 'a';
             print_r($etuInfo);
             sendMail($_SESSION['mail'], 'Votre demande d\'annulation', 'Salut !'.PHP_EOL.'Tu as demandé d\'annuler le changement du '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].'. Un mail a déjà été envoyé mais tu peux le/la contacter directement si besoin: '.$etuInfo['mail']);
-            sendMail($etuInfo['mail'], 'Demande d\'annulation', 'Salut !'.PHP_EOL.$_SESSION['nom'].' '.$_SESSION['prenom'].' souhaiterait annuler le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' l\'échange que vous avez effectué ensemble'.PHP_EOL.'Pour annuler: https://assos.utc.fr/emploidutemps/?mode=modifier&recu=1&id=r'.$_GET['idExchange'], $_SESSION['mail']);
+            sendMail($etuInfo['mail'], 'Demande d\'annulation', 'Salut !'.PHP_EOL.$_SESSION['nom'].' '.$_SESSION['prenom'].' souhaiterait annuler le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' l\'échange que vous avez effectué ensemble'.PHP_EOL.(isset($_POST['note']) ? 'Voici la raison qu\'il a donné: '.PHP_EOL.$_POST['note'].PHP_EOL : '').'Pour annuler: https://assos.utc.fr/emploidutemps/?mode=modifier&recu=1&id=r'.$_GET['idExchange'], $_SESSION['mail']);
             printSucces('Demande d\'annulation envoyée avec succès !');
           }
           else { // On effectue l'annulation
@@ -162,8 +162,8 @@
              foreach ($data as $recue)
               $GLOBALS['bdd']->execute($query, array($recu[0]['login'], $recue['idEchange'], $_SESSION['login']));
 
-            sendMail($_SESSION['mail'], 'Annulation d\'échange', 'Salut !'.PHP_EOL.'Ton échange avec '.$etuInfo['nom'].' '.$etuInfo['prenom'].' pour le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' a été annulé'.$_GET['idExchange']);
-            sendMail($etuInfo['mail'], 'Annulation d\'échange', 'Salut !'.PHP_EOL.'Ton échange avec '.$_SESSION['nom'].' '.$_SESSION['prenom'].' pour le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' a été annulé'.$_GET['idExchange']);
+            sendMail($_SESSION['mail'], 'Annulation d\'échange', 'Salut !'.PHP_EOL.'Ton échange avec '.$etuInfo['nom'].' '.$etuInfo['prenom'].' pour le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' a été annulé');
+            sendMail($etuInfo['mail'], 'Annulation d\'échange', 'Salut !'.PHP_EOL.'Ton échange avec '.$_SESSION['nom'].' '.$_SESSION['prenom'].' pour le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' a été annulé');
             printSucces('Les deux emplois du temps ont été restaurés. L\'échange a été annulé avec succès !');
           }
         }
@@ -183,7 +183,7 @@
           // Si on est le premier à demander l'annulation
           if ($envoi[0]['disponible'] == 0) {
             sendMail($_SESSION['mail'], 'Votre demande d\'annulation', 'Salut !'.PHP_EOL.'Tu as demandé d\'annuler le changement du '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].'. Un mail a déjà été envoyé mais tu peux le/la contacter directement si besoin: '.$etuInfo['mail']);
-            sendMail($etuInfo['mail'], 'Demande d\'annulation', 'Salut !'.PHP_EOL.$_SESSION['nom'].' '.$_SESSION['prenom'].' souhaiterait annuler le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' l\'échange que vous avez effectué ensemble'.PHP_EOL.'Pour annuler: https://assos.utc.fr/emploidutemps/?mode=modifier&envoi=1&id=e'.$_GET['idExchange'], $_SESSION['mail']);
+            sendMail($etuInfo['mail'], 'Demande d\'annulation', 'Salut !'.PHP_EOL.$_SESSION['nom'].' '.$_SESSION['prenom'].' souhaiterait annuler le '.($infosIdUV['type'] == 'D' ? 'TD' : ($infosIdUV['type'] == 'C' ? 'cours' : 'TP')).' de '.$infosIdUV['uv'].' l\'échange que vous avez effectué ensemble'.PHP_EOL.(isset($_POST['note']) ? 'Voici la raison qu\'il a donné: '.PHP_EOL.$_POST['note'].PHP_EOL : '').'Pour annuler: https://assos.utc.fr/emploidutemps/?mode=modifier&envoi=1&id=e'.$_GET['idExchange'], $_SESSION['mail']);
             printSucces('Demande d\'annulation envoyée avec succès !');
           }
           else { // On effectue l'annulation

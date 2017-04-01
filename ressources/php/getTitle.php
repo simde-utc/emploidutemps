@@ -38,9 +38,4 @@
     else
       echo 'Affichage de ton emploi du temps';
   }
-
-  if (count($_SESSION['tab']['etu']) == 0 && count($_SESSION['tab']['uv']) == 0)
-    echo '<script>window.tab = 0;</script>';
-  elseif (isset($_GET['tab']) && is_string($_GET['tab']) && $_GET['tab'] == 1)
-    echo ' - Mode suppression'
 ?>

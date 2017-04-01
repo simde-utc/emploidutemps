@@ -59,9 +59,11 @@ END:VTIMEZONE';
   $id = 0;
 
   $alarm = (isset($_GET['alarm']) && $_GET['alarm'] > 0 ? $_GET['alarm'] : 0); // 0 désactive l'alarme
+  $begin = (isset($_GET['begin']) ? $_GET['begin'] : '0001-01-01');
+  $end = (isset($_GET['end']) ? $_GET['end'] : '9999-12-31');
 
-  $jours = $GLOBALS['bdd']->prepare('SELECT * FROM jours ORDER BY jour');
-  $GLOBALS['bdd']->execute($jours, array());
+  $jours = $GLOBALS['bdd']->prepare('SELECT * FROM jours WHERE jour BETWEEN ? AND ? ORDER BY jour');
+  $GLOBALS['bdd']->execute($jours, array($begin, $end));
 
   foreach ($jours->fetchAll() as $jour) {
     $type = $jour['type'];

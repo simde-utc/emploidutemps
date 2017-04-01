@@ -248,6 +248,7 @@ function popupInfo(info) {
 
 function popupClose() {
   window.click = false;
+  window.toSearch = '';
 
   $('#popup').css('visibility', 'hidden');
   $('#popup').css('opacity', '0');
@@ -273,11 +274,12 @@ function seeEtu(idUV) {
 
 function searchTab() {
   window.tab = 0;
+  window.search = '';
 
   if (!$('#addTab').hasClass("blocked")) {
     popup("<div id='popupHead'>\
       <div style='margin-bottom: 2px;'>Chercher un étudiant ou une UV pour l'ajouter</div>\
-      <input type='text' autofocus='autofocus'' onInput='checkEtuAndUVList(this.value);' id='addTabText' />\
+      <input type='text' autofocus='autofocus'' onInput='checkEtuAndUVList(this.value);' value='" + window.toSearch + "' id='addTabText' />\
       <button onClick='printEtuAndUVList();'>Chercher</button>\
     </div>\
     <div id='searchResult'></div>");
@@ -305,9 +307,9 @@ function printEtuAndUVList(begin) {
   if (window.toSearch != window.search) {
     loading();
 
+    searchTab();
     window.search = window.toSearch;
 
-    searchTab();
     checkEtuAndUVList(window.search);
     $('#popup').scrollTop(0);
 
@@ -342,17 +344,18 @@ function delExchange(idExchange) {
   });
 }
 
-function cancelExchange(idExchange, confirm) {
+function cancelExchange(idExchange, note) {
   window.click = true;
-  if (confirm === undefined) {
+  if (note === undefined) {
     popup("<div id='popupHead'>Annuler un échange</div>\
     <div class='parameters'>En annulant un échange effectué, un mail de demande d\'annulation sera envoyé à la personne ayant échangé ce créneau. Tant que celle-ci n'a pas accepté l'annulation, les emplois du temps reste inchangés<br /> \
-      Lorsque l'annulation sera effective, des demandes d'échange pour le créneau pourront être reçues et envoyées\
-      <button style='background-color: #F00' onClick='cancelExchange(" + idExchange + ", 1);'>Demander l'annulation</button>\
+      Lorsque l'annulation sera effective, des demandes d'échange pour le créneau pourront être reçues et envoyées<br />\
+      <textarea maxlength=\"500\" cols=\"30\" rows=\"5\" id=\"noteExchange\" placeholder=\"Explique pourquoi tu souhaites annuler l'échange\" contenteditable></textarea><br />\
+      <button style='background-color: #FF0000' onClick=\"cancelExchange(" + idExchange + ", $('#noteExchange').val());\">Demander l'annulation</button>\
     </div>");
   }
   else {
-    $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?cancel=' + confirm + '&idExchange=' + idExchange, function (info) {
+    $.post('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?cancel=1&idExchange=' + idExchange, {note: note}, function (info) {
       popupInfo(info);
     });
   }
@@ -365,10 +368,19 @@ function infosExchange(idExchange) {
   });
 }
 
-function acceptExchange(idExchange) {
-  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?accept=1&idExchange=' + idExchange, function (info) {
-    popupInfo(info);
-  });
+function acceptExchange(idExchange, confirm) {
+  if (confirm === undefined) {
+    popup("<div id='popupHead'>Accepter un échange</div>\
+    <div class='parameters'>En acceptant l'échange, un mail de confirmation sera envoyé pour signaler que l'échange a bien été pris en compte. Le nom et le prénom ainsi que l'adresse mail de la personne avec qui tu as échangé te sera donné pour que vous puissiez par la suite contacter les responsables TDs/TPs pour échanger<br /><br />\
+      Si l'échange n'est pas effectué, il faudra demander l'annulation de l'échange en cliquant sur le créneau que tu viens d'échanger (dans le menu 'Modifier') pour que vos emplois du temps soient réinitialisés comme avant l'échange<br />\
+      <button style='background-color: #00FF00' onClick='acceptExchange(" + idExchange + ", 1);'>Accepter l'échange</button>\
+    </div>");
+  }
+  else {
+    $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?accept=1&idExchange=' + idExchange, function (info) {
+      popupInfo(info);
+    });
+  }
 }
 
 function refuseExchange(idExchange) {
@@ -385,18 +397,33 @@ function parameters(param) {
 
   $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/parameters.php' + get, function (info) {
     popup(info);
+
+    if (param === 'pdf')
+        $('#pdfTitle').val($('#sTitle').text());
   });
 }
 
 function getICal() {
-  var get = '';
+  var get = '?begin=' + ($('#beginICS').val() === '' ? $('#beginICS').attr('placeholder') : $('#beginICS').val()) + '&end=' + ($('#endICS').val() === '' ? $('#endICS').attr('placeholder') : $('#endICS').val());
 
-  if ($('#alarmICS').val() !== undefined)
-    get = '?alarm=' + $('#alarmICS').val();
+  if ($('#alarmICS').val() !== '')
+    get += '&alarm=' + $('#alarmICS').val();
 
   $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getICal.php' + get, function (file) {
     window.location.href = 'https://' + window.location.hostname + file;
   });
+}
+
+function getPDF() {
+  doc = new jsPDF('l', 'mm', [297, 210]);
+
+  doc.text($('#pdfTitle').val(), 149, 8, null, null, 'center');
+  if ($('#pdfCheckTabs').prop('checked')) {
+    html2canvas($('#menu'), { onrendered: function(canvas) { doc.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', 10, 12); }});
+  }
+  if ($('#pdfCheckCalendar').prop('checked')) {
+    html2canvas($('#skeduler-container'), { onrendered: function(canvas) { doc.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', 10, 25); doc.save($('#pdfName').val() + '.pdf'); }});
+  }
 }
 
 function setSkeduler(day) {

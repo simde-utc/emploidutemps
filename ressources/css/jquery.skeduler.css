@@ -249,12 +249,34 @@ background-color: #FFFFFF;
   margin: 0.5%;
   margin-top: 2.5px;
   margin-bottom: 2.5px;
-  cursor: pointer;
   height: 75px;
   border: 2px SOLID #CCCCCC;
   border-radius: 5px;
   background-color: #CCCCCC;
-  overflow-y: auto;
+}
+
+@media screen and (max-width: 500px) {
+  .searchCard {
+    min-width: 200px;
+  }
+
+  .searchCard div, .searchCard button {
+    display: block;
+  }
+}
+
+@media screen and (max-width: 350px) {
+  .searchCard {
+    min-width: 0;
+  }
+
+  .searchCard div, .searchCard button {
+    display: none;
+  }
+}
+
+.searchCard button {
+  cursor: pointer;
 }
 
 .searchCard:hover {
@@ -263,6 +285,7 @@ background-color: #FFFFFF;
 
 .searchImg {
   position: absolute;
+  cursor: pointer;
   margin: 5px;
   margin-top: 2.5px;
   height: 70px;
@@ -271,11 +294,13 @@ background-color: #FFFFFF;
 }
 
 .searchCard div {
-  display: block;
-  overflow: hidden;
   margin: auto;
-  margin-left: 35px;
   border: 0px;
+}
+
+.searchCard > div {
+  margin-left: 68px;
+  overflow-y: auto;
 }
 
 .login {
@@ -337,6 +362,7 @@ background-color: #FFFFFF;
   display: flex;
   flex-wrap: nowrap;
   overflow-x: auto;
+  background-color: #273036;
   overflow-y: visible;
 }
 
@@ -467,6 +493,7 @@ background-color: #FFFFFF;
   color: #FFF;
   cursor: pointer;
   text-align: center;
+  z-index: 10;
 }
 
 .parameters {

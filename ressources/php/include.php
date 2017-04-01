@@ -6,7 +6,7 @@
   // ini_set('display_errors', 1);  ini_set('display_startup_errors', 1);  error_reporting(E_ALL);
 
   $etuPic = '<i class="searchImg fa fa-4x fa-user-o" style="padding-left: 1px; padding-top: 3px;" aria-hidden="true"></i>';
-  $uvPic = '<i class="searchImg fa fa-4x fa-graduation-cap" style="padding-left:2px;" aria-hidden="true"></i>';
+  $uvPic = '<i class="searchImg fa fa-4x fa-graduation-cap" style="margin-left:10%;" aria-hidden="true"></i>';
   $colors = array('#7DC779', '#82A1CA', '#F2D41F', '#457293', '#AB7AC6', '#DF6F53', '#B0CEE9', '#AAAAAA', '#576D7C', '#1C704E', '#F79565');
   $jours = array('lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche');
   include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/class/class.bdd.php');
@@ -21,7 +21,7 @@
   if (isset($_SESSION['MODCASID']))
     $curl->setCookies('MODCASID='.$_SESSION['MODCASID']);
 
-  if (!isset($_SESSION['login'])) {
+  if (!isset($_SESSION['login']) && !isset($api)) {
     if (!isset($_SESSION['_GET']))
       $_SESSION['_GET'] = $_GET;
 
@@ -91,22 +91,24 @@
       $name = $etu['nom'].' '.$etu['prenom'];
     }
 
-    echo '<div class="searchCard" onClick="edtEtu(\'', $etu['login'], '\')">
-      '.$GLOBALS['etuPic'].'<img class="searchImg" src="https://demeter.utc.fr/pls/portal30/portal30.get_photo_utilisateur?username='.$etu['login'].'" alt="" />
+    echo '<div class="searchCard">
+      '.$GLOBALS['etuPic'].'<img onClick="edtEtu(\'', $etu['login'], '\')" class="searchImg" src="https://demeter.utc.fr/pls/portal30/portal30.get_photo_utilisateur?username='.$etu['login'].'" alt="" />
       <div>
-        <div>', $name, '</div>
-        <div>', $etu['semestre'], '</div>
-        <div>', $mail, '</div>
+        <div><b>', $name, '</b></div>
+        <div>', $etu['semestre'], ' - ', $etu['login'], '</div>
+        <div><a href="mailto:', $mail, '">', $mail, '</a></div>
       </div>
+      <button onClick="edtEtu(\'', $etu['login'], '\')"><i class="fa fa-plus" aria-hidden="true"></i></button>
     </div>';
   }
 
   function printUV($uv) {
-    echo '<div class="searchCard" onClick="edtUV(\'', $uv['uv'], '\')">
+    echo '<div class="searchCard">
     ', $GLOBALS['uvPic'], '
       <div>
-        <div>', $uv['uv'], '</div>
+        <div onClick="edtUV(\'', $uv['uv'], '\')" style="margin-left: 75%;"><b>', $uv['uv'], '</b></div>
       </div>
+      <button onClick="edtUV(\'', $uv['uv'], '\')"><i class="fa fa-plus" aria-hidden="true"></i></button>
     </div>';
   }
 
@@ -119,13 +121,11 @@
       $pic = $GLOBALS['voidPic'];
 
     echo '<div class="searchCard" style="width: 100%;" onClick="popupClose(); window.login = \'\'; window.uv = \'\'; selectMode("", window.mode);">
-      <div style="margin: auto;">
-        <img class="searchImg" style="top: 55px" src="https://demeter.utc.fr/pls/portal30/portal30.get_photo_utilisateur?username='.$etu['login'].'" alt="" />
-        <div>
-          <div>', $_SESSION['nom'], ' ', $_SESSION['prenom'], '</div>
-          <div>', $etu['semestre'], '</div>
-          <div>', $_SESSION['mail'], '</div>
-        </div>
+      <img class="searchImg" src="https://demeter.utc.fr/pls/portal30/portal30.get_photo_utilisateur?username='.$etu['login'].'" alt="" />
+      <div>
+        <div>', $_SESSION['nom'], ' ', $_SESSION['prenom'], '</div>
+        <div>', $etu['semestre'], '</div>
+        <div>', $_SESSION['mail'], '</div>
       </div>
     </div>';
   }
@@ -224,6 +224,28 @@
     $GLOBALS['bdd']->execute($query, array($idExchange, $idExchange, $login, $login, $disponible, $disponible, $echange, $echange, $idUV, $idUV, $for, $for, $date, $date));
 
     return $query->fetchAll();
+  }
+
+  function getAnnulationList($login) {
+    $list = array();
+    $envoies = getEnvoiesList($login, NULL, 0, 1); // On récupère tous nos échanges envoyés acceptés
+    $recues = getRecuesList($login, NULL, 0, 1); // On récupère tous nos échanges recus acceptés
+
+    foreach ($envoies as $envoie) {
+      $recue = getRecuesList(NULL, $envoie['idEchange'], 1, 1, NULL, NULL, $envoie['date']);
+
+      if (count($recue) == 1)
+        array_push($list, $recue[0]);
+    }
+
+    foreach ($recues as $recue) {
+      $envoie = getRecuesList(NULL, $recue['idEchange'], 1, 1, NULL, NULL, $recue['date']);
+
+      if (count($envoie) == 1)
+        array_push($list, $envoie[0]);
+    }
+
+    return $list;
   }
 
   function getEtuListFromSearch($search) {

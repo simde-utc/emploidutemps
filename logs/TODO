@@ -9,6 +9,10 @@
 // TODO: finir le protocole d'échanges, ajouter l'option se désinscrire du service
 // Supprimer la suppression
 // Afficher un nouvel onglet avec uniquement les demandes non répondus / ceux répondus
+// Ajout de l'affichage des demandes d'annulation
+// Modification de l'export ics avec ajout des choix de date d'export
+// Confirmation d'acceptation d'échange
+// Envoyer un texte d'annulation
 
 / Permettre uniquement la màj à une seule personne (donc vérifier son Modcasid)
 /Si MODCASID périmé, supprimer de update et permettre un nouveau login à faire la màj (logs/update)
@@ -37,9 +41,6 @@ Créer un iframe pour la connexion au Moodle et à UVweb automatique
 
 Améliorer le défilement
 Problème de déplacement du calendrier (nous sommes samedi et le lundi bug) ??
-
-Checker les bugs: Demander l'annulation de changement
-
 
 Modifier exchange pour utuliser à la place de $_SESSION => $envoie[0] au cas où on débug
 Ajouter un mode d'affichage avec l'emploi du temps actuel

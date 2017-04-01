@@ -36,16 +36,40 @@
     </div>';
   }
   elseif ($_GET['param'] == 'exporter') {
-      echo '<div onClick="parameters()" style="cursor: pointer" id="popupHead">Exporter/Télécharger</div>
-      <div class="parameters" style="text-align: center;">
-        Etre prévenu <input class="focusedInput submitedInput" type="number" step="1" min="0" max="1440" id="alarmICS" placeholder="0" /> min avant l\'évènement (cours, TD, TP)<br />
-        <button class="submitedButton" onClick="getICal();">Son calendrier sous format ICal (.ics) pour son agenda Android/Google ou iOS/Apple</button>
-        <button onClick="return xepOnline.Formatter.Format(\'skeduler-container\',
-            {render:\'download\', pageWidth:\'216mm\', pageHeight:\'279mm\'});">Son calendrier sous format PDF (pas fini)</button>
-        <button onClick="window.location.href = \'https://\' + window.location.hostname + \'/emploidutemps\' + \'/ressources/pdf/alternances.pdf\';">Obtenir le calendrier des alternances</button>
-        <button onClick="window.location.href = \'https://\' + window.location.hostname + \'/emploidutemps\' + \'/ressources/pdf/infosRentree.pdf\';">Obtenir les infos de rentrée</button>
-        <button>Bientôt d\'autres options</button>
-      </div>';
+    echo '<div onClick="parameters()" style="cursor: pointer" id="popupHead">Exporter/Télécharger</div>
+    <div class="parameters" style="text-align: center;">
+      <button onClick="parameters(\'ical\');">Obtenir son calendrier sous format iCal (.ics)</button>
+      <button onClick="parameters(\'pdf\');">Obtenir son calendrier sous format PDF (.pdf)</button>
+      <button onClick="window.location.href = \'https://\' + window.location.hostname + \'/emploidutemps\' + \'/ressources/pdf/alternances.pdf\';">Télécharger le calendrier des alternances</button>
+      <button onClick="window.location.href = \'https://\' + window.location.hostname + \'/emploidutemps\' + \'/ressources/pdf/infosRentree.pdf\';">Télécharger les infos de rentrée</button>
+      <button>Bientôt d\'autres options</button>
+    </div>';
+  }
+  elseif ($_GET['param'] == 'ical') {
+    $query = $GLOBALS['bdd']->prepare('SELECT * FROM jours ORDER BY jour LIMIT 1');
+    $GLOBALS['bdd']->execute($query, array());
+    $begin = $query->fetch();
+    $begin = (strtotime($begin['jour']) < strtotime(date('Y-m-d')) ? date("Y-m-d") : $begin['jour']);
+    $query = $GLOBALS['bdd']->prepare('SELECT * FROM jours ORDER BY jour DESC LIMIT 1');
+    $GLOBALS['bdd']->execute($query, array());
+    $end = $query->fetch();
+    $end = $end['jour'];
+    echo '<div onClick="parameters(\'exporter\')" style="cursor: pointer" id="popupHead">Obtenir en iCal</div>
+    <div class="parameters" style="text-align: center;">
+      Etre prévenu <input class="focusedInput submitedInput" type="number" step="1" min="0" max="1440" id="alarmICS" placeholder="0" /> min avant l\'évènement (cours, TD, TP)<br />
+      Du <input class="focusedInput submitedInput" id="beginICS" value="', $begin, '" placeholder="', $begin, '" /> à <input class="focusedInput submitedInput" id="endICS" value="', $end, '" placeholder="', $end, '" />
+      <button class="submitedButton" onClick="getICal();">Télécharer son emploi du temps</button>
+    </div>';
+  }
+  elseif ($_GET['param'] == 'pdf') {
+    echo '<div onClick="parameters(\'exporter\')" style="cursor: pointer" id="popupHead">Obtenir en PDF</div>
+    <div class="parameters" style="text-align: center;">
+      Titre du pdf: <input class="focusedInput submitedInput" id="pdfTitle" value=""/><br />
+      <input type="checkbox" id="pdfCheckTabs" /><label for="pdfCheckTabs">Afficher la liste des onglets</label><br />
+      <input type="checkbox" id="pdfCheckCalendar" CHECKED/><label for="pdfCheckCalendar">Afficher le calendrier</label><br /><br />
+      Nom du fichier: <input class="focusedInput submitedInput" id="pdfName" value="edt_actuel"/><br />
+      <button class="submitedButton" onClick="getPDF();">Télécharer son emploi du temps</button>
+    </div>';
   }
   elseif ($_GET['param'] == 'aide') {
     echo '<div onClick="parameters()" style="cursor: pointer" id="popupHead">Aide</div>
@@ -68,8 +92,8 @@
       <div class="parameters" style="background-color: #FF0000">Désinscription déjà réalisée</div>';
   }
   elseif ($_GET['param'] == 'desinscription') {
-    $envoies = getEnvoiesList($_SESSION['login'], NULL, 1);
-    $recues = getRecuesList($_SESSION['login'], NULL, 1);
+    $envoies = getEnvoiesList($_SESSION['login'], NULL, 1, 0);
+    $recues = getRecuesList($_SESSION['login'], NULL, 1, 0);
 
     foreach ($envoies as $envoie)
       cancelIdExchange($envoie['idEchange']);
@@ -160,9 +184,9 @@
       Salut ! Bienvenu sur le service qui va te permettre de gérer ton emploi du temps, de le modifier, de l\'exporter et encore plein d\'autres choses que je te laisse découvrir<br />
       <br />
       Pour rapidement t\'aider à te repérer: il y a plusieurs modes d\'affichage que tu peux choisir en cliquant en haut à droite<br />
-      En haut à gauche, tu as le menu avec pleins d\'options et surtout la possibilité d\'exporter ton emploi du temps sur ton calendrier perso !<br />
+      En haut à gauche, tu as le menu avec pleins d\'option et surtout la possibilité d\'exporter ton emploi du temps sur ton calendrier perso !<br />
       <br />
-      N\'oublie pas que les modifications faites sont uniquement faites sur le site, par conséquent, il est impératif de prévenir les responsables UV d\'un changement. Vous en êtes les unique responsables<br />
+      N\'oublie pas que les modifications faites sont uniquement sur le site, par conséquent, il est impératif de prévenir les responsables UV d\'un changement. Vous en êtes les uniques responsables<br />
       <br />
       N\'hésite pas à farfouiller le site et si tu rencontres un problème, prends un screen et signale le nous <a href="https://gitlab.utc.fr/simde/emploidutemps/issues">ici</a> ou <a href="mailto:simde@assos.utc.fr">par mail</a><br />
       Le service est encore tout neuf et subit encore des améliorations, mais est totalement utilisable<br />

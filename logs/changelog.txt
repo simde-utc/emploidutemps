@@ -189,3 +189,16 @@ Stable 1.1: 2017-03-05
   - Amélioration du Trombi (les recherches avec accents ne marchaient pas => conversion en ASCII)
   - Réaffichage des noms prénoms dans la liste des demandeurs
   - C'EST MON ANNIV' LES BBS <3
+
+Stable 1.2: 2017-04-01
+  - Correction du bug de désinscription qui supprimait toutes les demandes (même en cours d'annulation)
+  - Ajout de l'affichage des demandes d'annulation
+  - Ajout d'une confirmation à la validation d'échange
+  - Ajout d'un champ texte pour valider la demande d'annulation qui est envoyé par mail
+  - Correction d'un léger bug du Trombi
+  - Affichage des logins dans le Trombi
+  - Ajout d'un lien mail direct dans le Trombi
+  - Regroupement des fichiers pdf
+  - Ajout du téléchargement de l'emploi du temps sous format PDF avec différentes options
+  - Modification du téléchargement sous format iCal, ajout de l'option de dates pour les apprenti(e)s
+  - Ajout d'un répertoire API pour les projets API comme le PicBot qui souhaiterait afficher le prochain cours

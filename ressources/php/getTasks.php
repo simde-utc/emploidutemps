@@ -196,10 +196,16 @@
   }
 
   function printAnnulees($login) {
+    $demandesCanceled = getAnnulationList($login); // Demandes d'annulation reçues
     $recuesCanceled = getRecuesList($login, NULL, 1, 1);
     $envoiesCanceled = getEnvoiesList($login, NULL, 1, 1);
     $arraydemande = array();
     $passed = array();
+
+    foreach ($demandesCanceled as $demande) {
+      $demandeInfo = getUVFromIdUV($demande['idUV']);
+      array_push($passed, array($demandeInfo['jour'], $demandeInfo['debut'], $demandeInfo['fin']));
+    }
 
     foreach ($recuesCanceled as $recue) {
       $recueInfo = getUVFromIdUV($recue['idUV']);
@@ -210,6 +216,9 @@
       $envoieInfo = getUVFromIdUV($envoie['idUV']);
       array_push($passed, array($envoieInfo['jour'], $envoieInfo['debut'], $envoieInfo['fin']));
     }
+
+    foreach ($demandesCanceled as $demande)
+      array_push($arraydemande, arrayRecue($login, $demande, $passed, '#FF00FF', '<button class="option" onClick=\'cancelExchange('.$demande['idEchange'].');\'>Accepter l\'annulation</button>'));
 
     foreach ($recuesCanceled as $recue)
       array_push($arraydemande, arrayRecue($login, $recue, $passed, '#555555', '<button class="option" style="background-color: #777777; color: #FFFFFF" disabled>Annulation demandée</button>'));
