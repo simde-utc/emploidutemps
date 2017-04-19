@@ -76,3 +76,12 @@ CREATE TABLE `uvs` (
  `nbrEtu` int(11) NOT NULL DEFAULT '1',
  PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin
+
+CREATE TABLE IF NOT EXISTS `salles` (
+  `salle` char(8) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `type` char(1) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `jour` tinyint(4) NOT NULL,
+  `debut` char(5) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `fin` char(5) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `ecart` int(11) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin
