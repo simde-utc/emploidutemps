@@ -139,7 +139,7 @@ foreach ($_SESSION['tab']['uv'] as $uv) {
     if ($mode == 'modifier' || $mode == 'planifier')
     echo 'class="blocked"'; ?>><i class="fa fa-search" aria-hidden="true"></i></button>
 
-  <select id='mode' onChange="selectMode('', this.options[this.selectedIndex].value);">
+  <select id='mode' onChange="window.card = ''; selectMode('', this.options[this.selectedIndex].value);">
   <?php
     $query = $GLOBALS['bdd']->prepare('SELECT login FROM etudiants WHERE login = ?');
     $GLOBALS['bdd']->execute($query, array($_SESSION['login']));

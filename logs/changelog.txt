@@ -223,3 +223,7 @@ Stable 1.3: 2017-04-17
   - Ajout du créneau toute la journée pour les évènements durant plus de 14h en journée (uniquement pour le mode planifier)
   - Ajout d'une rubrique à la place de soi-même lors du listing des étudiants d'un groupe
   - Correction de bugs
+
+  Stable 1.3.1: 2017-04-19
+  - Mise à jour de l'affichage des tâches du mode Planifier
+  - Correction de bugs d'affichage et de changement de mode

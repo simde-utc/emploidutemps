@@ -222,8 +222,6 @@ function appendTasks(placeholder, tasks) {
       else
         type = 'C';
 
-      task.interraction += "<button class='option' style='color:" + task.fgColor + "; background-color:" + task.bgColor + ";' onClick='seeOthers(\"" + task.uv + "\", \"" + type + "\", " + task.idUV + ");'><i class='fa fa-info' aria-hidden='true'></i> Echanger son " + (task.type == 'Cours' ? task.type.toLowerCase() : task.type) + "</button>";
-
       for (var key in colors) {
         if (colors[key] == task.bgColor)
           task.interraction += "<button class='colorButton' style='background-color:" + colors[key] + "; color: " + task.fgColor + "' onClick='changeColor(" + task.idUV + ", \"#NULL\");' ><i class=\"fa fa-times\" aria-hidden=\"true\"></i></button>";
@@ -285,12 +283,18 @@ function appendTasks(placeholder, tasks) {
         class: classCard
       });
 
-    if (window.mode == 'planifier' && window.get.indexOf('salle=') > -1) {
-      card.on('click', function () {
-        popup('<div id="popupHead">' + task.idUV + ' salle' + (task.idUV == 1 ? '' : 's') + ' disponible' + (task.idUV == 1 ? '' : 's') + ' de ' + task.horaire.replace('-', ' à ').replace(':', 'h').replace(':', 'h') + '</div><table><tr><td>Salle' + (task.note['C'].length == 1 ? '' : 's') + ' de cours</td><td>:</td><td> ' + task.note['C'].join(', ') + '</td></tr><tr><td>Salle' + (task.note['D'].length == 1 ? '' : 's') + ' de TD</td><td>:</td><td> ' + task.note['D'].join(', ') + '</td></tr></table>');
-      });
-      card.append($('<div class="time">' + (task.startTime < 14 ? toTimeString(task.duration) : 'Journée') + '</div><div class="uvType"><span>' + task.uv + '</span></div>')).appendTo(placeholder);
-      return;
+    if (window.mode == 'planifier') {
+      if (window.get.indexOf('salle=') > -1) {
+        card.on('click', function () {
+          popup('<div id="popupHead">' + task.idUV + ' salle' + (task.idUV == 1 ? '' : 's') + ' disponible' + (task.idUV == 1 ? '' : 's') + ' de ' + task.horaire.replace('-', ' à ').replace(':', 'h').replace(':', 'h') + '</div><table><tr><td>Salle' + (task.note['C'].length == 1 ? '' : 's') + ' de cours</td><td>:</td><td> ' + task.note['C'].join(', ') + '</td></tr><tr><td>Salle' + (task.note['D'].length == 1 ? '' : 's') + ' de TD</td><td>:</td><td> ' + task.note['D'].join(', ') + '</td></tr></table>');
+        });
+        card.append($('<div class="time">' + (task.startTime < 14 ? toTimeString(task.duration) : 'Journée') + '</div><div class="uvType"><span>' + task.uv + '</span></div>')).appendTo(placeholder);
+        return;
+      }
+
+      task.interraction = "<button disabled class='option' style='color:" + task.fgColor + "; background-color:" + task.bgColor + ";' onClick='modify(\"" + task.idUV + "\");'><i class='fa fa-pencil-square-o' aria-hidden='true'></i> Modifier</button>\
+      <button class='option' style='color:" + task.fgColor + "; background-color:" + task.bgColor + ";' onClick='seeOthers(\"" + task.uv + "\", \"" + type + "\", " + task.idUV + ");'><i class='fa fa-info' aria-hidden='true'></i> Echanger son " + (task.type == 'Cours' ? task.type.toLowerCase() : task.type) + "</button>\
+      <button class='option' style='color:" + task.fgColor + "; background-color:" + task.bgColor + ";' onClick='afficher(\"" + task.idUV + "\");'><i class='fa fa-calendar-o' aria-hidden='true'></i> Afficher d'autres options</button>";
     }
 
     if (window.idUV != task.idUV)

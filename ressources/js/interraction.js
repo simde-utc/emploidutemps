@@ -154,6 +154,19 @@ function changeColor(idUV, color) {
   }, 200);
 }
 
+function afficher(idUV) {
+  selectMode('&login=' + window.login, 'afficher');
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getTasks.php?mode=afficher&login=' + window.login, function (tasks) {
+    tasks = JSON.parse(tasks);
+    tasks.forEach(function(task) {
+      if (task.idUV == idUV)
+        setTimeout(function() {
+          $('#' + task.id).click();
+        }, 500);
+    });
+  });
+}
+
 function edtUV(uv) {
   window.uv = uv;
   window.idUV = '';
@@ -167,7 +180,7 @@ function edtUV(uv) {
   setTimeout(function () {
     unFocus();
     popupClose(); }, 100);
-  newRequest('&uv=' + uv, '&addTab=' + uv);
+    newRequest('&uv=' + uv, '&addTab=' + uv);
 }
 
 function edtEtu(login) {
