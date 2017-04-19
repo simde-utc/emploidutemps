@@ -35,7 +35,8 @@
       unset($_SESSION['etuActive'][array_search($_GET['delEtuActive'], $_SESSION['etuActive'])]);
   }
 
-?><div id='menu'><button id='sessionLogin' class=<?php
+?>
+  <div id='menu'><button id='sessionLogin' class=<?php
 $nbrRecu = count(getRecuesList($_SESSION['login'], NULL));
 $nbrRecuNouveau = count(getRecuesList($_SESSION['login'], NULL, 1, 0));
 $nbrRecuAccepte = count(getRecuesList($_SESSION['login'], NULL, 0, 1)) + count(getRecuesList($_SESSION['login'], NULL, 1, 1));
@@ -44,30 +45,55 @@ $nbrEnvoi = count(getEnvoiesList($_SESSION['login'], NULL));
 $nbrEnvoiNouveau = count(getEnvoiesList($_SESSION['login'], NULL, 1, 0));
 $nbrEnvoiAccepte = count(getEnvoiesList($_SESSION['login'], NULL, 0, 1)) + count(getEnvoiesList($_SESSION['login'], NULL, 1, 1));
 $nbrEnvoiRefuse = count(getEnvoiesList($_SESSION['login'], NULL, 0, 0));
-$nbrAnnule = count(getRecuesList($_SESSION['login'], NULL, 1, 1)) + count(getEnvoiesList($_SESSION['login'], NULL, 1, 1));
+$nbrAnnule = count(getRecuesList($_SESSION['login'], NULL, 1, 1)) + count(getEnvoiesList($_SESSION['login'], NULL, 1, 1)) + count(getAnnulationList($_SESSION['login']));
 
-echo (($mode != 'organiser' && (($mode != 'modifier' && (!isset($_GET['uv']) || $_GET['uv'] == '')) || ($mode == 'modifier' && (!isset($_GET['envoi']) || $nbrEnvoi == 0) && (!isset($_GET['recu']) || $nbrRecu == 0) && (!isset($_GET['annule']) || $nbrAnnule == 0) && !isset($_GET['original']) && !isset($_GET['changement'])) || $_GET == array('mode' => 'modifier', 'login' => '', 'addTab' => '')) && (!isset($_GET['login']) || isset($_GET['login']) && is_string($_GET['login']) && (($_GET['login'] == $_SESSION['login']) || ($_GET['login'] == '')) || empty($_GET) || (isset($_GET['tab']) && is_string($_GET['tab']) && $_GET['tab'] == 1))) ? '\'active\'>' : '\'notActive\' onClick="edtEtu(\'\');">');
+echo (($mode != 'organiser' && (($mode != 'modifier' && (!isset($_GET['uv']) || $_GET['uv'] == '')) || ($mode == 'modifier' && (!isset($_GET['envoi']) || $nbrEnvoi == 0) && (!isset($_GET['recu']) || $nbrRecu == 0) && (!isset($_GET['annule']) || $nbrAnnule == 0) && !isset($_GET['original']) && !isset($_GET['changement'])) || $_GET == array('mode' => 'modifier', 'login' => '', 'addTab' => '')) && (!isset($_GET['login']) || isset($_GET['login']) && is_string($_GET['login']) && (($_GET['login'] == $_SESSION['login']) || ($_GET['login'] == '')) || empty($_GET) || (isset($_GET['tab']) && $_GET['tab'] == 1)) && ($mode != 'planifier' || !((isset($_GET['cours']) && $_GET['cours'] == 1) && !(isset($_GET['event']) && $_GET['event'] == 1)) && !(isset($_GET['reu']) && $_GET['reu'] == 1) && !(isset($_GET['salle']) && is_string($_GET['salle']) && !empty($_GET['salle'])))) ? '\'active\'>' : '\'notActive\' onClick="edtEtu(\'\');">');
 echo $_SESSION['nom'], ' ', $_SESSION['prenom'], '</button>';
 
-if ($mode == 'modifier') {
+if ($mode == 'planifier') {
+  echo '<div style="border: 1px SOLID #000000;"></div>';
+
+  if ($mode == 'planifier') {
+    $date = new DateTime($_SESSION['week']);
+    $date->modify('-7 day');
+    echo '<button ', (isAGoodDate($date->format('Y-m-d')) ? 'class="notActive" onClick="planifier(\'\', \''.$date->format('Y-m-d').'\')"' : 'style="cursor: default;  background-color: #555555;" disabled'), '><i class="fa fa-arrow-left" aria-hidden="true"></i></button>';
+    $date->modify('7 day');
+    echo '<button class="notActive" onClick="planifier(\'\', \'', date('Y-m-d', strtotime('monday this week')), '\')">Sem. ', $date->format('d/m'), '</button>';
+    $date->modify('7 day');
+    echo '<button ', (isAGoodDate($date->format('Y-m-d')) ? 'class="notActive" onClick="planifier(\'\', \''.$date->format('Y-m-d').'\')"' : 'style="cursor: default;  background-color: #555555;" disabled'), '><i class="fa fa-arrow-right" aria-hidden="true"></i></button>';
+  }
+
+  echo '<div style="border: 1px SOLID #000000;"></div>
+  <button class="', (isset($_GET['cours']) && $_GET['cours'] == '1' ? 'active"' : 'notActive" onClick="planifier(\'cours=1\')"'), '>Cours</button>
+  <button class="', (isset($_GET['salle']) && $_GET['salle'] == '1' ? 'active"' : 'notActive" onClick="planifier(\'salle=1\')"'), '>1-2h</button>
+  <button class="', (isset($_GET['salle']) && $_GET['salle'] == '3' ? 'active"' : 'notActive" onClick="planifier(\'salle=3\')"'), '>3-4h</button>
+  <button class="', (isset($_GET['salle']) && $_GET['salle'] == '5' ? 'active"' : 'notActive" onClick="planifier(\'salle=5\')"'), '>5-6h</button>
+  <button class="', (isset($_GET['salle']) && $_GET['salle'] == '7' ? 'active"' : 'notActive" onClick="planifier(\'salle=7\')"'), '>7-8h</button>
+  <button class="', (isset($_GET['salle']) && $_GET['salle'] == '-8' ? 'active"' : 'notActive" onClick="planifier(\'salle=-8\')"'), '>+ 8h</button>
+  <div style="border: 1px SOLID #000000;"></div>
+  <button class="notActive" onClick="planifier(\'event=1\')" style="cursor: default; background-color: #555555;" disabled>Evènements</button>
+  <button class="notActive" onClick="planifier(\'reu=1\')" style="cursor: default;  background-color: #555555;" disabled>Réunions</button>';
+}
+elseif ($mode == 'modifier') {
   if ($nbrRecu != 0)
-    echo '<button class="', (isset($_GET['recu']) && $_GET['recu'] == '1' ? 'active"' : 'notActive" onClick="seeExchanges(\'recu\', 1);"'), '>', $nbrRecu, ' reçu', ($nbrRecu > 1 ? 's': ''), ':</button>
+    echo '<div style="border: 1px SOLID #000000;"></div>
+    <button class="', (isset($_GET['recu']) && $_GET['recu'] == '1' ? 'active"' : 'notActive" onClick="seeExchanges(\'recu\', 1);"'), '>', $nbrRecu, ' reçu', ($nbrRecu > 1 ? 's': ''), ':</button>
     <button class="', (isset($_GET['recu']) && $_GET['recu'] == 'nouveau' ? 'active"' : 'notActive" onClick="seeExchanges(\'recu\', \'nouveau\');"'), ' style="color: #7777FF;',($nbrRecuNouveau == 0 ? ' cursor: default;  background-color: #555555;" disabled' : '"'), '><i class="fa fa-question" aria-hidden="true"></i></button>
     <button class="', (isset($_GET['recu']) && $_GET['recu'] == 'accepte' ? 'active"' : 'notActive" onClick="seeExchanges(\'recu\', \'accepte\');"'), ' style="color: #00FF00;',($nbrRecuAccepte == 0 ? ' cursor: default;  background-color: #555555;" disabled' : '"'), '><i class="fa fa-check" aria-hidden="true"></i></button>
-    <button class="', (isset($_GET['recu']) && $_GET['recu'] == 'refuse' ? 'active"' : 'notActive" onClick="seeExchanges(\'recu\', \'refuse\');"'), ' style="color: #FF0000;',($nbrRecuRefuse == 0 ? ' cursor: default;  background-color: #555555;" disabled' : '"'), '><i class="fa fa-times" aria-hidden="true"></i></button>
-    <div style="border: 1px SOLID #000000;"></div>';
+    <button class="', (isset($_GET['recu']) && $_GET['recu'] == 'refuse' ? 'active"' : 'notActive" onClick="seeExchanges(\'recu\', \'refuse\');"'), ' style="color: #FF0000;',($nbrRecuRefuse == 0 ? ' cursor: default;  background-color: #555555;" disabled' : '"'), '><i class="fa fa-times" aria-hidden="true"></i></button>';
   if ($nbrEnvoi != 0)
-    echo '<button class="', (isset($_GET['envoi']) && $_GET['envoi'] == '1' ? 'active"' : 'notActive" onClick="seeExchanges(\'envoi\', 1);"'), '>', $nbrEnvoi, ' envoi', ($nbrEnvoi > 1 ? 's': ''), ':</button>
+    echo '<div style="border: 1px SOLID #000000;"></div>
+    <button class="', (isset($_GET['envoi']) && $_GET['envoi'] == '1' ? 'active"' : 'notActive" onClick="seeExchanges(\'envoi\', 1);"'), '>', $nbrEnvoi, ' envoi', ($nbrEnvoi > 1 ? 's': ''), ':</button>
     <button class="', (isset($_GET['envoi']) && $_GET['envoi'] == 'nouveau' ? 'active"' : 'notActive" onClick="seeExchanges(\'envoi\', \'nouveau\');"'), ' style="color: #7777FF;',($nbrEnvoiNouveau == 0 ? ' cursor: default;  background-color: #555555;" disabled' : '"'), '>?</button>
     <button class="', (isset($_GET['envoi']) && $_GET['envoi'] == 'accepte' ? 'active"' : 'notActive" onClick="seeExchanges(\'envoi\', \'accepte\');"'), ' style="color: #00FF00;',($nbrEnvoiAccepte == 0 ? ' cursor: default;  background-color: #555555;" disabled' : '"'), '><i class="fa fa-check" aria-hidden="true"></i></button>
-    <button class="', (isset($_GET['envoi']) && $_GET['envoi'] == 'refuse' ? 'active"' : 'notActive" onClick="seeExchanges(\'envoi\', \'refuse\');"'), ' style="color: #FF0000;',($nbrEnvoiRefuse == 0 ? ' cursor: default;  background-color: #555555;" disabled' : '"'), '><i class="fa fa-times" aria-hidden="true"></i></button>
-    <div style="border: 1px SOLID #000000;"></div>';
+    <button class="', (isset($_GET['envoi']) && $_GET['envoi'] == 'refuse' ? 'active"' : 'notActive" onClick="seeExchanges(\'envoi\', \'refuse\');"'), ' style="color: #FF0000;',($nbrEnvoiRefuse == 0 ? ' cursor: default;  background-color: #555555;" disabled' : '"'), '><i class="fa fa-times" aria-hidden="true"></i></button>';
   if ($nbrAnnule != 0)
-    echo '<button class="', (isset($_GET['annule']) && $_GET['annule'] == '1' ? 'active"' : 'notActive" onClick="seeExchanges(\'annule\', 1);"'), '>', $nbrAnnule, ' demande', ($nbrAnnule > 1 ? 's': ''), ' d\'annulation</button>
-    <div style="border: 1px SOLID #000000;"></div>';
+    echo '<div style="border: 1px SOLID #000000;"></div>
+    <button class="', (isset($_GET['annule']) && $_GET['annule'] == '1' ? 'active"' : 'notActive" onClick="seeExchanges(\'annule\', 1);"'), '>', $nbrAnnule, ' demande', ($nbrAnnule > 1 ? 's': ''), ' d\'annulation</button>';
 
   if (!isEdtEtuVoid($_SESSION['login'], 0))
-    echo '<button class="', (isset($_GET['original']) && $_GET['original'] == '1' ? 'active"' : 'notActive" onClick="seeOriginal();"'), '>L\'original</button>
+    echo '<div style="border: 1px SOLID #000000;"></div>
+    <button class="', (isset($_GET['original']) && $_GET['original'] == '1' ? 'active"' : 'notActive" onClick="seeOriginal();"'), '>L\'original</button>
     <div style="border: 1px SOLID #000000;"></div>
     <button class="', (isset($_GET['changement']) && $_GET['changement'] == '1' ? 'active"' : 'notActive" onClick="seeChangement();"'), '>Les changements</button>';
 }
@@ -80,7 +106,7 @@ foreach ($_SESSION['tab']['etu'] as $login) {
   else
     $name = $info['nom'].' '.$info['prenom'];
 
-  if ($mode == 'modifier')
+  if ($mode == 'modifier' || $mode == 'planifier')
     break;
   elseif ($mode == 'afficher')
     echo '<div><button class="', (isset($_GET['login']) && is_string($_GET['login']) && ($_GET['login'] == $login) ? 'active">'.$name : 'notActive" onClick="edtEtu(\''.$login.'\')">'.$name), '</button>';
@@ -95,14 +121,12 @@ foreach ($_SESSION['tab']['etu'] as $login) {
 }
 
 foreach ($_SESSION['tab']['uv'] as $uv) {
-  if ($mode == 'modifier')
+  if ($mode == 'modifier' || $mode == 'planifier' || $mode == 'organiser')
     break;
   elseif ($mode == 'afficher')
     echo '<div><button class="', (isset($_GET['uv']) && is_string($_GET['uv']) && ($_GET['uv'] == $uv) ? 'active">'.$uv : 'notActive" onClick="edtUV(\''.$uv.'\')">'.$uv), '</button>';
   elseif ($mode == 'comparer')
     echo '<div><button class="', (isset($_GET['uv']) && is_string($_GET['uv']) && ($_GET['uv'] == $uv) ? 'active">'.$uv : 'notActive" onClick="compareUV(\''.$uv.'\')">'.$uv), '</button>';
-  elseif ($mode == 'organiser')
-    echo '<div><button class="blocked">', $uv, '</button>';
   else
     echo '<div><button class="', (isset($_GET['uv']) && is_string($_GET['uv']) && ($_GET['uv'] == $uv) ? 'active">'.$uv.'</button>' : 'notActive" onClick="edtUV(\''.$uv.'\')">'.$uv.'</button>');
 
@@ -112,7 +136,7 @@ foreach ($_SESSION['tab']['uv'] as $uv) {
 </div>
 <div id='option'>
   <button id='addTab' onClick='searchTab();'<?php
-    if ($mode == 'modifier')
+    if ($mode == 'modifier' || $mode == 'planifier')
     echo 'class="blocked"'; ?>><i class="fa fa-search" aria-hidden="true"></i></button>
 
   <select id='mode' onChange="selectMode('', this.options[this.selectedIndex].value);">
@@ -124,8 +148,7 @@ foreach ($_SESSION['tab']['uv'] as $uv) {
       echo '<option value=\'afficher\'', ($mode == 'afficher' ? ' selected' : ''), '>Afficher</option>
       <option value=\'comparer\'', ($mode == 'comparer' ? ' selected' : ''), '>Comparer</option>
       <option value=\'modifier\'', ($mode == 'modifier' ? ' selected' : ''), '>Modifier</option>
-      ';
+      <option value=\'planifier\'', ($mode == 'planifier' ? 'selected' : ''), '>Planifier</option>';
    ?><option value='organiser'<?php echo ($mode == 'organiser' ? 'selected' : ''); ?>>Organiser</option>
-  <!--  <option value='planifier'<?php echo ($mode == 'planifier' ? 'selected' : ''); ?>>Planifier</option> -->
   </select>
 </div>

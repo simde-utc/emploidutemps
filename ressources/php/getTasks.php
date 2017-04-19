@@ -2,15 +2,14 @@
 
   $id = 1;
 
-  function arrayRecue($login, $recue, $passed, $bgColor, $interraction) {
+  function arrayRecue($login, $recue, $bgColor, $interraction) {
     $recueInfo = getUVFromIdUV($recue['idUV']);
-    $nbrSameTime = count(array_keys($passed, array($recueInfo['jour'], $recueInfo['debut'], $recueInfo['fin'])));
     $exchange = getUVFromIdUV($recue['pour']);
     // Conversion de minutes en heures
     $exploded = explode(':', $recueInfo['debut']);
-    $debut = join('.', array($exploded[0], 50/30*$exploded[1]));
+    $debut = join('.', array($exploded[0], 100/60*$exploded[1]));
     $exploded = explode(':', $recueInfo['fin']);
-    $fin = join('.', array($exploded[0], 50/30*$exploded[1]));
+    $fin = join('.', array($exploded[0], 100/60*$exploded[1]));
 
     $fgColor = getFgColor($bgColor);
 
@@ -23,7 +22,7 @@
       'horaire' => $recueInfo['debut'].'-'.$recueInfo['fin'],
       'idUV' => $recue['idUV'],
       'uv' => $recueInfo['uv'],
-      'type' => ($recueInfo['type'] == 'D' ? $recueInfo['type'] = 'TD' : ($recueInfo['type'] == 'C' ? $recueInfo['type'] = 'Cours' : $recueInfo['type'] = 'TP')),
+      'type' => ($recueInfo['type'] == 'D' ? 'TD' : ($recueInfo['type'] == 'C' ? 'Cours' : 'TP')),
       'groupe' => $recueInfo['groupe'],
       'salle' => $recueInfo['salle'],
       'frequence' => $recueInfo['frequence'],
@@ -31,7 +30,6 @@
       'note' => (($recueInfo['semaine'] == '') ? '' : 'Sem '.$recueInfo['semaine']),
       'fgColor' => $fgColor,
       'bgColor' => $bgColor,
-      'nbrSameTime' => $nbrSameTime,
       'columnPerDay' => 2,
       'interraction' => '<div class="infosExchange" onClick=\'infosExchange('.$recue['idEchange'].');\'>En échange avec le vôtre du '.$GLOBALS['jours'][$exchange['jour']].' de '.$exchange['debut'].' à '.$exchange['fin'].' en '.$exchange['salle'].(($exchange['semaine'] == '') ? '' : ' chaque semaine '.$exchange['semaine']).'</div>'.$interraction,
       'session' => 0
@@ -44,7 +42,6 @@
     $recuesAccepted = array();
     $recuesCanceled = array();
     $arraydemande = array();
-    $passed = array();
 
     if ($stat == '1') {
       $recues = getRecuesList($login, NULL, 1, 0);
@@ -61,55 +58,33 @@
     elseif ($stat == 'refuse')
       $recuesRefused = getRecuesList($login, NULL, 0, 0);
 
-
-    foreach ($recues as $recue) {
-      $recueInfo = getUVFromIdUV($recue['idUV']);
-      array_push($passed, array($recueInfo['jour'], $recueInfo['debut'], $recueInfo['fin']));
-    }
-
-    foreach ($recuesRefused as $recue) {
-      $recueInfo = getUVFromIdUV($recue['idUV']);
-      array_push($passed, array($recueInfo['jour'], $recueInfo['debut'], $recueInfo['fin']));
-    }
-
-    foreach ($recuesAccepted as $recue) {
-      $recueInfo = getUVFromIdUV($recue['idUV']);
-      array_push($passed, array($recueInfo['jour'], $recueInfo['debut'], $recueInfo['fin']));
-    }
-
-    foreach ($recuesCanceled as $recue) {
-      $recueInfo = getUVFromIdUV($recue['idUV']);
-      array_push($passed, array($recueInfo['jour'], $recueInfo['debut'], $recueInfo['fin']));
-    }
-
     foreach ($recues as $recue) {
       if ($recue['active'] == 1)
-        array_push($arraydemande, arrayRecue($login, $recue, $passed, '#0000FF', '<button class="option" style="width: 59px; height: 15px" onClick=\'acceptExchange('.$recue['idEchange'].');\'>Accepter</button><button class="option" style="width: 59px; height: 15px" onClick=\'refuseExchange('.$recue['idEchange'].');\'>Refuser</button>'));
+        array_push($arraydemande, arrayRecue($login, $recue, '#0000FF', '<button class="option" style="width: 59px; height: 15px" onClick=\'acceptExchange('.$recue['idEchange'].');\'>Accepter</button><button class="option" style="width: 59px; height: 15px" onClick=\'refuseExchange('.$recue['idEchange'].');\'>Refuser</button>'));
       else
-        array_push($arraydemande, arrayRecue($login, $recue, $passed, '#FFFF00', '<button class="option" onClick=\'askForExchange('.$recue['pour'].', '.$recue['idUV'].');\'>Plus dispo. Proposer</button>'));
+        array_push($arraydemande, arrayRecue($login, $recue, '#FFFF00', '<button class="option" onClick=\'askForExchange('.$recue['pour'].', '.$recue['idUV'].');\'>Plus dispo. Proposer</button>'));
     }
 
     foreach ($recuesRefused as $recue)
-      array_push($arraydemande, arrayRecue($login, $recue, $passed, '#FF0000', '<button class="option" disabled>Proposition refusée</button>'));
+      array_push($arraydemande, arrayRecue($login, $recue, '#FF0000', '<button class="option" disabled>Proposition refusée</button>'));
 
     foreach ($recuesAccepted as $recue)
-      array_push($arraydemande, arrayRecue($login, $recue, $passed, '#00FF00', '<button class="option" onClick=\'cancelExchange('.$recue['idEchange'].');\'>Annuler l\'échange</button>'));
+      array_push($arraydemande, arrayRecue($login, $recue, '#00FF00', '<button class="option" onClick=\'cancelExchange('.$recue['idEchange'].');\'>Annuler l\'échange</button>'));
 
     foreach ($recuesCanceled as $recue)
-      array_push($arraydemande, arrayRecue($login, $recue, $passed, '#555555', '<button class="option" style="background-color: #777777; color: #FFFFFF" disabled>Annulation demandée</button>'));
+      array_push($arraydemande, arrayRecue($login, $recue, '#555555', '<button class="option" style="background-color: #777777; color: #FFFFFF" disabled>Annulation demandée</button>'));
 
     return $arraydemande;
   }
 
-  function arrayEnvoie($login, $envoie, $passed, $bgColor, $interraction) {
+  function arrayEnvoie($login, $envoie, $bgColor, $interraction) {
     $envoieInfo = getUVFromIdUV($envoie['idUV']);
-    $nbrSameTime = count(array_keys($passed, array($envoieInfo['jour'], $envoieInfo['debut'], $envoieInfo['fin'])));
     $exchange = getUVFromIdUV($envoie['pour']);
     // Conversion de minutes en heures
     $exploded = explode(':', $envoieInfo['debut']);
-    $debut = join('.', array($exploded[0], 50/30*$exploded[1]));
+    $debut = join('.', array($exploded[0], 100/60*$exploded[1]));
     $exploded = explode(':', $envoieInfo['fin']);
-    $fin = join('.', array($exploded[0], 50/30*$exploded[1]));
+    $fin = join('.', array($exploded[0], 100/60*$exploded[1]));
 
     $fgColor = getFgColor($bgColor);
 
@@ -122,7 +97,7 @@
       'horaire' => $envoieInfo['debut'].'-'.$envoieInfo['fin'],
       'idUV' => $envoie['idUV'],
       'uv' => $envoieInfo['uv'],
-      'type' => ($envoieInfo['type'] == 'D' ? $envoieInfo['type'] = 'TD' : ($envoieInfo['type'] == 'C' ? $envoieInfo['type'] = 'Cours' : $envoieInfo['type'] = 'TP')),
+      'type' => ($envoieInfo['type'] == 'D' ? 'TD' : ($envoieInfo['type'] == 'C' ? 'Cours' : 'TP')),
       'groupe' => $envoieInfo['groupe'],
       'salle' => $envoieInfo['salle'],
       'frequence' => $envoieInfo['frequence'],
@@ -130,7 +105,6 @@
       'note' => (($envoieInfo['semaine'] == '') ? '' : 'Sem '.$envoieInfo['semaine']),
       'fgColor' => $fgColor,
       'bgColor' => $bgColor,
-      'nbrSameTime' => $nbrSameTime,
       'columnPerDay' => 2,
       'interraction' => '<div class="infosExchange" onClick=\'infosExchange('.$envoie['idEchange'].');\'>En échange avec celui du '.$GLOBALS['jours'][$exchange['jour']].' de '.$exchange['debut'].' à '.$exchange['fin'].' en '.$exchange['salle'].(($exchange['semaine'] == '') ? '' : ' chaque semaine '.$exchange['semaine']).'</div>'.$interraction,
       'session' => 0
@@ -143,7 +117,6 @@
     $envoiesAccepted = array();
     $envoiesCanceled = array();
     $arraydemande = array();
-    $passed = array();
 
     if ($stat == '1') {
       $envoies = getEnvoiesList($login, NULL, 1, 0);
@@ -160,37 +133,17 @@
     elseif ($stat == 'refuse')
       $envoiesRefused = getEnvoiesList($login, NULL, 0, 0);
 
-    foreach ($envoies as $envoie) {
-      $envoieInfo = getUVFromIdUV($envoie['idUV']);
-      array_push($passed, array($envoieInfo['jour'], $envoieInfo['debut'], $envoieInfo['fin']));
-    }
-
-    foreach ($envoiesRefused as $envoie) {
-      $envoieInfo = getUVFromIdUV($envoie['idUV']);
-      array_push($passed, array($envoieInfo['jour'], $envoieInfo['debut'], $envoieInfo['fin']));
-    }
-
-    foreach ($envoiesAccepted as $envoie) {
-      $envoieInfo = getUVFromIdUV($envoie['idUV']);
-      array_push($passed, array($envoieInfo['jour'], $envoieInfo['debut'], $envoieInfo['fin']));
-    }
-
-    foreach ($envoiesCanceled as $envoie) {
-      $envoieInfo = getUVFromIdUV($envoie['idUV']);
-      array_push($passed, array($envoieInfo['jour'], $envoieInfo['debut'], $envoieInfo['fin']));
-    }
-
     foreach ($envoies as $envoie)
-      array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#0000FF', '<button class="option" onClick=\'delExchange('.$envoie['idEchange'].');\'>Annuler la proposition</button>'));
+      array_push($arraydemande, arrayEnvoie($login, $envoie, '#0000FF', '<button class="option" onClick=\'delExchange('.$envoie['idEchange'].');\'>Annuler la proposition</button>'));
 
     foreach ($envoiesRefused as $envoie)
-      array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#FF0000', '<button class="option" disabled>Proposition réfusée</button>'));
+      array_push($arraydemande, arrayEnvoie($login, $envoie, '#FF0000', '<button class="option" disabled>Proposition réfusée</button>'));
 
     foreach ($envoiesAccepted as $envoie)
-      array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#00FF00', '<button class="option" onClick=\'cancelExchange('.$envoie['idEchange'].');\'>Annuler l\'échange</button>'));
+      array_push($arraydemande, arrayEnvoie($login, $envoie, '#00FF00', '<button class="option" onClick=\'cancelExchange('.$envoie['idEchange'].');\'>Annuler l\'échange</button>'));
 
     foreach ($envoiesCanceled as $envoie)
-      array_push($arraydemande, arrayEnvoie($login, $envoie, $passed, '#555555', '<button class="option" style="background-color: #777777; color: #FFFFFF" disabled>Annulation demandée</button>'));
+      array_push($arraydemande, arrayEnvoie($login, $envoie, '#555555', '<button class="option" style="background-color: #777777; color: #FFFFFF" disabled>Annulation demandée</button>'));
 
     return $arraydemande;
   }
@@ -200,22 +153,6 @@
     $recuesCanceled = getRecuesList($login, NULL, 1, 1);
     $envoiesCanceled = getEnvoiesList($login, NULL, 1, 1);
     $arraydemande = array();
-    $passed = array();
-
-    foreach ($demandesCanceled as $demande) {
-      $demandeInfo = getUVFromIdUV($demande['idUV']);
-      array_push($passed, array($demandeInfo['jour'], $demandeInfo['debut'], $demandeInfo['fin']));
-    }
-
-    foreach ($recuesCanceled as $recue) {
-      $recueInfo = getUVFromIdUV($recue['idUV']);
-      array_push($passed, array($recueInfo['jour'], $recueInfo['debut'], $recueInfo['fin']));
-    }
-
-    foreach ($envoiesCanceled as $envoie) {
-      $envoieInfo = getUVFromIdUV($envoie['idUV']);
-      array_push($passed, array($envoieInfo['jour'], $envoieInfo['debut'], $envoieInfo['fin']));
-    }
 
     foreach ($demandesCanceled as $demande)
       array_push($arraydemande, arrayRecue($login, $demande, $passed, '#FF00FF', '<button class="option" onClick=\'cancelExchange('.$demande['idEchange'].');\'>Accepter l\'annulation</button>'));
@@ -238,12 +175,11 @@
     $result = $query->fetchAll();
 
     foreach ($result as $edt) {
-
       // Conversion de minutes en heures
-      $exploded = explode(':', $edt['debut']);
-      $debut = join('.', array($exploded[0], 50/30*$exploded[1]));
-      $exploded = explode(':', $edt['fin']);
-      $fin = join('.', array($exploded[0], 50/30*$exploded[1]));
+      $exploded = explode(':', $edt['debut'], 2);
+      $debut = join('.', array($exploded[0], 100/60*$exploded[1]));
+      $exploded = explode(':', $edt['fin'], 2);
+      $fin = join('.', array($exploded[0], 100/60*$exploded[1]));
 
       if ($edt['login'] == $_SESSION['login'])
         $bgColor = '#770000';
@@ -273,18 +209,13 @@
   function printEdtEtu($login, $columnPerDay = 0, $actuel = 1, $echange = NULL) {
     $allEdt = getEdtEtu($login, $actuel, $echange);
     $arrayEdt = array();
-    $passed = array();
-
-    foreach ($allEdt as $edt)
-      array_push($passed, array($edt['jour'], $edt['debut'], $edt['fin']));
 
     foreach ($allEdt as $edt) {
-      $nbrSameTime = count(array_keys($passed, array($edt['jour'], $edt['debut'], $edt['fin'])));
       // Conversion de minutes en heures
-      $exploded = explode(':', $edt['debut']);
-      $debut = join('.', array($exploded[0], 50/30*$exploded[1]));
-      $exploded = explode(':', $edt['fin']);
-      $fin = join('.', array($exploded[0], 50/30*$exploded[1]));
+      $exploded = explode(':', $edt['debut'], 2);
+      $debut = join('.', array($exploded[0], 100/60*$exploded[1]));
+      $exploded = explode(':', $edt['fin'], 2);
+      $fin = join('.', array($exploded[0], 100/60*$exploded[1]));
 
       $bgColor = ($edt['color'] == NULL ? $edt['colorUV'] : $edt['color']);
 
@@ -304,7 +235,7 @@
         'horaire' => $edt['debut'].'-'.$edt['fin'],
         'idUV' => $edt['id'],
         'uv' => $edt['uv'],
-        'type' => ($edt['type'] == 'D' ? $edt['type'] = 'TD' : ($edt['type'] == 'C' ? $edt['type'] = 'Cours' : $edt['type'] = 'TP')),
+        'type' => ($edt['type'] == 'D' ? 'TD' : ($edt['type'] == 'C' ? 'Cours' : 'TP')),
         'groupe' => $edt['groupe'],
         'salle' => $edt['salle'],
         'frequence' => $edt['frequence'],
@@ -312,7 +243,113 @@
         'note' => (($edt['semaine'] == '') ? '' : 'Sem '.$edt['semaine']),
         'fgColor' => $fgColor,
         'bgColor' => $bgColor,
-        'nbrSameTime' => $nbrSameTime,
+        'columnPerDay' => $columnPerDay,
+        'session' => ($login == $_SESSION['login'])
+      ));
+    }
+
+    return $arrayEdt;
+  }
+
+
+  function printWeek($login, $week, $getEdt = 'getEdtEtu', $nbrOfDays = 7) {
+    $days = array();
+    $allEdt = array();
+    $arrayEdt = array();
+    $columnPerDay = 0;
+    $date = new DateTime($week);
+
+    for ($i = 0; $i < $nbrOfDays; $i++) {
+      if (!isAGoodDate($date->format('Y-m-d')))
+        continue;
+
+      $cours = TRUE;
+      $td = TRUE;
+      $tp = TRUE;
+
+      $query = $GLOBALS['bdd']->prepare('SELECT * FROM jours WHERE jour <= ? ORDER BY jour DESC LIMIT 1');
+      $GLOBALS['bdd']->execute($query, array($date->format('Y-m-d')));
+
+      $data = $query->fetch();
+      $type = $data['type'];
+
+      if ($type < 10) {
+        $day = $type;
+      }
+      else if ($type < 20) {
+        $day = $type - 10;
+        $cours = FALSE;
+      }
+      else if ($type < 30) {
+        $day = $type - 20;
+        $cours = FALSE;
+        $td = FALSE;
+      }
+      else if ($type < 40) {
+        $day = $type - 30;
+        $cours = FALSE;
+        $tp = FALSE;
+      }
+      else if ($type < 50) {
+        $day = $type - 40;
+        $td = FALSE;
+        $tp = FALSE;
+      }
+      else {
+        $day = $type - 50;
+        $cours = FALSE;
+        $td = FALSE;
+        $tp = FALSE;
+      }
+
+      array_push($days, array('date' => $date->format('Y-m-d'), 'jour' => $day, 'semaine' => $data['alternance'], 'cours' => $cours, 'td' => $td, 'tp' => $tp));
+      $date->modify('+1 day');
+    }
+
+    foreach ($days as $i => $day) {
+      $dayEdt = $getEdt($login, 1, NULL, $day['jour']);
+      foreach ($dayEdt as $edt) {
+        if (($edt['type'] == 'C' && $day['cours']) || ($edt['type'] == 'D' && $day['td']) || ($edt['type'] == 'T' && $day['tp']) || ($edt['type'] == '' && ($day['cours'] || $day['td']))) {
+          if ($edt['semaine'] != '') {
+            if (($day['semaine'] === 'A' && $edt['semaine'] === 'B') || ($day['semaine'] === 'B' && $edt['semaine'] === 'A'))
+              continue;
+
+            $edt['note'] = 'Cette semaine A';
+          }
+
+          $edt['jour'] = $i;
+          array_push($allEdt, $edt);
+        }
+      }
+    }
+
+    foreach ($allEdt as $i => $edt) {
+      // Conversion de minutes en heures
+      $exploded = explode(':', $edt['debut'], 2);
+      $debut = join('.', array($exploded[0], 100/60*$exploded[1]));
+      $exploded = explode(':', $edt['fin'], 2);
+      $fin = join('.', array($exploded[0], 100/60*$exploded[1]));
+
+      $bgColor = (isset($edt['color']) ? ($edt['color'] == NULL ? $edt['colorUV'] : $edt['color']) : (isset($edt['colorUV']) ? $edt['colorUV'] : $GLOBALS['colors'][$GLOBALS['id'] % count($GLOBALS['colors'])]));
+      $fgColor = getFgColor($bgColor);
+
+      array_push($arrayEdt, array(
+        'id' => $GLOBALS['id']++,
+        'login' => $login,
+        'column' => $edt['jour'],
+        'duration' => $fin - $debut,
+        'startTime' => $debut - 7,
+        'horaire' => $edt['debut'].'-'.$edt['fin'],
+        'idUV' => $edt['id'],
+        'uv' => $edt['uv'],
+        'type' => ($edt['type'] == 'D' ? 'TD' : ($edt['type'] == 'C' ? 'Cours' : ($edt['type'] == 'T' ? 'TP' : ''))),
+        'groupe' => $edt['groupe'],
+        'salle' => $edt['salle'],
+        'frequence' => '1',
+        'semaine' => '',
+        'note' => ((isset($edt['note'])) ? $edt['note'] : ''),
+        'fgColor' => $fgColor,
+        'bgColor' => $bgColor,
         'columnPerDay' => $columnPerDay,
         'session' => ($login == $_SESSION['login'])
       ));
@@ -334,10 +371,10 @@
       $nbrSameTime = count(array_keys($passed, array($edt['jour'], $edt['debut'], $edt['fin'])));
 
       // Conversion de minutes en heures
-      $exploded = explode(':', $edt['debut']);
-      $debut = join('.', array($exploded[0], 50/30*$exploded[1]));
-      $exploded = explode(':', $edt['fin']);
-      $fin = join('.', array($exploded[0], 50/30*$exploded[1]));
+      $exploded = explode(':', $edt['debut'], 2);
+      $debut = join('.', array($exploded[0], 100/60*$exploded[1]));
+      $exploded = explode(':', $edt['fin'], 2);
+      $fin = join('.', array($exploded[0], 100/60*$exploded[1]));
 
       $query = $GLOBALS['bdd']->prepare('SELECT color FROM uvs, cours WHERE uvs.uv = ? AND cours.login = ? AND uvs.id = cours.id LIMIT 1');
       $GLOBALS['bdd']->execute($query, array($uv, $_SESSION['login']));
@@ -362,7 +399,7 @@
         'horaire' => $edt['debut'].'-'.$edt['fin'],
         'idUV' => $edt['id'],
         'uv' => $edt['uv'],
-        'type' => ($edt['type'] == 'D' ? $edt['type'] = 'TD' : ($edt['type'] == 'C' ? $edt['type'] = 'Cours' : $edt['type'] = 'TP')),
+        'type' => ($edt['type'] == 'D' ? 'TD' : ($edt['type'] == 'C' ? 'Cours' : 'TP')),
         'groupe' => $edt['groupe'],
         'salle' => $edt['salle'],
         'frequence' => $edt['frequence'],
@@ -425,7 +462,21 @@
     }
   }
   elseif ($mode == 'organiser') {
-    $all = array_merge(printManyEdtEtu(array_merge($_SESSION['etuActive'], array($_SESSION['login']))));
+    $all = array_merge($all, printManyEdtEtu(array_merge($_SESSION['etuActive'], array($_SESSION['login']))));
+  }
+  elseif ($mode == 'planifier') {
+    if (isset($_GET['cours']) && $_GET['cours'] = '1')
+      $all = array_merge($all, printWeek($_SESSION['login'], $_SESSION['week']));
+    elseif (isset($_GET['event']) && $_GET['event'] = '1')
+      $all = array_merge($all, printWeek($_SESSION['login'], $_SESSION['week'], 'getEdtEvent'));
+    elseif (isset($_GET['reu']) && $_GET['reu'] = '1')
+      $all = array_merge($all, printWeek($_SESSION['login'], $_SESSION['week'], 'getEdtReu'));
+    elseif (isset($_GET['salle']) && is_string($_GET['salle'])  && !empty($_GET['salle']))
+      $all = array_merge($all, printWeek($_GET['salle'], $_SESSION['week'], 'getEdtSalle'));
+    else {
+      $all = array_merge($all, printWeek($_SESSION['login'], $_SESSION['week']));
+      //$all = array_merge($all, printWeek($_SESSION['login'], $_SESSION['week'], 'getEdtReu'));
+    }
   }
   else {
     if (isset($_GET['uv']) && is_string($_GET['uv']) && !empty($_GET['uv']))

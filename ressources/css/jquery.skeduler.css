@@ -44,7 +44,6 @@ body {
   background-color: #D3E0EF;
 }
 
-.skeduler-headers > div:last-child,
 .skeduler-main-body > div > div.skeduler-cell10,
 .skeduler-main-body > div > div.skeduler-cell20,
 .skeduler-main-body > div > div.skeduler-cell21  {
@@ -98,6 +97,14 @@ body {
 .skeduler-main-body > div > div.skeduler-cell21 {
   width: 68.5px;
   height: 20px;
+}
+
+.skeduler-main-body > div > div.skeduler-cell10.allDay {
+  height: 40px;
+}
+
+.skeduler-main-timeline > div.allDay {
+  height: 37px;
 }
 
 .skeduler-main-body > div > div.skeduler-cell20 {

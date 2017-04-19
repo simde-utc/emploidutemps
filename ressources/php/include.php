@@ -35,6 +35,7 @@
   		$_SESSION['ticket'] = $_GET['ticket'];
       $_SESSION['tab'] = array('uv' => array(), 'etu' => array());
       $_SESSION['etuActive'] = array();
+      $_SESSION['week'] = (isset($_GET['week']) && is_string($_GET['week']) && isAGoodDate($_GET['week'])) ? $_GET['week'] : date('Y-m-d', strtotime('monday this week'));
 
       $get = '?';
       foreach ($_SESSION['_GET'] as $key => $value) {
@@ -98,7 +99,7 @@
         <div>', $etu['semestre'], ' - ', $etu['login'], '</div>
         <div><a href="mailto:', $mail, '">', $mail, '</a></div>
       </div>
-      <button onClick="edtEtu(\'', $etu['login'], '\')"><i class="fa fa-plus" aria-hidden="true"></i></button>
+      <button onClick="edtEtu(\'', $etu['login'], '\')"><i class="fa ', (in_array($etu['login'], $_SESSION['tab']['etu']) ? 'fa-search' : 'fa-plus'), '" aria-hidden="true"></i></button>
     </div>';
   }
 
@@ -145,9 +146,19 @@
     }
 
     if ($where != FALSE) {
-      printSelf($etus[$where]);
+      //printSelf($etus[$where]);
       unset($etus[$where]);
     }
+
+    $mailto = array();
+    foreach ($etus as $etu)
+      array_push($mailto, $etu['mail']);
+
+    echo '<div class="searchCard" style="width: 100%;">
+      <a href="mailto:', implode(';', $mailto), '">Envoyer un mail au groupe</a>
+      <button onClick="uvMoodle(' + $idUV + ');"><i class="fa fa-external-link" aria-hidden="true"></i> Moodle</button>
+      <button onClick="uvWeb(' + $idUV + ');"><i class="fa fa-external-link" aria-hidden="true"></i> UVWeb</button>
+    </div>';
 
     foreach ($etus as $etu)
       printEtu($etu);
@@ -180,7 +191,7 @@
       $i = 0;
 
       if ($begin != 0)
-        echo '<div class="searchCard" style="background-color: #0000FF; color: #FFF; padding: 5px; height: 100%; width: 100%; text-align: center; display: block;" onClick="window.search=\'\'; printEtuAndUVList(', $begin - $limit, ');">Cliquez ici pour afficher les résultats précédents</div>';
+        echo '<div class="searchCard" style="cursor: pointer; background-color: #0000FF; color: #FFF; padding: 5px; height: 100%; width: 100%; text-align: center; display: block;" onClick="window.search=\'\'; printEtuAndUVList(', $begin - $limit, ');">Cliquez ici pour afficher les résultats précédents</div>';
 
       foreach ($etus as $etu) {
         if ($i++ < $begin)
@@ -201,7 +212,7 @@
       }
 
       if ($i > $limit + $begin)
-        echo '<div class="searchCard" style="background-color: #0000FF; color: #FFF; padding: 5px; height: 100%; width: 100%; text-align: center; display: block;" onClick="window.search=\'\'; printEtuAndUVList(', $begin + $limit, ');">Cliquez ici pour afficher la suite de la recherche</div>';
+        echo '<div class="searchCard" style="cursor: pointer; background-color: #0000FF; color: #FFF; padding: 5px; height: 100%; width: 100%; text-align: center; display: block;" onClick="window.search=\'\'; printEtuAndUVList(', $begin + $limit, ');">Cliquez ici pour afficher la suite de la recherche</div>';
     }
   }
 
@@ -276,9 +287,54 @@
     return $query->fetch();
   }
 
-  function getEdtEtu($login, $actuel = 1, $echange = NULL) {
-    $query = $GLOBALS['bdd']->prepare('SELECT uvs.id, uvs.uv, uvs.type, uvs.groupe, uvs.jour, uvs.debut, uvs.fin, uvs.salle, uvs.frequence, uvs.semaine, cours.color, couleurs.color AS colorUV FROM uvs, cours, couleurs WHERE cours.login = ? AND cours.actuel = ? AND (? IS NULL OR cours.echange = ?) AND uvs.uv = couleurs.uv AND uvs.id=cours.id ORDER BY uvs.jour, uvs.debut, semaine, groupe');
-    $GLOBALS['bdd']->execute($query, array($login, $actuel, $echange, $echange));
+  function getEdtSalle($ecart, $useless1, $useless2, $day = NULL) {
+    if ($ecart < 0)
+      $query = $GLOBALS['bdd']->prepare('SELECT salles.salle, salles.type, salles.jour, salles.debut, salles.fin, salles.ecart FROM salles WHERE (salles.ecart >= -? OR salles.ecart >= -? + 1) AND (? IS NULL OR salles.jour = ?) ORDER BY salles.jour, salles.debut, salles.fin, salles.salle');
+    else
+      $query = $GLOBALS['bdd']->prepare('SELECT salles.salle, salles.type, salles.jour, salles.debut, salles.fin, salles.ecart FROM salles WHERE (salles.ecart = ? OR salles.ecart = ? + 1) AND (? IS NULL OR salles.jour = ?) ORDER BY salles.jour, salles.debut, salles.fin, salles.salle');
+
+    $GLOBALS['bdd']->execute($query, array($ecart, $ecart, $day, $day));
+
+    $data = $query->fetchAll();
+
+    $passed = array();
+    foreach ($data as $edt)
+      array_push($passed, array($edt['jour'], $edt['debut'], $edt['fin']));
+
+    $edts = array();
+    foreach ($data as $i => $edt) {
+      $info = array($edt['jour'], $edt['debut'], $edt['fin']);
+      $nbrSameTime = count(array_keys($passed, $info));
+
+      if ($nbrSameTime == 0)
+        continue;
+
+      $edt['salle'] = '';
+      $edt['note'] = array('C' => array(), 'D' => array());
+      $edt['id'] = $nbrSameTime;
+      $edt['uv'] = $nbrSameTime.' dispo'.($nbrSameTime == 1 ? '' : 's');
+
+      foreach($passed as $j => $elem) {
+        if($elem == $info) {
+          unset($passed[$j]);
+          array_push($edt['note'][$data[$j]['type']], $data[$j]['salle']);
+        }
+      }
+
+      array_push($edts, $edt);
+    }
+
+    foreach ($edts as $i => $edt) {
+      $edts[$i]['type'] = '';
+      $edts[$i]['groupe'] = '';
+    }
+
+    return $edts;
+  }
+
+  function getEdtEtu($login, $actuel = 1, $echange = NULL, $day = NULL) {
+    $query = $GLOBALS['bdd']->prepare('SELECT uvs.id, uvs.uv, uvs.type, uvs.groupe, uvs.jour, uvs.debut, uvs.fin, uvs.salle, uvs.frequence, uvs.semaine, cours.color, couleurs.color AS colorUV FROM uvs, cours, couleurs WHERE cours.login = ? AND cours.actuel = ? AND (? IS NULL OR cours.echange = ?) AND (? IS NULL OR uvs.jour = ?) AND uvs.uv = couleurs.uv AND uvs.id=cours.id ORDER BY uvs.jour, uvs.debut, semaine, groupe');
+    $GLOBALS['bdd']->execute($query, array($login, $actuel, $echange, $echange, $day, $day));
 
     return $query->fetchAll();
   }
@@ -346,6 +402,27 @@
     }
   }
 
+  function isAGoodDate($week) {
+    $query = $GLOBALS['bdd']->prepare('SELECT * FROM jours WHERE jour <= ? ORDER BY jour DESC LIMIT 1');
+    $GLOBALS['bdd']->execute($query, array($week));
+
+    if ($query->rowCount() === 0)
+      return FALSE;
+
+    $data = $query->fetch();
+
+    if ($data['jour'] === $week)
+      return TRUE;
+    else if ($data['type'] > 50) {
+      $date1 = new DateTime($week);
+      $date2 = new DateTime($data['jour']);
+      $date2->modify('+'.($data['type'] - 50).' day');
+      return $date1 <= $date2;
+    }
+    else
+      return FALSE;
+  }
+
   if (isUpdating()) {
     echo 'Emploi d\'UTemps est en cours de mise à jour, veuillez patienter. La page se relancera d\'elle-même lorsque la mise à jour sera terminée
     <script>
@@ -353,4 +430,7 @@
     </script>';
     exit;
   }
+
+  if (isset($_GET['week']) && isAGoodDate($_GET['week']))
+    $_SESSION['week'] = $_GET['week'];
 ?>

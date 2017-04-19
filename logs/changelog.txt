@@ -198,7 +198,28 @@ Stable 1.2: 2017-04-01
   - Correction d'un léger bug du Trombi
   - Affichage des logins dans le Trombi
   - Ajout d'un lien mail direct dans le Trombi
-  - Regroupement des fichiers pdf
+  - Regroupement des fichiers PDF
   - Ajout du téléchargement de l'emploi du temps sous format PDF avec différentes options
   - Modification du téléchargement sous format iCal, ajout de l'option de dates pour les apprenti(e)s
   - Ajout d'un répertoire API pour les projets API comme le PicBot qui souhaiterait afficher le prochain cours
+
+Stable 1.2.1: 2017-04-02
+  - Amélioration de l'export PDF (affichage ou non de chaque jour de la semaine, avec centrages)
+  - Ajout du mode d'affichage: Planifier (qui permettra plus tard de planifier en fonction de la semaine)
+
+Stable 1.3: 2017-04-17
+  - Création de l'affichage Planifier en fonction de la semaine pour les cours et les salles libres en fonction des jours et du nombre d'heures
+  - Ajout de catégories pour le mode Planifier avec un affichage en fonction de la semaine
+  - Adapatation du code pour la future mise à jour avec l'ajout de l'affichage des évenements, réunions
+  - Amélioration de l'adaptation d'affichage du calendrier en fonction de la taille
+  - Amélioration de l'affichage du calendirer dans sa globalité (bordures)
+  - Amélioration finale du PDF (taille du canevas ne correspondant pas toujours à la taille du calendrier, les pixels doivent être pairs)
+  - Amélioration de la gesiton de la date actuelle
+  - Test d'amélioration de la mise à jour
+  - Amélioration du système de déconnexion
+  - Correction de certaines parties du code un peu WTF (ca fait toujours mal de relire son code 6 mois après xD)
+  - Optimisation du calendrier: les affichages en parrallèle d'évenements sont mieux gérés
+  - Coté serveur: optimisation de la génération des évènements
+  - Ajout du créneau toute la journée pour les évènements durant plus de 14h en journée (uniquement pour le mode planifier)
+  - Ajout d'une rubrique à la place de soi-même lors du listing des étudiants d'un groupe
+  - Correction de bugs

@@ -46,3 +46,9 @@ Modifier exchange pour utuliser à la place de $_SESSION => $envoie[0] au cas o�
 Ajouter un mode d'affichage avec l'emploi du temps actuel
 Ajouter la possibilité d'ajoutr un créneau
 Mettre pareil la proposition d'envoi comme celle reçu
+Création de groupe par le biais du Trombi
+Sauvegarde des onglets
+Même couleur pendant la comparaison
+
+Mode Afficher => Consulter
+Mode Planifier=> Afficher

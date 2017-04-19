@@ -32,7 +32,7 @@
         echo '<button onClick="parameters(\'reinscription\');""><i class="fa fa-check" aria-hidden="true"></i> Se réinscrire au service</button>';
     }
 
-    echo '<button onClick="window.location.href = \'/emploidutemps\' + \'/deconnexion.php\'"><i class="fa fa-sign-out" aria-hidden="true"></i> Se déconnecter</button>
+    echo '<button onClick="deconnexion();"><i class="fa fa-sign-out" aria-hidden="true"></i> Se déconnecter</button>
     </div>';
   }
   elseif ($_GET['param'] == 'exporter') {
@@ -40,9 +40,9 @@
     <div class="parameters" style="text-align: center;">
       <button onClick="parameters(\'ical\');">Obtenir son calendrier sous format iCal (.ics)</button>
       <button onClick="parameters(\'pdf\');">Obtenir son calendrier sous format PDF (.pdf)</button>
+      <button onClick="window.location.href = \'http://wwwetu.utc.fr/sme/EDT/', $_SESSION['login'], '.edt\';">Obtenir son calendrier sous format SME (mail reçu)</button>
       <button onClick="window.location.href = \'https://\' + window.location.hostname + \'/emploidutemps\' + \'/ressources/pdf/alternances.pdf\';">Télécharger le calendrier des alternances</button>
       <button onClick="window.location.href = \'https://\' + window.location.hostname + \'/emploidutemps\' + \'/ressources/pdf/infosRentree.pdf\';">Télécharger les infos de rentrée</button>
-      <button>Bientôt d\'autres options</button>
     </div>';
   }
   elseif ($_GET['param'] == 'ical') {
@@ -65,8 +65,14 @@
     echo '<div onClick="parameters(\'exporter\')" style="cursor: pointer" id="popupHead">Obtenir en PDF</div>
     <div class="parameters" style="text-align: center;">
       Titre du pdf: <input class="focusedInput submitedInput" id="pdfTitle" value=""/><br />
-      <input type="checkbox" id="pdfCheckTabs" /><label for="pdfCheckTabs">Afficher la liste des onglets</label><br />
-      <input type="checkbox" id="pdfCheckCalendar" CHECKED/><label for="pdfCheckCalendar">Afficher le calendrier</label><br /><br />
+      <input type="checkbox" id="pdfCheckTabs" /><label for="pdfCheckTabs">Afficher la liste des onglets d\'étudiants</label><br /><br />
+      <input type="checkbox" id="pdfCheck0" CHECKED /><label for="pdfCheck0">Afficher le lundi</label>
+      <input type="checkbox" id="pdfCheck1" CHECKED /><label for="pdfCheck1">Afficher le mardi</label><br />
+      <input type="checkbox" id="pdfCheck2" CHECKED /><label for="pdfCheck2">Afficher le mercredi</label>
+      <input type="checkbox" id="pdfCheck3" CHECKED /><label for="pdfCheck3">Afficher le jeudi</label><br />
+      <input type="checkbox" id="pdfCheck4" CHECKED /><label for="pdfCheck4">Afficher le vendredi</label>
+      <input type="checkbox" id="pdfCheck5" CHECKED /><label for="pdfCheck5">Afficher le samedi</label><br />
+      <input type="checkbox" id="pdfCheck6" CHECKED /><label for="pdfCheck6">Afficher le dimanche</label><br /><br />
       Nom du fichier: <input class="focusedInput submitedInput" id="pdfName" value="edt_actuel"/><br />
       <button class="submitedButton" onClick="getPDF();">Télécharer son emploi du temps</button>
     </div>';
@@ -196,6 +202,19 @@
       La bise,<br />
       Samy et le SiMDE
     </div>';
+  }
+  elseif ($_GET['param'] == 'test') {
+    echo '<iframe id="Example"
+    name="Example2"
+    title="Example2"
+    width="4000"
+    height="3000"
+    frameborder="0"
+    scrolling="no"
+    marginheight="0"
+    marginwidth="0"
+    src="https://assos.utc.fr/emploidutemps/">
+</iframe>';
   }
   else
     echo '<div onClick="parameters()" style="cursor: pointer" id="popupHead">Cliquez ici pour retourner au menu</div>

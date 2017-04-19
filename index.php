@@ -23,12 +23,18 @@
         else
           $mode = (isset($_GET['mode']) && is_string($_GET['mode']) && !empty($_GET['mode']) ? $_GET['mode'] : '');
 
-        if (isset($_GET['mode']))
+        $get = (substr($_SERVER['REQUEST_URI'], strpos($_SERVER['REQUEST_URI'], "?") + 1) == '' ? '' : '&').substr($_SERVER['REQUEST_URI'], strpos($_SERVER['REQUEST_URI'], "?") + 1);
+
+        if (isset($_GET['mode'])) {
           echo 'phpGet = true;';
 
-        echo 'selectMode(\'', (substr($_SERVER['REQUEST_URI'], strpos($_SERVER['REQUEST_URI'], "?") + 1) == '' ? '' : '&'), substr($_SERVER['REQUEST_URI'], strpos($_SERVER['REQUEST_URI'], "?") + 1), '\', \'', $mode, "');";
+          if ($_GET['mode'] == 'planifier')
+            echo 'planifierGet = \''.$get.'\';';
+        }
 
-        // Lance le paramètre demander (désinscription par exemple)
+        echo 'selectMode(\'', $get, '\', \'', $mode, "');";
+
+        // Lance le paramètre demanér (désinscription par exemple)
         if (isset($_GET['param']) && is_string($_GET['param']) && !empty($_GET['param']))
           echo 'setTimeout(function () { parameters("', $_GET['param'], '"); }, 1000);';
         //  Animer l'affichage d'une UV à échanger lors de la réception du mail

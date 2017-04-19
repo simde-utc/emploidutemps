@@ -193,6 +193,8 @@ class MAJ
           }
         }
 
+        self::insertSalles();
+
         unlink($file);
         closedir($handle);
 
@@ -296,6 +298,52 @@ class MAJ
   private static function insertCours ($login, $id) {
     $queryAddCours = $GLOBALS['bdd']->prepare('INSERT INTO cours(login, id) VALUES(?, ?)');
     $GLOBALS['bdd']->execute($queryAddCours, array($login, $id));
+  }
+
+  private static function insertSalle($salle, $type, $jour, $debut, $fin) {
+    $debutDispo = array(7 => '07:00', 8 => '08:00', 9 => '09:00', 10 => '10:15', 11 => '11:15', 12 => '12:15', 13 => '13:15', 14 => '14:15', 15 => '15:15', 16 => '16:30', 17 => '17:30', 18=> '18:30', 19 => '19:30');
+    $finDispo = array(8 => '08:00', 9 => '09:00', 10 => '10:00', 11 => '11:15', 12 => '12:15', 13 => '13:15', 14 => '14:15', 15 => '15:15', 16 => '16:15', 17 => '17:30', 18 => '18:30', 19 => '19:30', 20 => '20:30', 21 => '21:00');
+
+    $debutArray = array_map('intval', explode(':', $debut, 2));
+    $debut = round(($debutArray[0] * 60 + $debutArray[1]) / 60);
+    $finArray = array_map('intval', explode(':', $fin, 2));
+    $fin = floor(($finArray[0] * 60 + $finArray[1]) / 60);
+
+    $ecart = $fin - $debut;
+
+    if ($ecart >= 1 && $debut < 20) {
+      echo $debutDispo[$debut], ' - ', $finDispo[$fin], '<br />';
+      $query = $GLOBALS['bdd']->prepare('INSERT INTO salles(salle, type, jour, debut, fin, ecart) VALUES(?, ?, ?, ?, ?, ?)');
+      $GLOBALS['bdd']->execute($query, array($salle, $type, $jour, $debutDispo[$debut], $finDispo[$fin], $ecart));
+    }
+  }
+
+  public static function insertSalles() {
+    $query = $GLOBALS['bdd']->prepare('SELECT salle, type FROM uvs WHERE salle != "" AND type != "T" GROUP BY salle');
+    $GLOBALS['bdd']->execute($query, array());
+    $salles = $query->fetchAll();
+    $query = $GLOBALS['bdd']->prepare('SELECT debut, fin FROM uvs WHERE salle = ? AND jour = ? ORDER BY debut, fin');
+
+    foreach ($salles as $salle) {
+      for ($jour = 0; $jour < 5; $jour++) { // On compte que la semaine, le week-end on considère tout fermé
+        $debutDispo = '07:00';
+        $finDispo = '21:00';
+        $GLOBALS['bdd']->execute($query, array($salle['salle'], $jour));
+        $infos = $query->fetchAll();
+
+        if ($query->rowCount() == 0)
+          self::insertSalle($salle['salle'], $salle['type'], $jour, $debutDispo, $finDispo);
+        else {
+          foreach ($infos as $info) {
+            self::insertSalle($salle['salle'], $salle['type'], $jour, $debutDispo, $info['debut']);
+            $debutDispo = $info['fin'];
+          }
+
+          $fin = $info['fin'][0] * 60 + $info['fin'][1];
+          self::insertSalle($salle['salle'], $salle['type'], $jour, $infos[count($infos) - 1]['fin'], $finDispo);
+        }
+      }
+    }
   }
 
 

@@ -1,3 +1,5 @@
+var HOUR_MIN = 7;
+var HOUR_MAX = 21;
 var get = '';
 var phpGet = false;
 var card = '';
@@ -14,6 +16,8 @@ var click = false;
 var headers = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi",  "Samedi", 'Dimanche'];
 var date = new Date();
 var focusedDay = (date.getDay() + 6) % 7;
+var planifierGet = '';
+var week = '';
 
 function newRequest(get, tab) {
   loading();
@@ -37,7 +41,7 @@ function selectMode(get, mode) {
   if (mode !== '')
     window.mode = mode;
 
-  if (window.mode == 'afficher') {
+   if (window.mode == 'afficher') {
     window.columnPerDay = 1;
     window.compare = 0;
     window.idUV = '';
@@ -79,13 +83,24 @@ function selectMode(get, mode) {
         searchTab();
     }, 500);
   }
+  else if (window.mode == 'planifier') {
+    window.columnPerDay = 1;
+    window.compare = 0;
+    window.idUV = '';
+
+    newRequest(window.planifierGet + (window.week === '' ? '' : '&week=' + window.week), '');
+  }
   else
     selectMode('', 'afficher');
-  /*
-  else if (mode == 'planifier') {
-    window.columnPerDay = 2;
-    window.compare = 0;
-  }*/
+}
+
+function planifier(get, week) {
+  if (get == '')
+    window.week = week;
+  else
+    window.planifierGet = '&' + get;
+
+  selectMode('', 'planifier');
 }
 
 function loading() {
@@ -159,10 +174,11 @@ function edtEtu(login) {
   window.uv = '';
   window.idUV = '';
   window.login = login;
+  window.planifierGet = '';
 
   unFocus();
   popupClose();
-  newRequest('&login=' + login, '&addTab=' + login);
+  newRequest('&week=' + window.week + '&login=' + login, '&addTab=' + login);
 }
 
 function compareEtu(login) {
@@ -235,7 +251,7 @@ function popup(info) {
   if ($(".submitedInput").length != 0 && $(".submitedButton").length != 0)
     $(".submitedInput").last().keyup(function (event) {
       code = event.keyCode || event.which;
-      if(code == 27 || code == 32|| code == 13 || code == 188 || code == 186)
+      if(code == 13)
         $(".submitedButton")[0].click();
     });
 }
@@ -403,6 +419,13 @@ function parameters(param) {
   });
 }
 
+function createTask(day, begin, duration, description) {
+  popup("<div id='popupHead'>Créer un évènement</div>\
+  <div class='parameters'>Jour: " + window.week + " " + day + "<br />Début: " + toTimeString(begin) + "<br />Fin: " + toTimeString(begin + duration) + "<br />Description: " + description + "<br />\
+    <button style='background-color: #00FF00' onClick='createTask(" +  + ", 1);'>Créer</button>\
+  </div>");
+}
+
 function getICal() {
   var get = '?begin=' + ($('#beginICS').val() === '' ? $('#beginICS').attr('placeholder') : $('#beginICS').val()) + '&end=' + ($('#endICS').val() === '' ? $('#endICS').attr('placeholder') : $('#endICS').val());
 
@@ -415,15 +438,46 @@ function getICal() {
 }
 
 function getPDF() {
+  var headers = $('.skeduler-headers div');
+  var days = $('.skeduler-main-body .days');
+  var length = window.headers.length;
+  var displays = [];
+  var hidden = 0;
   doc = new jsPDF('l', 'mm', [297, 210]);
 
   doc.text($('#pdfTitle').val(), 149, 8, null, null, 'center');
   if ($('#pdfCheckTabs').prop('checked')) {
-    html2canvas($('#menu'), { onrendered: function(canvas) { doc.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', 10, 12); }});
+    html2canvas($('#menu'), { onrendered: function(canvas) { doc.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', 10, 15); }});
   }
-  if ($('#pdfCheckCalendar').prop('checked')) {
-    html2canvas($('#skeduler-container'), { onrendered: function(canvas) { doc.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', 10, 25); doc.save($('#pdfName').val() + '.pdf'); }});
+
+  for (var i = 0; i < length; i++) {
+    displays[i] = $(headers[i]).css('display');
+
+    if ($('#pdfCheck' + i).prop('checked')) {
+      $(days[i]).css('display', 'block');
+      $(headers[i]).css('display', 'block');
+    }
+    else {
+      $(days[i]).css('display', 'none');
+      $(headers[i]).css('display', 'none');
+      hidden += 1;
+    }
   }
+
+  var calendar = $('#skeduler-container');
+  var width = calendar.css('width');
+  calendar.css('width', (1036 - (hidden * 32)) + 'px');
+
+  html2canvas(calendar[0], { onrendered: function(canvas) {
+    doc.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', 10 + (hidden * 18), 25 + ($('#pdfCheckTabs').prop('checked') ? 10 : 0));
+
+    for (var i = 0; i < length; i++) {
+      $(days[i]).css('display', displays[i]);
+      $(headers[i]).css('display', displays[i]);
+    }
+
+    doc.save($('#pdfName').val() + '.pdf');
+  }});
 }
 
 function setSkeduler(day) {
@@ -432,16 +486,17 @@ function setSkeduler(day) {
   var width = $(window).width();
 
   var numbers = [200.4, 339.2, 478, 616.8, 755.6, 894.4, 1033.2];
-  var number = headers.length;
+  var length = window.headers.length;
+  var number = length;
 
   var focusedDay = day;
 
-  if (focusedDay === undefined || focusedDay < 0 || focusedDay >= headers.length)
+  if (focusedDay === undefined || focusedDay < 0 || focusedDay >= length)
     focusedDay = window.focusedDay;
 
   var indexs = [focusedDay];
 
-  for (var i = 0; i < headers.length; i++) {
+  for (var i = 0; i < length; i++) {
     if (numbers[i] > width) {
       number = i;
       break;
@@ -452,21 +507,21 @@ function setSkeduler(day) {
   //$('#toPDF').css('display', 'none');
   $('#otherDay').css('display', 'block').css('padding-right', numbers[number - 1] - 60);
 
-  if (number >= headers.length) {
+  if (number >= length) {
     //$('#toPDF').css('display', 'block').css('padding-right', numbers[number - 1] - 60);
     $('#otherDay').css('display', 'none');
 
-    for (var i = 0; i < headers.length; i++)
+    for (var i = 0; i < length; i++)
       indexs.push(i);
   }
   else if (number === 2) {
-    if (focusedDay + 1 === headers.length)
+    if (focusedDay + 1 === length)
       indexs.push(focusedDay - 1);
     else
       indexs.push(focusedDay + 1);
   }
   else if (number === 3) {
-    if (focusedDay + 1 === headers.length) {
+    if (focusedDay + 1 === length) {
       indexs.push(focusedDay - 1);
       indexs.push(focusedDay - 2);
     }
@@ -479,7 +534,7 @@ function setSkeduler(day) {
     }
   }
   else if (number === 4) {
-    if (focusedDay + 1 === headers.length) {
+    if (focusedDay + 1 === length) {
       indexs.push(focusedDay - 1);
       indexs.push(focusedDay - 2);
       indexs.push(focusedDay - 3);
@@ -492,7 +547,7 @@ function setSkeduler(day) {
       }
       else {
         indexs.push(focusedDay - 1);
-        if (focusedDay + 2 === headers.length)
+        if (focusedDay + 2 === length)
           indexs.push(focusedDay - 2);
         else
           indexs.push(focusedDay + 2);
@@ -500,7 +555,7 @@ function setSkeduler(day) {
     }
   }
   else if (number === 5) {
-    if (focusedDay + 1 === headers.length) {
+    if (focusedDay + 1 === length) {
       indexs.push(focusedDay - 1);
       indexs.push(focusedDay - 2);
       indexs.push(focusedDay - 3);
@@ -515,7 +570,7 @@ function setSkeduler(day) {
       }
       else {
         indexs.push(focusedDay - 1);
-        if (focusedDay + 2 === headers.length) {
+        if (focusedDay + 2 === length) {
           indexs.push(focusedDay - 2);
           indexs.push(focusedDay - 3);
         }
@@ -530,7 +585,7 @@ function setSkeduler(day) {
     }
   }
   else if (number === 6) {
-    if (focusedDay + 1 === headers.length) {
+    if (focusedDay + 1 === length) {
       indexs.push(focusedDay - 1);
       indexs.push(focusedDay - 2);
       indexs.push(focusedDay - 3);
@@ -547,7 +602,7 @@ function setSkeduler(day) {
       }
       else {
         indexs.push(focusedDay - 1);
-        if (focusedDay + 2 === headers.length) {
+        if (focusedDay + 2 === length) {
           indexs.push(focusedDay - 2);
           indexs.push(focusedDay - 3);
           indexs.push(focusedDay - 4);
@@ -560,7 +615,7 @@ function setSkeduler(day) {
           }
           else {
             indexs.push(focusedDay - 2);
-            if (focusedDay + 3 === headers.length)
+            if (focusedDay + 3 === length)
               indexs.push(focusedDay - 3);
             else {
               indexs.push(focusedDay + 3);
@@ -573,6 +628,9 @@ function setSkeduler(day) {
 
   var diff = false;
   headers.each(function(index) {
+    if (index >= length)
+      return
+
     if (indexs.indexOf(index) === -1) {
       if ($(this).css('display') === 'block')
         diff = true;
@@ -605,7 +663,7 @@ function setSkeduler(day) {
       }
     }
     else if (focusedDay - window.focusedDay === 1) {
-      for (var i = focusedDay + 1; i < headers.length; i++) {
+      for (var i = focusedDay + 1; i < length; i++) {
         setSkeduler(i);
         if (window.focusedDay - focusedDay != 1)
           break;
