@@ -4,8 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=0.75">
-  <link rel="stylesheet" href="ressources/css/jquery.skeduler.css" type="text/css">
-  <link rel="stylesheet" href="ressources/css/card.skeduler.css" type="text/css">
+  <link rel="stylesheet" href="ressources/css/style.css" type="text/css">
   <link rel="stylesheet" href="ressources/font-awesome/css/font-awesome.min.css">
   <script type="text/javascript" src="ressources/js/jquery-3.1.1.min.js"></script>
   <script type="text/javascript" src="ressources/js/interraction.js"></script>
@@ -32,7 +31,8 @@
             echo 'planifierGet = \''.$get.'\';';
         }
 
-        echo 'selectMode(\'', $get, '\', \'', $mode, "');";
+        echo 'selectMode(\'', $get, '\', \'', $mode, "');
+        window.week = '", $_SESSION['week'], "'";
 
         // Lance le paramètre demanér (désinscription par exemple)
         if (isset($_GET['param']) && is_string($_GET['param']) && !empty($_GET['param']))

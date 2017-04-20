@@ -62,55 +62,22 @@ END:VTIMEZONE';
   $begin = (isset($_GET['begin']) ? $_GET['begin'] : '0001-01-01');
   $end = (isset($_GET['end']) ? $_GET['end'] : '9999-12-31');
 
-  $jours = $GLOBALS['bdd']->prepare('SELECT * FROM jours WHERE jour BETWEEN ? AND ? ORDER BY jour');
+  $jours = $GLOBALS['bdd']->prepare('SELECT * FROM days WHERE begin BETWEEN ? AND ? ORDER BY begin, end');
   $GLOBALS['bdd']->execute($jours, array($begin, $end));
 
   foreach ($jours->fetchAll() as $jour) {
-    $type = $jour['type'];
-    $jourStart = str_replace('-', '', $jour['jour']);
-    $jourEnd = $jourStart;
+    $jourStart = str_replace('-', '', $jour['begin']);
+    $jourEnd = str_replace('-', '', $jour['end']);
     $description = $jour['infos'];
-    $cours = TRUE;
-    $td = TRUE;
-    $tp = TRUE;
-/*
-    if ($type < 0 || $type == 50 || ($type > 6 && $type < 10))
-      echo 'Mauvais type de jour: '.$jour['jour'];
-*/
-    if ($type < 50) {
-      if ($type < 40) {
-        if ($type < 30) {
-          if ($type < 20) {
-            if ($type >= 10) {
-              $type -= 10;
-              $cours = FALSE;
-            }
-          }
-          else {
-            $type -= 20;
-            $cours = FALSE;
-            $td = FALSE;
-          }
-        }
-        else {
-          $type -= 30;
-          $cours = FALSE;
-          $tp = FALSE;
-        }
-      }
-      else {
-        $type -= 40;
-        $td = FALSE;
-        $tp = FALSE;
-      }
 
+    if ($jour['cours'] || $jour['td'] || $jour['tp']) {
       foreach ($edt as $uv) {
-        if ($uv['jour'] < $type)
+        if ($uv['jour'] < $jour['day'])
           continue;
-        elseif ($uv['jour'] > $type)
+        elseif ($uv['jour'] > $jour['day'])
           break;
 
-        if (($uv['type'] == 'C' && !$cours) || ($uv['type'] == 'D' && !$td) || ($uv['type'] == 'T' && !$tp))
+        if (($uv['type'] == 'C' && !$jour['cours']) || ($uv['type'] == 'D' && !$jour['td']) || ($uv['type'] == 'T' && !$jour['tp']))
           continue;
 
         if ($jour['alternance'] != NULL && $uv['frequence'] == 2 && $jour['alternance'] != $uv['semaine'])
@@ -137,20 +104,8 @@ END:VTIMEZONE';
 
         createEvent($jourStart, $debut, $jourEnd, $fin, $summary, $description, $uv['salle'], $alarm);
       }
-
-      // Afficher pour chaque TPs et TDs aussi
-      //$summary = $type.$uv;
     }
     else {
-      $type -= 50;
-      $cours = FALSE;
-      $td = FALSE;
-      $tp = FALSE;
-
-      $temp = date_create($jourEnd);
-      date_add($temp, date_interval_create_from_date_string($type.' days'));
-      $jourEnd = date_format($temp, 'Ymd');
-
       $split = explode(' - ', $jour['infos']);
       $summary = (isset($split[0]) ? $split[0] : $jour['infos']);
       $description = (isset($split[1]) ? $split[1] : NULL);

@@ -195,7 +195,7 @@
         'duration' => $fin - $debut,
         'startTime' => $debut - 7,
         'semaine' => $edt['semaine'],
-        'fgColor' => '',
+        'fgColor' => '#FFFFFF',
         'bgColor' => $bgColor,
         'columnPerDay' => 3,
         'session' => ($edt['login'] == $_SESSION['login'])
@@ -253,61 +253,35 @@
 
 
   function printWeek($login, $week, $getEdt = 'getEdtEtu', $nbrOfDays = 7) {
-    $days = array();
+    $days = getDays($week, $nbrOfDays);
     $allEdt = array();
     $arrayEdt = array();
     $columnPerDay = 0;
-    $date = new DateTime($week);
-
-    for ($i = 0; $i < $nbrOfDays; $i++) {
-      if (!isAGoodDate($date->format('Y-m-d')))
-        continue;
-
-      $cours = TRUE;
-      $td = TRUE;
-      $tp = TRUE;
-
-      $query = $GLOBALS['bdd']->prepare('SELECT * FROM jours WHERE jour <= ? ORDER BY jour DESC LIMIT 1');
-      $GLOBALS['bdd']->execute($query, array($date->format('Y-m-d')));
-
-      $data = $query->fetch();
-      $type = $data['type'];
-
-      if ($type < 10) {
-        $day = $type;
-      }
-      else if ($type < 20) {
-        $day = $type - 10;
-        $cours = FALSE;
-      }
-      else if ($type < 30) {
-        $day = $type - 20;
-        $cours = FALSE;
-        $td = FALSE;
-      }
-      else if ($type < 40) {
-        $day = $type - 30;
-        $cours = FALSE;
-        $tp = FALSE;
-      }
-      else if ($type < 50) {
-        $day = $type - 40;
-        $td = FALSE;
-        $tp = FALSE;
-      }
-      else {
-        $day = $type - 50;
-        $cours = FALSE;
-        $td = FALSE;
-        $tp = FALSE;
-      }
-
-      array_push($days, array('date' => $date->format('Y-m-d'), 'jour' => $day, 'semaine' => $data['alternance'], 'cours' => $cours, 'td' => $td, 'tp' => $tp));
-      $date->modify('+1 day');
-    }
 
     foreach ($days as $i => $day) {
       $dayEdt = $getEdt($login, 1, NULL, $day['jour']);
+
+      if ($day['infos'] != '') {
+        $split = explode(' - ', $day['infos']);
+        $summary = (isset($split[0]) ? $split[0] : $day['infos']);
+        $description = (isset($split[1]) ? $split[1] : '');
+        $location = (isset($split[2]) ? $split[2] : '');
+        array_push($allEdt, array('uv' => $summary, 'note' => $description, 'idUV' => NULL, 'jour' => $i, 'debut' => '00:00', 'fin' => '23:59', 'type' => '', 'groupe' => '', 'salle' => $location, 'color' => '#000000'));
+      }
+      else {
+        $query = $GLOBALS['bdd']->prepare('SELECT * FROM days WHERE begin < ? AND end >= ? ORDER BY end DESC');
+        $GLOBALS['bdd']->execute($query, array($day['date'], $day['date']));
+
+        if ($query->rowCount() == 1) {
+          $data = $query->fetch();
+          $split = explode(' - ', $data['infos']);
+          $summary = (isset($split[0]) ? $split[0] : $data['infos']);
+          $description = (isset($split[1]) ? $split[1] : '');
+          $location = (isset($split[2]) ? $split[2] : '');
+          array_push($allEdt, array('uv' => $summary, 'note' => $description, 'idUV' => NULL, 'jour' => $i, 'debut' => '00:00', 'fin' => '23:59', 'type' => '', 'groupe' => '', 'salle' => $location, 'color' => '#000000'));
+        }
+      }
+
       foreach ($dayEdt as $edt) {
         if (($edt['type'] == 'C' && $day['cours']) || ($edt['type'] == 'D' && $day['td']) || ($edt['type'] == 'T' && $day['tp']) || ($edt['type'] == '' && ($day['cours'] || $day['td']))) {
           if ($edt['semaine'] != '') {

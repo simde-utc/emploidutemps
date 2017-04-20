@@ -27,56 +27,42 @@ var defaultSettings = {
         seeOthers(card.uv, type, card.idUV);
       }
       else {
+        var end = (window.mode == 'planifier' ? 473 : 430);
+
         if (window.card === '') {
-          window.card = card;
+          if (card.top > end) // Détecter si la tache ne dépasse pas le calendrier en s'ouvrant
+            $('#' + card.id).css('top', end);
+          $('#' + card.id).css('left', 0).css('height', 150).css('width', 132).addClass('focus');
+          $('#' + card.id + ' .interraction').css('opacity', '1').css('visibility', 'visible');
 
-          if (Math.ceil($('#' + card.id).position().top) > 430) // Détecter si la tache ne dépasse pas le calendrier en s'ouvrant
-            $('#' + card.id).css('top', 430);
-          $('#' + card.id).height(150);
-
-          $('#' + card.id + ' .interraction').css('opacity', '1');
-          $('#' + card.id + ' .interraction').css('visibility', 'visible');
           $('#zoneGrey').addClass('focused');
           $('#zoneFocus').addClass('focused');
+
+          window.card = card;
         }
         else if (window.card.id == card.id) {
-          if (Math.ceil($('#' + card.id).position().top) >= 430)
-            $('#' + card.id).css('top', Math.ceil(getCardTopPosition(window.card.startTime)));
+          $('#' + card.id).css('top', card.top).css('left', card.left).css('height', card.height).css('width', card.width).removeClass('focus');
+          $('#' + card.id + ' .interraction').css('opacity', '0').css('visibility', 'hidden');
 
-          $('#' + card.id).height(Math.ceil(getCardHeight(window.card.duration)) - 2).css('z-index: 99'); // Je sais pas pourquoi mais ici height rajoute 2
-
-          $('#' + card.id + ' .interraction').css('opacity', '0');
-          $('#' + card.id + ' .interraction').css('visibility', 'hidden');
           $('#zoneGrey').removeClass('focused');
           $('#zoneFocus').removeClass('focused');
 
           window.card = '';
         }
-        else if ($('#' + window.card.id).length === 0) {
-          window.card = '';
-          $('#' + card.id).addClass('focus');
-          $('#' + card.id).click();
-        }
         else {
-          if (Math.ceil($('#' + window.card.id).position().top) >= 430)
-            $('#' + window.card.id).css('top', Math.ceil(getCardTopPosition(window.card.startTime)));
-          $('#' + window.card.id).height(Math.ceil(getCardHeight(window.card.duration)) - 2).css('z-index: 99');
+          $('#' + window.card.id).css('top', window.card.top).css('left', window.card.left).css('height', window.card.height).css('width', window.card.width).removeClass('focus');
+          $('#' + window.card.id + ' .interraction').css('opacity', '0').css('visibility', 'hidden');
 
-          $('#' + window.card.id).toggleClass('focus');
-          $('#' + window.card.id + ' .interraction').css('opacity', '0');
-          $('#' + window.card.id + ' .interraction').css('visibility', 'hidden');
+          if (card.top > end) // Détecter si la tache ne dépasse pas le calendrier en s'ouvrant
+            $('#' + card.id).css('top', end);
+          $('#' + card.id).css('left', 0).css('height', 150).css('width', 132).addClass('focus');
+          $('#' + card.id + ' .interraction').css('opacity', '1').css('visibility', 'visible');
+
+          $('#zoneGrey').addClass('focused');
+          $('#zoneFocus').addClass('focused');
 
           window.card = card;
-
-          if (Math.ceil($('#' + card.id).position().top) > 430)
-            $('#' + card.id).css('top', 430);
-          $('#' + card.id).height(150);
-
-          $('#' + card.id + ' .interraction').css('opacity', '1');
-          $('#' + card.id + ' .interraction').css('visibility', 'visible');
         }
-
-        $('#' + card.id).toggleClass('focus');
       }
     },
     // Css classes
@@ -98,9 +84,9 @@ function schedule(tasks) {
     headers: window.headers,
     tasks: tasks,
   });
-/*
-  if (window.mode === 'planifier') {
-    var cells = $('.skeduler-cell10');
+
+  if (window.mode === 'planifier' || window.mode == 'organiser') {
+    var cells = $('.futureDay .skeduler-cell10');
     var length = cells.length;
     var perDay = length / 7;
 
@@ -111,10 +97,11 @@ function schedule(tasks) {
         begin = -1;
 
       $(cells[index]).on('click', function() {
-        createTask(day, begin, 1, 'Créer un nouvel évènement');
+        //createTask(day, begin, 1, 'Créer un nouvel évènement');
+        console.log('Bientot');
       });
     });
-  }*/
+  }
 }
 /**
  * Convert double value of hours to zero-preposited string with 30 or 00 value of minutes
@@ -160,46 +147,25 @@ function appendTasks(placeholder, tasks) {
   var colors = ['#7DC779', '#82A1CA', '#F2D41F', '#457293', '#AB7AC6', '#DF6F53', '#B0CEE9', '#576D7C', '#1C704E'];
   var nbrPassed = 0;
 
-  /*$nbrSameTime = 0;
-  // Conversion de minutes en heures
-  $exploded = explode(':', $edt['debut'], 2);
-  $debut = join('.', array($exploded[0], 100/60*$exploded[1]));
-  $exploded = explode(':', $edt['fin'], 2);
-  $fin = join('.', array($exploded[0], 100/60*$exploded[1]));
-
-  foreach ($allEdt as $j => $toCompare) {
-    if ($edt['jour'] != $toCompare['jour'])
-      continue;
-
-    $exploded = explode(':', $toCompare['debut'], 2);
-    $debutToCapare = join('.', array($exploded[0], 100/60*$exploded[1]));
-    $exploded = explode(':', $toCompare['fin'], 2);
-    $finToCapare = join('.', array($exploded[0], 100/60*$exploded[1]));
-
-    if (($debutToCapare >= $debut && $debutToCapare < $fin) || ($debut >= $debutToCapare && $debut < $finToCapare))
-      $nbrSameTime++;
-  }*/
-
-
-  var side = false;
   tasks.forEach(function(task) {
-    var card = '';
-    var classCard = '';
-    nbrSameTime = 0;
-
-    if (task.duration >= 14) {
-      task.startTime = 14;
+    if (task.duration >= (window.HOUR_MAX - window.HOUR_MIN)) {
+      task.startTime = (window.HOUR_MAX - window.HOUR_MIN);
       task.duration = 1;
+      task.horaire = 'Journée';
     }
 
-    tasks.forEach(function(toCompare) {
-      if (toCompare.duration < 14 && (task.columnPerDay === toCompare.columnPerDay && task.column === toCompare.column) && ((task.startTime >= toCompare.startTime && task.startTime < toCompare.startTime + toCompare.duration) || (toCompare.startTime >= task.startTime && toCompare.startTime < task.startTime + task.duration)))
-        nbrSameTime++;
-    });
+    task.top = Math.ceil(getCardTopPosition(task.startTime));
+    task.height = Math.ceil(getCardHeight(task.duration));
+    var style = 'top: ' + task.top + 'px; height: ' + task.height + 'px';
+    var nbrSameTime = 0;
 
-    var top = Math.ceil(getCardTopPosition(task.startTime));
-    var height = Math.ceil(getCardHeight(task.duration));
-    var style = 'top: ' + top + 'px; height: ' + height + 'px';
+    tasks.forEach(function(toCompare) {
+      if (toCompare.duration < (window.HOUR_MAX - window.HOUR_MIN) && (task.columnPerDay === toCompare.columnPerDay && task.column === toCompare.column) && ((task.startTime >= toCompare.startTime && task.startTime < toCompare.startTime + toCompare.duration) || (toCompare.startTime >= task.startTime && toCompare.startTime < task.startTime + task.duration)))
+        nbrSameTime++;
+
+      if (window.mode != 'organiser' && window.mode != 'planifier' && task.id != toCompare.id && task.idUV == toCompare.idUV)
+        style += '; border: 2px SOLID #000000';
+    });
 
     if (typeof task.interraction == 'undefined') {
       if (typeof task.login == 'undefined' && (window.compare == 1 || window.columnPerDay == 1))
@@ -245,22 +211,23 @@ function appendTasks(placeholder, tasks) {
 
     style += '; color: ' + task.fgColor + '; background-color: ' + task.bgColor;
 
-    if (window.columnPerDay == 1 && window.compare == 1) {
-      classCard = 'card0' + task.semaine;
-      style += '; opacity: 0.75; box-shadow: none; cursor: default';
+    if (window.mode == 'organiser') {
+      style += '; opacity: 0.5; box-shadow: none; cursor: default';
 
       card = $('<div></div>')
         .attr({
           style: style,
           id: task.id,
-          class: classCard
+          class: 'card'
         });
       card.append($('<div>' + task.idUV + '<h6 style="display: inline; padding-left: 2px;">' + task.salle + '</h6></div>')).appendTo(placeholder);
       return;
     }
 
-    if (nbrSameTime == 1)
-      classCard = 'card' + task.columnPerDay + task.semaine;
+    if (nbrSameTime == 1 || (nbrSameTime == 2 && task.frequence == 2)) {
+      task.width = (132 / (window.columnPerDay * task.frequence)) - (window.columnPerDay - 1);
+      task.left = (task.frequence == 2 && task.semaine == '' ? (window.columnPerDay == 1 ? 32 : 16) : 0) + (task.semaine === 'B' ? 66 / window.columnPerDay : 0) + (task.columnPerDay == 2 ? 69 : 0) + (window.columnPerDay == 2 ? -1 : 0);
+    }
     else {
       var toPass = [task.columnPerDay, task.column, task.startTime, task.duration];
       if ((passed[0] === toPass[0] && passed[1] === toPass[1]) && ((passed[2] >= toPass[2] && passed[2] < toPass[2] + toPass[3]) || (toPass[2] >= passed[2] && toPass[2] < passed[2] + passed[3])))
@@ -268,19 +235,23 @@ function appendTasks(placeholder, tasks) {
       else {
         passed = toPass;
         nbrPassed = 0;
-        side = !side;
       }
 
-      nbr = (nbrSameTime > 4 ? ((nbrSameTime + 4) % 5) : (nbrSameTime % 5));
+      nbr = (nbrSameTime > 4 ? ((nbrSameTime + 4) % 5) : nbrSameTime);
       if (nbr == 0) { nbr = 2; }
-      classCard = 'card' + task.columnPerDay + ' nbr' + nbr + ((side || nbrSameTime > 4 ? (nbr - (nbrPassed % nbr)) : nbrPassed) % nbr);
+      space = ((nbrSameTime % 2 == 1 ? (nbr - (nbrPassed % nbr)) : nbrPassed) % nbr);
+
+      task.width = 132 / nbr;
+      task.left = 132 * space / nbr;
     }
+
+    style += '; width: ' + task.width + 'px; left: ' + task.left + 'px';
 
     card = $('<div></div>')
       .attr({
         style: style,
         id: task.id,
-        class: classCard
+        class: 'card'
       });
 
     if (window.mode == 'planifier') {
@@ -288,7 +259,7 @@ function appendTasks(placeholder, tasks) {
         card.on('click', function () {
           popup('<div id="popupHead">' + task.idUV + ' salle' + (task.idUV == 1 ? '' : 's') + ' disponible' + (task.idUV == 1 ? '' : 's') + ' de ' + task.horaire.replace('-', ' à ').replace(':', 'h').replace(':', 'h') + '</div><table><tr><td>Salle' + (task.note['C'].length == 1 ? '' : 's') + ' de cours</td><td>:</td><td> ' + task.note['C'].join(', ') + '</td></tr><tr><td>Salle' + (task.note['D'].length == 1 ? '' : 's') + ' de TD</td><td>:</td><td> ' + task.note['D'].join(', ') + '</td></tr></table>');
         });
-        card.append($('<div class="time">' + (task.startTime < 14 ? toTimeString(task.duration) : 'Journée') + '</div><div class="uvType"><span>' + task.uv + '</span></div>')).appendTo(placeholder);
+        card.append($('<div class="time">' + (task.startTime < (window.HOUR_MAX - window.HOUR_MIN) ? (task.duration - Math.floor(task.duration) > 0.25 ? Math.ceil(task.duration) : Math.floor(task.duration)) + 'h' : task.horaire) + '</div><div class="uvType"><span>' + task.uv + '</span></div>')).appendTo(placeholder);
         return;
       }
 
@@ -296,6 +267,9 @@ function appendTasks(placeholder, tasks) {
       <button class='option' style='color:" + task.fgColor + "; background-color:" + task.bgColor + ";' onClick='seeOthers(\"" + task.uv + "\", \"" + type + "\", " + task.idUV + ");'><i class='fa fa-info' aria-hidden='true'></i> Echanger son " + (task.type == 'Cours' ? task.type.toLowerCase() : task.type) + "</button>\
       <button class='option' style='color:" + task.fgColor + "; background-color:" + task.bgColor + ";' onClick='afficher(\"" + task.idUV + "\");'><i class='fa fa-calendar-o' aria-hidden='true'></i> Afficher d'autres options</button>";
     }
+
+    if (task.idUV == null)
+      task.interraction = '';
 
     if (window.idUV != task.idUV)
       card.on('click', function () {
@@ -319,8 +293,12 @@ function appendTasks(placeholder, tasks) {
 */
 $.fn.skeduler = function( options ) {
   settings = $.extend(defaultSettings, options);
-  var date = new Date();
   var currentDay = (date.getDay() + 6) % 7;
+
+  if (Date.parse(window.week) + (1000*60*60*24*(currentDay + 2)) < Date.now())
+    currentDay = 7;
+  else if (Date.parse(window.week) > Date.now())
+    currentDay = -1;
 
   if (settings.debug) {
     console.time('skeduler');
@@ -375,13 +353,19 @@ $.fn.skeduler = function( options ) {
   // Populate timeline
   for (var i = window.HOUR_MIN; i < window.HOUR_MAX; i++) {
     if (window.mode === 'planifier') {
-      if (i < hour)
+      if (currentDay == -1)
+        divHour = futureHour;
+      else if (currentDay == 7)
+        divHour = passedHour;
+      else if (i < hour)
         divHour = passedHour;
       else if (i === hour)
         divHour = currentHour;
       else
         divHour = futureHour;
     }
+    else if (window.mode == 'organiser')
+      divHour = futureHour;
     else
       divHour = div.clone();
 
@@ -414,6 +398,8 @@ $.fn.skeduler = function( options ) {
       else
         el.addClass('passedDay');
     }
+    else if (window.mode == 'organiser')
+      el.addClass('futureDay');
 
     el.addClass('days');
     el.prepend(placeholder);

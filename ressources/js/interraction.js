@@ -38,10 +38,9 @@ function newRequest(get, tab) {
 }
 
 function selectMode(get, mode) {
-  if (mode !== '')
-    window.mode = mode;
+  window.mode = mode;
 
-   if (window.mode == 'afficher') {
+  if (mode == 'afficher') {
     window.columnPerDay = 1;
     window.compare = 0;
     window.idUV = '';
@@ -51,7 +50,7 @@ function selectMode(get, mode) {
 
     newRequest('&login=' + window.login + '&uv=' + window.uv + get, '');
   }
-  else if (window.mode == 'comparer') {
+  else if (mode == 'comparer') {
     window.columnPerDay = 2;
     window.compare = 1;
     window.idUV = '';
@@ -65,13 +64,13 @@ function selectMode(get, mode) {
         $('#menu button')[1].click();
     }, 500);
   }
-  else if (window.mode == 'modifier') {
+  else if (mode == 'modifier') {
     window.columnPerDay = 2;
     window.compare = 0;
 
     newRequest(get, '');
   }
-  else if (window.mode == 'organiser') {
+  else if (mode == 'organiser') {
     window.columnPerDay = 1;
     window.compare = 1;
     window.idUV = '';
@@ -83,7 +82,7 @@ function selectMode(get, mode) {
         searchTab();
     }, 500);
   }
-  else if (window.mode == 'planifier') {
+  else if (mode == 'planifier') {
     window.columnPerDay = 1;
     window.compare = 0;
     window.idUV = '';
@@ -446,6 +445,7 @@ function getICal() {
     get += '&alarm=' + $('#alarmICS').val();
 
   $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getICal.php' + get, function (file) {
+    console.log('https://' + window.location.hostname + file);
     window.location.href = 'https://' + window.location.hostname + file;
   });
 }

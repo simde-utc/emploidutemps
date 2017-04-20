@@ -311,7 +311,7 @@
 
       $edt['salle'] = '';
       $edt['note'] = array('C' => array(), 'D' => array());
-      $edt['id'] = $nbrSameTime;
+      $edt['id'] = NULL;
       $edt['uv'] = $nbrSameTime.' dispo'.($nbrSameTime == 1 ? '' : 's');
 
       foreach($passed as $j => $elem) {
@@ -330,6 +330,54 @@
     }
 
     return $edts;
+  }
+
+  function getDays($startingDay, $nbrOfDays) {
+    $days = array();
+    $date = new DateTime($startingDay);
+
+    for ($i = 0; $i < $nbrOfDays; $i++) {
+      if (!isAGoodDate($date->format('Y-m-d'))) {
+        $date->modify('+1 day');
+        continue;
+      }
+
+      $query = $GLOBALS['bdd']->prepare('SELECT * FROM days WHERE begin <= ? ORDER BY begin DESC LIMIT 1');
+      $GLOBALS['bdd']->execute($query, array($date->format('Y-m-d')));
+
+      $data = $query->fetch();
+
+      array_push($days, array('date' => $date->format('Y-m-d'), 'jour' => $data['day'], 'semaine' => $data['alternance'], 'alternance' => $data['semaine'], 'cours' => $data['cours'], 'td' => $data['td'], 'tp' => $data['tp'], 'infos' => $data['infos']));
+      $date->modify('+1 day');
+    }
+
+    return $days;
+  }
+
+  function getNextCours($login, $day) {
+    $inDays = 0;
+    $date = new DateTime($day);
+
+    while (TRUE) {
+      if (!isAGoodDate($date->format('Y-m-d')))
+        return array('error' => 'plus cours');
+
+      $days = getDays($date->format('Y-m-d'), 1);
+      $today = $days[0];
+      $allEdt = getEdtEtu($login, 1, NULL, $today['jour']);
+
+      if (count($allEdt) != 0) {
+        foreach ($allEdt as $edt) {
+          if (($edt['type'] == 'D' && $today['td']) || ($edt['type'] == 'T' && $today['tp']) || ($edt['type'] == 'C' && $today['cours'])) {
+            $edt['inDays'] = $inDays;
+            return $edt;
+          }
+        }
+      }
+
+      $inDays++;
+      $date->modify('+1 day');
+    }
   }
 
   function getEdtEtu($login, $actuel = 1, $echange = NULL, $day = NULL) {
@@ -403,24 +451,10 @@
   }
 
   function isAGoodDate($week) {
-    $query = $GLOBALS['bdd']->prepare('SELECT * FROM jours WHERE jour <= ? ORDER BY jour DESC LIMIT 1');
-    $GLOBALS['bdd']->execute($query, array($week));
+    $query = $GLOBALS['bdd']->prepare('SELECT * FROM days WHERE begin <= ? AND end >= ? LIMIT 1');
+    $GLOBALS['bdd']->execute($query, array($week, $week));
 
-    if ($query->rowCount() === 0)
-      return FALSE;
-
-    $data = $query->fetch();
-
-    if ($data['jour'] === $week)
-      return TRUE;
-    else if ($data['type'] > 50) {
-      $date1 = new DateTime($week);
-      $date2 = new DateTime($data['jour']);
-      $date2->modify('+'.($data['type'] - 50).' day');
-      return $date1 <= $date2;
-    }
-    else
-      return FALSE;
+    return $query->rowCount() == 1;
   }
 
   if (isUpdating()) {
