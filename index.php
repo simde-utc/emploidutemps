@@ -32,7 +32,7 @@
         }
 
         echo 'selectMode(\'', $get, '\', \'', $mode, "');
-        window.week = '", $_SESSION['week'], "'";
+        window.week = '", $_SESSION['week'], "';";
 
         // Lance le paramètre demanér (désinscription par exemple)
         if (isset($_GET['param']) && is_string($_GET['param']) && !empty($_GET['param']))

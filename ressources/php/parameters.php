@@ -46,14 +46,14 @@
     </div>';
   }
   elseif ($_GET['param'] == 'ical') {
-    $query = $GLOBALS['bdd']->prepare('SELECT * FROM jours ORDER BY jour LIMIT 1');
+    $query = $GLOBALS['bdd']->prepare('SELECT * FROM days ORDER BY begin LIMIT 1');
     $GLOBALS['bdd']->execute($query, array());
     $begin = $query->fetch();
-    $begin = (strtotime($begin['jour']) < strtotime(date('Y-m-d')) ? date("Y-m-d") : $begin['jour']);
-    $query = $GLOBALS['bdd']->prepare('SELECT * FROM jours ORDER BY jour DESC LIMIT 1');
+    $begin = (strtotime($begin['begin']) < strtotime(date('Y-m-d')) ? date("Y-m-d") : $begin['begin']);
+    $query = $GLOBALS['bdd']->prepare('SELECT * FROM days ORDER BY begin DESC LIMIT 1');
     $GLOBALS['bdd']->execute($query, array());
     $end = $query->fetch();
-    $end = $end['jour'];
+    $end = $end['end'];
     echo '<div onClick="parameters(\'exporter\')" style="cursor: pointer" id="popupHead">Obtenir en iCal</div>
     <div class="parameters" style="text-align: center;">
       Etre prévenu <input class="focusedInput submitedInput" type="number" step="1" min="0" max="1440" id="alarmICS" placeholder="0" /> min avant l\'évènement (cours, TD, TP)<br />

@@ -19,7 +19,7 @@
   }
 
   function addValue($query, $array) {
-    $test = $GLOBALS['bdd']->prepare('SELECT jour FROM jours WHERE jour = ?');
+    $test = $GLOBALS['bdd']->prepare('SELECT begin FROM days WHERE begin = ?');
     $GLOBALS['bdd']->execute($test, array($array[0]));
 
     if ($test->rowCount() == 0) {

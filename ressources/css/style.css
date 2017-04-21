@@ -1,0 +1,683 @@
+html, body {
+  height: 100%;
+}
+
+html {
+  display: table;
+  margin: auto;
+}
+
+body {
+  background-color: #384047;
+  padding-top: 135px;
+  display: table-cell;
+  font-family: Helvetica, ​Arial, ​sans-serif;
+  -webkit-print-color-adjust: exact;
+  overflow-x: hidden;
+}
+
+.skeduler-container {
+  z-index: 1;
+  margin: auto;
+}
+
+.skeduler-container * {
+  box-sizing: content-box;
+}
+
+
+.skeduler-headers {
+  display: flex;
+  padding-left: 61px;
+  position: relative;
+}
+
+.skeduler-headers > div {
+  flex: 0 0 138px;
+  height: 20px;
+  padding-top: 10px;
+  /*margin-bottom: 10px;*/
+  border-left: 1px solid #AABBBB;
+  border-bottom: 1px solid #AABBBB;
+  border-top: 1px solid #AABBBB;
+  text-align: center;
+  background-color: #D3E0EF;
+}
+
+.skeduler-main-body > div > div.skeduler-cell10,
+.skeduler-main-body > div > div.skeduler-cell20,
+.skeduler-main-body > div > div.skeduler-cell21  {
+  border-right: 1px solid #AABBBB;
+}
+
+
+.skeduler-main {
+  display: flex;
+}
+
+.skeduler-main-timeline div {
+  width: 50px;
+  height: 17px;
+  text-align: left;
+  padding-left: 10px;
+  padding-top: 3px;
+  color: #333333;
+  border-right: 1px solid #AABBBB;
+  border-left: 1px solid #AABBBB;
+}
+
+.skeduler-main-timeline div:first-child {
+  margin-top: -1px;
+  border-top: 1px solid #AABBBB;
+}
+
+
+.skeduler-main-body {
+  display: flex;
+}
+
+.skeduler-main-timeline div {
+  background-color: #FFFFFF;
+}
+
+.skeduler-main-timeline div:nth-child(even),
+.skeduler-main-body > div > div.skeduler-cell10:nth-child(odd),
+.skeduler-main-body > div > div.skeduler-cell20:nth-child(odd),
+.skeduler-main-body > div > div.skeduler-cell21:nth-child(odd) {
+  border-top: 1px dotted #AABBBB;
+  border-bottom: 1px solid #AABBBB;
+}
+
+.skeduler-main-body > div > div.skeduler-cell10 {
+  width: 138px;
+  height: 20px;
+}
+
+.skeduler-main-body > div > div.skeduler-cell20,
+.skeduler-main-body > div > div.skeduler-cell21 {
+  width: 68.5px;
+  height: 20px;
+}
+
+.skeduler-main-body > div > div.skeduler-cell10.allDay {
+  height: 41px;
+}
+
+.skeduler-main-timeline > div.allDay {
+  height: 38px;
+}
+
+.skeduler-main-body > div > div.skeduler-cell20 {
+  background-color: #CCCCCC;
+}
+
+.skeduler-main-body div .skeduler-cell10,
+.skeduler-main-body > div > div.skeduler-cell21 {
+background-color: #FFFFFF;
+}
+
+.skeduler-headers .passedDay, .skeduler-main-body .passedDay .skeduler-cell10, .skeduler-main-timeline .passedHour {
+  background-color: #CCCCCC;
+}
+
+.skeduler-headers .currentDay, .skeduler-main-body .currentDay .skeduler-cell10, .skeduler-main-timeline .currentHour {
+  background-color: #576D7C;
+  color: #FFF;
+}
+
+.skeduler-headers .futureDay, .skeduler-main-body .futureDay .skeduler-cell10, .skeduler-main-timeline .futureHour {
+  background-color: #D3E0EF;
+}
+
+.skeduler-main-body > div > .skeduler-task-placeholder {
+  height: 0;
+  position: relative;
+}
+
+.skeduler-main-body > div > .skeduler-task-placeholder > div {
+  position: absolute;
+  font-size: 12px;
+  border-radius: 2.5px;
+  overflow: hidden;
+  background-color: #576D7C;
+  padding: 5px;
+  padding-top: 2px;
+  padding-bottom: 0px;
+  box-sizing: border-box;
+  box-shadow: 0px .125em .25em rgba(0,0,0,.25);
+  margin-left: 3px;
+  color: #FFFFFF;
+  -webkit-transition: all 0.5s ease;
+  -moz-transition: all 0.5s ease;
+  -ms-transition: all 0.5s ease;
+  -o-transition: all 0.5s ease;
+  transition: all 0.5s ease;
+}
+
+.skeduler-main-body > div > .skeduler-task-placeholder > div:hover {
+  box-shadow: 0.5em .5em .5em rgba(0,0,0,.5);
+  background-color: #3A4852;
+}
+
+.card {
+  z-index: 15;
+  width: 132px;
+  opacity: 0.9;
+}
+
+.card.focus {
+  z-index: 25;
+  opacity: 1;
+}
+
+.time {
+  font-size: 10px;
+  overflow: hidden;
+  height: 10px;
+  text-align: center;
+  opacity: 0.85;
+  padding-bottom: 1px;
+}
+
+.interraction {
+  position: absolute;
+  bottom: 2px;
+  text-align: center;
+  left: 2px;
+  width: 128px;
+  overflow: hidden;
+  -webkit-transition: all 0.5s ease;
+  -moz-transition: all 0.5s ease;
+  -ms-transition: all 0.5s ease;
+  -o-transition: all 0.5s ease;
+  transition: all 0.5s ease;
+  cursor: pointer;
+}
+
+#loading {
+  position: absolute;
+  display: block;
+  z-index: 100;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#zoneFocus, #zonePopup {
+  position: fixed;
+  visibility: hidden;
+  z-index: 10;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+#zoneGrey {
+  pointer-events: none;
+  position: fixed;
+  visibility: hidden;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000000;
+  opacity: 0;
+  z-index: 20;
+  -webkit-transition: all 0.5s ease;
+  -moz-transition: all 0.5s ease;
+  -ms-transition: all 0.5s ease;
+  -o-transition: all 0.5s ease;
+  transition: all 0.5s ease;
+}
+
+#zoneFocus.focused,
+#zoneGrey.focused,
+#zonePopup.focused {
+  opacity: 0.25;
+  visibility: visible;
+  -webkit-transition: all 0.5s ease;
+  -moz-transition: all 0.5s ease;
+  -ms-transition: all 0.5s ease;
+  -o-transition: all 0.5s ease;
+  transition: all 0.5s ease;
+}
+
+#zonePopup {
+  background-color: #000000;
+  z-index: 50;
+  -webkit-transition: all 0.5s ease;
+  -moz-transition: all 0.5s ease;
+  -ms-transition: all 0.5s ease;
+  -o-transition: all 0.5s ease;
+  transition: all 0.5s ease;
+}
+
+#popup {
+  flex-wrap: wrap;
+  position: fixed;
+  overflow: auto;
+  visibility: hidden;
+  width: 80%;
+  max-height: 80%;
+  max-width: 1000px;
+  opacity: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 5px SOLID #BBBBBB;
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  z-index: 50;
+  -webkit-transition: all 0.5s ease;
+  -moz-transition: all 0.5s ease;
+  -ms-transition: all 0.5s ease;
+  -o-transition: all 0.5s ease;
+  transition: all 0.5s ease;
+}
+
+#popupHead {
+  position: sticky;
+  top: 0;
+  left: 0;
+  margin: 0px;
+  padding: 10px;
+  text-align: center;
+  border: 5px SOLID #BBBBBB;
+  background-color: #BBBBBB;
+  z-index: 2;
+}
+
+#noteExchange {
+  margin: 4.5%;
+  width: 90%;
+  max-height: 250px;
+}
+
+#sendExchange {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 5px;
+}
+
+#searchResult {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.searchCard {
+  display: flex;
+  flex-grow: 1;
+  min-width: 300px;
+  width: 23%;
+  margin: 0.5%;
+  margin-top: 2.5px;
+  margin-bottom: 2.5px;
+  height: 75px;
+  border: 2px SOLID #CCCCCC;
+  border-radius: 5px;
+  background-color: #CCCCCC;
+}
+
+@media screen and (max-width: 500px) {
+  .searchCard {
+    min-width: 200px;
+  }
+
+  .searchCard div, .searchCard button {
+    display: block;
+  }
+}
+
+@media screen and (max-width: 350px) {
+  .searchCard {
+    min-width: 0;
+  }
+
+  .searchCard div, .searchCard button {
+    display: none;
+  }
+}
+
+.searchCard button {
+  cursor: pointer;
+}
+
+.searchCard:hover {
+  background-color: #BBBBBB;
+}
+
+.searchImg {
+  position: absolute;
+  cursor: pointer;
+  margin: 5px;
+  margin-top: 2.5px;
+  height: 70px;
+  width: 57px;
+  font-size: 25px;
+}
+
+.searchCard div {
+  margin: auto;
+  border: 0px;
+}
+
+.searchCard > div {
+  margin-left: 68px;
+  overflow-y: auto;
+}
+
+.login {
+  background-color: #FF0000;
+}
+
+.tab {
+  display: block;
+  margin-bottom: 10px;
+}
+
+#tab div span {
+  cursor: pointer;
+  background-color: #FFFFFF;
+  padding: 2px;
+  margin: 0;
+}
+
+.delTab {
+  background-color: #FF0000;
+  cursor: not-allowed;
+}
+
+#header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 125px;
+  background-color: #273036;
+  text-align: center;
+  color: #FFFFFF;
+}
+
+#title {
+  margin: 5px;
+  font-size: 25px;
+  color: #FFFFFF;
+  text-decoration: none;
+}
+
+#sTitle {
+  font-size: 16px;
+}
+
+#bar {
+  display: flex;
+  flex-wrap: nowrap;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  justify-content: space-between;
+  width: 80%;
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
+#menu {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  background-color: #273036;
+  overflow-y: visible;
+}
+
+#menu div {
+  min-height: 20px;
+  max-height: 55px;
+}
+
+#menu div:hover:not(.active):not(.blocked) {
+  background-color: #222;
+}
+
+#menu button {
+  border: none;
+  padding: 12px;
+  height: 100%;
+  color: white;
+  text-align: center;
+  vertical-align: middle;
+  text-align: center;
+  vertical-align: middle;
+  text-decoration: none;
+}
+
+.active, #sessionLogin.active {
+  background-color: #4CAF50;
+  cursor: default;
+}
+
+.notActive {
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.blocked {
+  cursor: default;
+  background-color: #555555;
+}
+
+.etu.active {
+  cursor: pointer;
+}
+
+.etu.notActive {
+  cursor: pointer;
+}
+
+#sessionLogin {
+  background-color: #770000;
+  cursor: pointer;
+}
+
+#option {
+  display: flex;
+  flex-wrap: nowrap;
+  background-color: #273036;
+  z-index: 1;
+}
+
+#option * {
+  border: none;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  float: left;
+  color: white;
+  text-align: center;
+  padding: 6px;
+  text-decoration: none;
+}
+
+#option button:not(.delTab):not(.blocked) {
+  background-color: transparent;
+}
+
+#option button {
+  padding: 10px;
+}
+
+#option select {
+  background-color: #273036;
+}
+
+#option button:hover:not(.blocked),
+#option select:hover {
+  background-color: #222;
+  cursor: pointer;
+}
+
+#searchTab {
+  padding: 10px;
+  margin: auto;
+}
+
+#otherDay {
+  display: none;
+  position: absolute;
+  top: 135px;
+  background-color: transparent;
+  border: none;
+  height: 30px;
+  width: 60px;
+  z-index: 20;
+  text-align: center;
+  padding: 0;
+  margin: auto;
+  left: 50%;
+  transform: translate(-50%, 0);
+}
+
+#otherDay button {
+  width: 30px;
+  height: 30px;
+  background-color: transparent;
+  border: none;
+  color: #FFF;
+}
+
+#parameters {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 2px;
+  margin-left: 5px;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  color: #FFF;
+  cursor: pointer;
+  text-align: center;
+  z-index: 10;
+}
+
+.parameters {
+  padding: 5px;
+}
+
+.parameters button {
+  display: block;
+  width: 80%;
+  margin-left: 10%;
+  min-height: 25px;
+  margin-bottom: 5px;
+}
+
+.parameters i {
+  margin-right: 1px;
+}
+
+#alarmICS {
+  min-width: 25px;
+  max-width: 50px;
+}
+
+.infosExchange {
+  color: #000000;
+  font-size: 11px;
+  background-color: #CCCCCC;
+  opacity: 0.75;
+  margin-left: 4px;
+  margin-right: 4px;
+  padding: 1px;
+}
+
+.option {
+  text-align: center;
+  font-size: 11px;
+  margin: 1px;
+  padding: 0px;
+  width: 120px;
+  border: none;
+  cursor: pointer;
+  overflow: auto;
+}
+
+.option:hover {
+  margin: 0px;
+  border: 1px SOLID #FFFFFF;
+  cursor: pointer;
+  border-radius: 2.5px;
+}
+
+.color {
+  padding: 0px;
+  margin: 0px;
+}
+
+.colorButton {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  padding: 0px;
+  margin: 1px;
+  font-size: 8px;
+  cursor: pointer;
+  border: none;
+}
+
+.colorButton:hover {
+  margin: 0px;
+  border: 1px SOLID #FFFFFF;
+  cursor: pointer;
+  border-radius: 2.5px;
+}
+
+#menu button:hover + .tab-close, #menu .tab-close:hover:not(.active):not(.blocked) {
+  display: inline;
+  position: absolute;
+  top: 0;
+  transform: translate(-16px, 0);
+}
+
+#menu .tab-close:hover:not(.active):not(.blocked) {
+  background-color: #0000;
+  color: #F00;
+}
+
+#menu .tab-close {
+  display: none;
+  width: 15px;
+  background-color: #0000;
+  padding: 0;
+}
+
+.uvType {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.uvType span {
+  font-weight: bold;
+  margin: 0;
+  padding-right: 2px;
+}
+
+.uvType h5 {
+  margin: 0;
+  font-style: italic;
+  opacity: 0.5;
+  padding-top: 1px;
+}
+
+.uvSalle {
+  font-size: 10px;
+  padding-top: 1px;
+}
+
+.uvNote {
+  font-size: 10px;
+  text-decoration: underline;
+}
