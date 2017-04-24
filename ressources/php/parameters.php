@@ -40,6 +40,7 @@
     <div class="parameters" style="text-align: center;">
       <button onClick="parameters(\'ical\');">Obtenir son calendrier sous format iCal (.ics)</button>
       <button onClick="parameters(\'pdf\');">Obtenir son calendrier sous format PDF (.pdf)</button>
+      <button onClick="parameters(\'img\');">Obtenir son calendrier sous format image (.png/jpg)</button>
       <button onClick="window.location.href = \'http://wwwetu.utc.fr/sme/EDT/', $_SESSION['login'], '.edt\';">Obtenir son calendrier sous format SME (mail reçu)</button>
       <button onClick="window.location.href = \'https://\' + window.location.hostname + \'/emploidutemps\' + \'/ressources/pdf/alternances.pdf\';">Télécharger le calendrier des alternances</button>
       <button onClick="window.location.href = \'https://\' + window.location.hostname + \'/emploidutemps\' + \'/ressources/pdf/infosRentree.pdf\';">Télécharger les infos de rentrée</button>
@@ -56,7 +57,11 @@
     $end = $end['end'];
     echo '<div onClick="parameters(\'exporter\')" style="cursor: pointer" id="popupHead">Obtenir en iCal</div>
     <div class="parameters" style="text-align: center;">
-      Etre prévenu <input class="focusedInput submitedInput" type="number" step="1" min="0" max="1440" id="alarmICS" placeholder="0" /> min avant l\'évènement (cours, TD, TP)<br />
+      Etre prévenu <input class="focusedInput submitedInput" type="number" step="1" min="0" max="1440" id="alarmICS" placeholder="0" /> min avant<br /><br />
+      <input type="checkbox" id="icalCheckCours" CHECKED DISABLED /><label for="icalCheckCours">Exporter mes cours, TDs, TPs</label><br />
+      <input type="checkbox" id="icalCheckReus" DISABLED /><label for="icalCheckReus">Exporter mes réunions</label><br />
+      <input type="checkbox" id="icalCheckEvents" DISABLED /><label for="icalCheckEvents">Exporter mes évènements</label><br />
+      <input type="checkbox" id="icalCheckEventsAll" DISABLED /><label for="icalCheckEventsAll">Exporter tous les évènements</label><br /><br />
       Du <input class="focusedInput submitedInput" id="beginICS" value="', $begin, '" placeholder="', $begin, '" /> à <input class="focusedInput submitedInput" id="endICS" value="', $end, '" placeholder="', $end, '" />
       <button class="submitedButton" onClick="getICal();">Télécharer son emploi du temps</button>
     </div>';
@@ -65,7 +70,7 @@
     echo '<div onClick="parameters(\'exporter\')" style="cursor: pointer" id="popupHead">Obtenir en PDF</div>
     <div class="parameters" style="text-align: center;">
       Titre du pdf: <input class="focusedInput submitedInput" id="pdfTitle" value=""/><br />
-      <input type="checkbox" id="pdfCheckTabs" /><label for="pdfCheckTabs">Afficher la liste des onglets d\'étudiants</label><br /><br />
+      <input type="checkbox" id="pdfCheckTabs" /><label for="pdfCheckTabs">Afficher la liste des onglets d\'étudiants ou d\'options</label><br /><br />
       <input type="checkbox" id="pdfCheck0" CHECKED /><label for="pdfCheck0">Afficher le lundi</label>
       <input type="checkbox" id="pdfCheck1" CHECKED /><label for="pdfCheck1">Afficher le mardi</label><br />
       <input type="checkbox" id="pdfCheck2" CHECKED /><label for="pdfCheck2">Afficher le mercredi</label>
@@ -73,8 +78,26 @@
       <input type="checkbox" id="pdfCheck4" CHECKED /><label for="pdfCheck4">Afficher le vendredi</label>
       <input type="checkbox" id="pdfCheck5" CHECKED /><label for="pdfCheck5">Afficher le samedi</label><br />
       <input type="checkbox" id="pdfCheck6" CHECKED /><label for="pdfCheck6">Afficher le dimanche</label><br /><br />
-      Nom du fichier: <input class="focusedInput submitedInput" id="pdfName" value="edt_actuel"/><br />
+      Nom du fichier: <input class="focusedInput submitedInput" id="pdfName" value="edt_', (isset($_GET['mode']) && !empty($_GET['mode']) ? $_GET['mode'] : 'afficher'), '_', (isset($_GET['login']) && !empty($_GET['login']) ? $_GET['login'] : (isset($_GET['uv']) && !empty($_GET['uv']) ? $_GET['uv'] : $_SESSION['login'])), '"/>.pdf<br />
       <button class="submitedButton" onClick="getPDF();">Télécharer son emploi du temps</button>
+    </div>';
+  }
+  elseif ($_GET['param'] == 'img') {
+    echo '<div onClick="parameters(\'exporter\')" style="cursor: pointer" id="popupHead">Obtenir une image</div>
+    <div class="parameters" style="text-align: center;">
+      <input type="checkbox" id="imgCheck0" CHECKED /><label for="imgCheck0">Afficher le lundi</label>
+      <input type="checkbox" id="imgCheck1" CHECKED /><label for="imgCheck1">Afficher le mardi</label><br />
+      <input type="checkbox" id="imgCheck2" CHECKED /><label for="imgCheck2">Afficher le mercredi</label>
+      <input type="checkbox" id="imgCheck3" CHECKED /><label for="imgCheck3">Afficher le jeudi</label><br />
+      <input type="checkbox" id="imgCheck4" CHECKED /><label for="imgCheck4">Afficher le vendredi</label>
+      <input type="checkbox" id="imgCheck5" CHECKED /><label for="imgCheck5">Afficher le samedi</label><br />
+      <input type="checkbox" id="imgCheck6" CHECKED /><label for="imgCheck6">Afficher le dimanche</label><br /><br />
+      Type du fichier: <select id="imgType">
+          <option value="png">PNG</option>
+          <option value="jpeg">JPG/JPEG</option>
+      </select><br />
+      <button class="submitedButton" onClick="getImg();">Générer son emploi du temps</button>
+      <div id="generatedImg" style="overflow: auto"></div>
     </div>';
   }
   elseif ($_GET['param'] == 'aide') {

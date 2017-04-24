@@ -27,11 +27,11 @@ var defaultSettings = {
         seeOthers(card.uv, type, card.idUV);
       }
       else {
-        var end = (window.mode == 'planifier' ? 473 : 430);
+        var end = (window.mode == 'planifier' ? 629 : 588);
 
         if (window.card === '') {
-          if (card.top > end) // Détecter si la tache ne dépasse pas le calendrier en s'ouvrant
-            $('#' + card.id).css('top', end);
+          if (card.top + 150 > end) // Détecter si la tache ne dépasse pas le calendrier en s'ouvrant
+            $('#' + card.id).css('top', end - 150);
           $('#' + card.id).css('left', 0).css('height', 150).css('width', 132).addClass('focus');
           $('#' + card.id + ' .interraction').css('opacity', '1').css('visibility', 'visible');
 
@@ -53,8 +53,8 @@ var defaultSettings = {
           $('#' + window.card.id).css('top', window.card.top).css('left', window.card.left).css('height', window.card.height).css('width', window.card.width).removeClass('focus');
           $('#' + window.card.id + ' .interraction').css('opacity', '0').css('visibility', 'hidden');
 
-          if (card.top > end) // Détecter si la tache ne dépasse pas le calendrier en s'ouvrant
-            $('#' + card.id).css('top', end);
+          if (card.top + 150 > end) // Détecter si la tache ne dépasse pas le calendrier en s'ouvrant
+            $('#' + card.id).css('top', end - 150);
           $('#' + card.id).css('left', 0).css('height', 150).css('width', 132).addClass('focus');
           $('#' + card.id + ' .interraction').css('opacity', '1').css('visibility', 'visible');
 
@@ -148,6 +148,8 @@ function appendTasks(placeholder, tasks) {
   var nbrPassed = 0;
 
   tasks.forEach(function(task) {
+    var classCard = 'card';
+
     if (task.duration >= (window.HOUR_MAX - window.HOUR_MIN)) {
       task.startTime = (window.HOUR_MAX - window.HOUR_MIN);
       task.duration = 1;
@@ -164,7 +166,7 @@ function appendTasks(placeholder, tasks) {
         nbrSameTime++;
 
       if (window.mode != 'organiser' && window.mode != 'planifier' && task.id != toCompare.id && task.idUV == toCompare.idUV)
-        style += '; border: 2px SOLID #000000';
+      classCard += ' sameCard';
     });
 
     if (typeof task.interraction == 'undefined') {
@@ -218,7 +220,7 @@ function appendTasks(placeholder, tasks) {
         .attr({
           style: style,
           id: task.id,
-          class: 'card'
+          class: classCard
         });
       card.append($('<div>' + task.idUV + '<h6 style="display: inline; padding-left: 2px;">' + task.salle + '</h6></div>')).appendTo(placeholder);
       return;
@@ -251,13 +253,21 @@ function appendTasks(placeholder, tasks) {
       .attr({
         style: style,
         id: task.id,
-        class: 'card'
+        class: classCard
       });
 
     if (window.mode == 'planifier') {
       if (window.get.indexOf('salle=') > -1) {
         card.on('click', function () {
-          popup('<div id="popupHead">' + task.idUV + ' salle' + (task.idUV == 1 ? '' : 's') + ' disponible' + (task.idUV == 1 ? '' : 's') + ' de ' + task.horaire.replace('-', ' à ').replace(':', 'h').replace(':', 'h') + '</div><table><tr><td>Salle' + (task.note['C'].length == 1 ? '' : 's') + ' de cours</td><td>:</td><td> ' + task.note['C'].join(', ') + '</td></tr><tr><td>Salle' + (task.note['D'].length == 1 ? '' : 's') + ' de TD</td><td>:</td><td> ' + task.note['D'].join(', ') + '</td></tr></table>');
+          nbr = task.uv.split(' ')[0];
+          html = '<div id="popupHead">' + nbr + ' salle' + (nbr == 1 ? '' : 's') + ' disponible' + (nbr == 1 ? '' : 's') + (task.horaire == 'Journée' ? ' toute la journée': (' de ' + task.horaire.replace('-', ' à ').replace(':', 'h').replace(':', 'h'))) + '</div><table style="padding: 1%; width: 100%; background-color: ' + task.bgColor + '; color: ' + task.fgColor + '">'
+
+          if (task.note['C'].length > 0)
+            html += '<tr><td style="width: 15%">Salle' + (task.note['C'].length == 1 ? '' : 's') + ' de cours</td><td style="width: 85%"> ' + task.note['C'].join(', ') + '</td></tr>';
+          if (task.note['D'].length > 0)
+            html += '<tr><td style="width: 15%">Salle' + (task.note['D'].length == 1 ? '' : 's') + ' de TD</td><td style="width: 85%"> ' + task.note['D'].join(', ') + '</td></tr>';
+
+          popup(html + '</table>');
         });
         card.append($('<div class="time">' + (task.startTime < (window.HOUR_MAX - window.HOUR_MIN) ? (task.duration - Math.floor(task.duration) > 0.25 ? Math.ceil(task.duration) : Math.floor(task.duration)) + 'h' : task.horaire) + '</div><div class="uvType"><span>' + task.uv + '</span></div>')).appendTo(placeholder);
         return;

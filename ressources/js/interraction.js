@@ -418,10 +418,10 @@ function refuseExchange(idExchange) {
 }
 
 function parameters(param) {
-  var get = '';
+  var get = '?mode=' + window.mode + '&login=' + window.login + '&uv=' + window.uv;
 
   if (param != undefined)
-    get = '?param=' + param;
+    get += '&param=' + param;
 
   $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/parameters.php' + get, function (info) {
     popup(info);
@@ -445,9 +445,55 @@ function getICal() {
     get += '&alarm=' + $('#alarmICS').val();
 
   $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getICal.php' + get, function (file) {
-    console.log('https://' + window.location.hostname + file);
     window.location.href = 'https://' + window.location.hostname + file;
   });
+}
+
+function getImg() {
+  var headers = $('.skeduler-headers div');
+  var days = $('.skeduler-main-body .days');
+  var length = window.headers.length;
+  var displays = [];
+  var hidden = 0;
+  var type = $('#imgType').val();
+
+  for (var i = 0; i < length; i++) {
+    displays[i] = $(headers[i]).css('display');
+
+    if ($('#imgCheck' + i).prop('checked')) {
+      $(headers[i]).css('display', 'block');
+      $(days[i * window.columnPerDay]).css('display', 'block');
+
+      if (window.columnPerDay == 2)
+        $(days[(i * window.columnPerDay) + 1]).css('display', 'block');
+    }
+    else {
+      $(headers[i]).css('display', 'none');
+      $(days[i * window.columnPerDay]).css('display', 'none');
+
+      if (window.columnPerDay == 2)
+        $(days[(i * window.columnPerDay) + 1]).css('display', 'none');
+      hidden += 1;
+    }
+  }
+
+  var calendar = $('#skeduler-container');
+
+  var width = calendar.css('width');
+  calendar.css('width', (1036 - (hidden * 139)) + 'px');
+
+  html2canvas(calendar[0], { onrendered: function(canvas) {
+    for (var i = 0; i < length; i++) {
+      $(headers[i]).css('display', displays[i]);
+      $(days[i * window.columnPerDay]).css('display', displays[i]);
+
+      if (window.columnPerDay == 2)
+        $(days[(i * window.columnPerDay) + 1]).css('display', displays[i]);
+    }
+
+    setSkeduler(window.focusedDay);
+    $('#generatedImg').html('<img src="' + canvas.toDataURL('image/' + type, 1.0) + '">');
+  }});
 }
 
 function getPDF() {
@@ -467,28 +513,38 @@ function getPDF() {
     displays[i] = $(headers[i]).css('display');
 
     if ($('#pdfCheck' + i).prop('checked')) {
-      $(days[i]).css('display', 'block');
       $(headers[i]).css('display', 'block');
+      $(days[i * window.columnPerDay]).css('display', 'block');
+
+      if (window.columnPerDay == 2)
+        $(days[(i * window.columnPerDay) + 1]).css('display', 'block');
     }
     else {
-      $(days[i]).css('display', 'none');
       $(headers[i]).css('display', 'none');
+      $(days[i * window.columnPerDay]).css('display', 'none');
+
+      if (window.columnPerDay == 2)
+        $(days[(i * window.columnPerDay) + 1]).css('display', 'none');
       hidden += 1;
     }
   }
 
   var calendar = $('#skeduler-container');
   var width = calendar.css('width');
-  calendar.css('width', (1036 - (hidden * 32)) + 'px');
+  calendar.css('width', 1036 + 'px');
 
   html2canvas(calendar[0], { onrendered: function(canvas) {
     doc.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', 10 + (hidden * 18), 25 + ($('#pdfCheckTabs').prop('checked') ? 10 : 0));
 
     for (var i = 0; i < length; i++) {
-      $(days[i]).css('display', displays[i]);
       $(headers[i]).css('display', displays[i]);
+      $(days[i * window.columnPerDay]).css('display', displays[i]);
+
+      if (window.columnPerDay == 2)
+        $(days[(i * window.columnPerDay) + 1]).css('display', displays[i]);
     }
 
+    setSkeduler(window.focusedDay);
     doc.save($('#pdfName').val() + '.pdf');
   }});
 }

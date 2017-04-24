@@ -246,3 +246,6 @@ Stable 1.4: 2017-04-20
 Stable 1.4.1: 2017-04-21
   - Correction de bugs (requêtes get, db)
   - Correction au niveau de Git
+  - Ajout de l'export sous format image
+  - Correction d'écriture
+  - Amélioration significative des exports pdf et img
