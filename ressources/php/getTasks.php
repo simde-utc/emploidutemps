@@ -461,9 +461,6 @@
       //$all = array_merge($all, printWeek($_SESSION['login'], $_SESSION['week'], 'getEdtReu'));
     }
   }
-  elseif ($mode == 'test') {
-    $all = array_merge($all, printManyEdtEtu(array_merge($_SESSION['etuActive'], array($_SESSION['login'])), $_SESSION['week']));
-  }
   else {
     if (isset($_GET['uv']) && is_string($_GET['uv']) && !empty($_GET['uv']))
       $all = array_merge($all, printEdtUV($_GET['uv'], 0, (isset($_GET['type']) && is_string($_GET['type']) && !empty($_GET['type']) ? $_GET['type'] : NULL)));

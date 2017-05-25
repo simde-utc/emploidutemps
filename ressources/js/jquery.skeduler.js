@@ -261,7 +261,7 @@ function appendTasks(placeholder, tasks) {
       });
 
     if (window.mode == 'planifier') {
-      if (window.get.indexOf('salle=') > -1) {
+      if (window.get.indexOf('salle=') > -1 && task.horaire != "Journée") {
         card.on('click', function () {
           nbr = task.uv.split(' ')[0];
           html = '<div id="popupHead">' + nbr + ' salle' + (nbr == 1 ? '' : 's') + ' disponible' + (nbr == 1 ? '' : 's') + (task.horaire == 'Journée' ? ' toute la journée': (' de ' + task.horaire.replace('-', ' à ').replace(':', 'h').replace(':', 'h'))) + '</div><table style="padding: 1%; width: 100%">'

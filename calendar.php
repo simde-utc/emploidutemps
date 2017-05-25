@@ -73,23 +73,36 @@
     $(document).ajaxError(function() {
       location.reload();
     });
+
+    function newRequest(get, tab) {
+      loading();
+      window.get = get;
+
+      $('#zoneGrey').removeClass('focused');
+      $('#zoneFocus').removeClass('focused');
+      $('#zonePopup').removeClass('focused');
+
+      $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getTasks.php?mode=' + window.mode + get, function (tasks) {
+        schedule(JSON.parse(tasks));
+        setSkeduler();
+      });
+    }
   </script>
+  <style>
+    body {
+      padding: 0;
+      background: none;
+    }
+  </style>
   <title>Emploi d'UTemps</title>
 </head>
 
 <body onLoad='main()'>
-  <div id='header'>
-    <button id='parameters' onClick="parameters();"><i class="fa fa-2x fa-bars" aria-hidden="true"></i></button>
-    <a id='title' href='/emploidutemps'>Emploi d'UTemps</a>
-    <div id='sTitle'></div>
-    <div id='bar'></div>
-  </div>
   <div id='zoneFocus' onClick='unFocus()'></div>
   <div id='zoneGrey'></div>
 
   <div id='zonePopup' onClick='popupClose();'></div>
   <div id='popup'></div>
-  <div id='otherDay'><button onClick='setSkeduler(focusedDay - 1);'><i class="fa fa-arrow-left" aria-hidden="true"></i></button><button onClick='setSkeduler(focusedDay + 1);'><i class="fa fa-arrow-right" aria-hidden="true"></i></button></div>
   <div id="skeduler-container"></div>
 </body>
 

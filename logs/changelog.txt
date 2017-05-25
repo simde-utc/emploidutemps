@@ -258,3 +258,8 @@ Stable 1.4.2: 2017-05-25
   - Correction de l'accès API avec ajout d'un mdp
   - Remise en marche du mode organiser (marche maintenant en fonction de la semaine courante)
   - Début de définition des types d'évènemets
+
+Stable 1.4.3: 2017-05-26
+  - Correction d'un bug d'affichage dans le mode planifier
+  - Suppression d'un fichier js inutile
+  - Ajout d'un lien calendar qui n'affichge uniquement que le calendrier (peut-être utile pour une inclusion dans une page)
