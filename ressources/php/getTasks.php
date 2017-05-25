@@ -166,40 +166,42 @@
     return $arraydemande;
   }
 
-  function printManyEdtEtu($logins) {
+  function printManyEdtEtu($logins, $week) {
     $arrayEdt = array();
+    $edts = array();
 
-    $loginList = join('", "', $logins);
-    $query = $GLOBALS['bdd']->query('SELECT login, uv, salle, jour, debut, fin, semaine FROM uvs, cours WHERE login IN ("'.$loginList.'") AND (frequence = 1 OR frequence = 2) AND uvs.id = cours.id ORDER BY jour, debut, fin DESC');
+    foreach ($logins as $login) {
+      $edts = getWeekEdt($login, $week);
 
-    $result = $query->fetchAll();
+      foreach ($edts as $edt) {
+        // Conversion de minutes en heures
+        $exploded = explode(':', $edt['debut'], 2);
+        $debut = join('.', array($exploded[0], 100/60*$exploded[1]));
+        $exploded = explode(':', $edt['fin'], 2);
+        $fin = join('.', array($exploded[0], 100/60*$exploded[1]));
 
-    foreach ($result as $edt) {
-      // Conversion de minutes en heures
-      $exploded = explode(':', $edt['debut'], 2);
-      $debut = join('.', array($exploded[0], 100/60*$exploded[1]));
-      $exploded = explode(':', $edt['fin'], 2);
-      $fin = join('.', array($exploded[0], 100/60*$exploded[1]));
+        if ($edt['type'] == 'calendar' && isset($edt['color']))
+          $bgColor = $edt['color'];
+        elseif ($login == $_SESSION['login'])
+          $bgColor = '#770000';
+        else
+          $bgColor = $GLOBALS['colors'][array_search($login, $_SESSION['etuActive']) % count($GLOBALS['colors'])];
 
-      if ($edt['login'] == $_SESSION['login'])
-        $bgColor = '#770000';
-      else
-        $bgColor = $GLOBALS['colors'][array_search($edt['login'], $_SESSION['etuActive']) % count($GLOBALS['colors'])];
-
-      array_push($arrayEdt, array(
-        'id' => $GLOBALS['id']++,
-        'idUV' => $edt['uv'],
-        'salle' => $edt['salle'],
-        'login' => $edt['login'],
-        'column' => $edt['jour'],
-        'duration' => $fin - $debut,
-        'startTime' => $debut - 7,
-        'semaine' => $edt['semaine'],
-        'fgColor' => '#FFFFFF',
-        'bgColor' => $bgColor,
-        'columnPerDay' => 3,
-        'session' => ($edt['login'] == $_SESSION['login'])
-      ));
+        array_push($arrayEdt, array(
+          'id' => $GLOBALS['id']++,
+          'idUV' => $edt['uv'],
+          'salle' => $edt['salle'],
+          'login' => $edt['login'],
+          'column' => $edt['jour'],
+          'duration' => $fin - $debut,
+          'startTime' => $debut - 7,
+          'semaine' => $edt['semaine'],
+          'fgColor' => '#FFFFFF',
+          'bgColor' => $bgColor,
+          'columnPerDay' => 3,
+          'session' => ($edt['login'] == $_SESSION['login'])
+        ));
+      }
     }
 
     return $arrayEdt;
@@ -252,10 +254,9 @@
   }
 
 
-  function printWeek($login, $week, $getEdt = 'getEdtEtu', $nbrOfDays = 7) {
+  function getWeekEdt($login, $week, $getEdt = 'getEdtEtu', $nbrOfDays = 7) {
     $days = getDays($week, $nbrOfDays);
     $allEdt = array();
-    $arrayEdt = array();
     $columnPerDay = 0;
 
     foreach ($days as $i => $day) {
@@ -266,7 +267,7 @@
         $summary = (isset($split[0]) ? $split[0] : $day['infos']);
         $description = (isset($split[1]) ? $split[1] : '');
         $location = (isset($split[2]) ? $split[2] : '');
-        array_push($allEdt, array('uv' => $summary, 'note' => $description, 'idUV' => NULL, 'jour' => $i, 'debut' => '00:00', 'fin' => '23:59', 'type' => '', 'groupe' => '', 'salle' => $location, 'color' => '#000000'));
+        array_push($allEdt, array('uv' => $summary, 'note' => $description, 'idUV' => NULL, 'jour' => $i, 'debut' => '00:00', 'fin' => '23:59', 'type' => 'calendar', 'groupe' => '', 'salle' => $location, 'color' => '#000000'));
       }
       else {
         $query = $GLOBALS['bdd']->prepare('SELECT * FROM days WHERE begin < ? AND end >= ? ORDER BY end DESC');
@@ -296,6 +297,14 @@
         }
       }
     }
+
+    return $allEdt;
+  }
+
+
+  function printWeek($login, $week, $getEdt = 'getEdtEtu', $nbrOfDays = 7) {
+    $allEdt = getWeekEdt($login, $week, $getEdt, $nbrOfDays);
+    $arrayEdt = array();
 
     foreach ($allEdt as $i => $edt) {
       // Conversion de minutes en heures
@@ -436,7 +445,7 @@
     }
   }
   elseif ($mode == 'organiser') {
-    $all = array_merge($all, printManyEdtEtu(array_merge($_SESSION['etuActive'], array($_SESSION['login']))));
+    $all = array_merge($all, printManyEdtEtu(array_merge($_SESSION['etuActive'], array($_SESSION['login'])), $_SESSION['week']));
   }
   elseif ($mode == 'planifier') {
     if (isset($_GET['cours']) && $_GET['cours'] = '1')
@@ -451,6 +460,9 @@
       $all = array_merge($all, printWeek($_SESSION['login'], $_SESSION['week']));
       //$all = array_merge($all, printWeek($_SESSION['login'], $_SESSION['week'], 'getEdtReu'));
     }
+  }
+  elseif ($mode == 'test') {
+    $all = array_merge($all, printManyEdtEtu(array_merge($_SESSION['etuActive'], array($_SESSION['login'])), $_SESSION['week']));
   }
   else {
     if (isset($_GET['uv']) && is_string($_GET['uv']) && !empty($_GET['uv']))

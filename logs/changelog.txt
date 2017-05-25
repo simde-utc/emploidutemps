@@ -249,3 +249,12 @@ Stable 1.4.1: 2017-04-21
   - Ajout de l'export sous format image
   - Correction d'écriture
   - Amélioration significative des exports pdf et img
+
+Stable 1.4.2: 2017-05-25
+  - Correction de bugs d'affichage (affichage des étudiants, développement des cards)
+  - Ajout d'options à l'affichage des étudiants: envoi d'un mail groupé, accès Moodle et UVWeb
+  - Adaptation de l'affichage des horaires en fonction de l'heure actuelle
+  - Adaptation du popup en fonction des couleurs de la tâche
+  - Correction de l'accès API avec ajout d'un mdp
+  - Remise en marche du mode organiser (marche maintenant en fonction de la semaine courante)
+  - Début de définition des types d'évènemets

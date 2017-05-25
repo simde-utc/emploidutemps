@@ -32,7 +32,9 @@ var defaultSettings = {
         if (window.card === '') {
           if (card.top + 150 > end) // Détecter si la tache ne dépasse pas le calendrier en s'ouvrant
             $('#' + card.id).css('top', end - 150);
-          $('#' + card.id).css('left', 0).css('height', 150).css('width', 132).addClass('focus');
+          if (card.height < 150)
+            $('#' + card.id).css('height', 150);
+          $('#' + card.id).css('left', 0).css('width', 132).addClass('focus');
           $('#' + card.id + ' .interraction').css('opacity', '1').css('visibility', 'visible');
 
           $('#zoneGrey').addClass('focused');
@@ -55,7 +57,9 @@ var defaultSettings = {
 
           if (card.top + 150 > end) // Détecter si la tache ne dépasse pas le calendrier en s'ouvrant
             $('#' + card.id).css('top', end - 150);
-          $('#' + card.id).css('left', 0).css('height', 150).css('width', 132).addClass('focus');
+          if (card.height < 150)
+            $('#' + card.id).css('height', 150);
+          $('#' + card.id).css('left', 0).css('width', 132).addClass('focus');
           $('#' + card.id + ' .interraction').css('opacity', '1').css('visibility', 'visible');
 
           $('#zoneGrey').addClass('focused');
@@ -175,7 +179,7 @@ function appendTasks(placeholder, tasks) {
       else
         task.interraction = "<button class='option' style='color:" + task.fgColor + "; background-color:" + task.bgColor + ";' onClick='edtUV(\"" + task.uv + "\");'><i class='fa fa-calendar-o' aria-hidden='true'></i> Voir l'edt de l'UV</button>";
 
-      task.interraction += "<button class='option' style='color:" + task.fgColor + "; background-color:" + task.bgColor + "; width: 59px' onClick='uvMoodle(\"" + task.uv + "\");'><i class='fa fa-external-link' aria-hidden='true'></i> Moodle</button><button class='option' style='color:" + task.fgColor + "; background-color:" + task.bgColor + "; width: 59px' onClick='uvWeb(\"" + task.uv + "\");' ><i class='fa fa-external-link' aria-hidden='true'></i> UVweb</button><button class='option' style=\"color:" + task.fgColor + "; background-color:" + task.bgColor + ";\" onClick=\"seeEtu(" + task.idUV + ");\"><i class='fa fa-user-o' aria-hidden='true'></i> Voir les étudiants</button>";
+      task.interraction += "<button class='option' style='color:" + task.fgColor + "; background-color:" + task.bgColor + "; width: 59px' onClick='uvMoodle(\"" + task.uv + "\");'><i class='fa fa-external-link' aria-hidden='true'></i> Moodle</button><button class='option' style='color:" + task.fgColor + "; background-color:" + task.bgColor + "; width: 59px' onClick='uvWeb(\"" + task.uv + "\");' ><i class='fa fa-external-link' aria-hidden='true'></i> UVweb</button><button class='option' style=\"color:" + task.fgColor + "; background-color:" + task.bgColor + ";\" onClick=\"seeEtu(" + task.idUV + ", '" + task.bgColor + "', '" + task.fgColor + "');\"><i class='fa fa-user-o' aria-hidden='true'></i> Voir les étudiants</button>";
 
       if (window.compare === 0 && task.columnPerDay == 2)
         task.interraction += "<button class='option' style='color:" + task.fgColor + "; background-color:" + task.bgColor + "' onClick='askForExchange(" + window.idUV + ", " + task.idUV + ");'><i class='fa fa-handshake-o' aria-hidden='true'></i> Proposer un échange</button>";
@@ -260,14 +264,14 @@ function appendTasks(placeholder, tasks) {
       if (window.get.indexOf('salle=') > -1) {
         card.on('click', function () {
           nbr = task.uv.split(' ')[0];
-          html = '<div id="popupHead">' + nbr + ' salle' + (nbr == 1 ? '' : 's') + ' disponible' + (nbr == 1 ? '' : 's') + (task.horaire == 'Journée' ? ' toute la journée': (' de ' + task.horaire.replace('-', ' à ').replace(':', 'h').replace(':', 'h'))) + '</div><table style="padding: 1%; width: 100%; background-color: ' + task.bgColor + '; color: ' + task.fgColor + '">'
+          html = '<div id="popupHead">' + nbr + ' salle' + (nbr == 1 ? '' : 's') + ' disponible' + (nbr == 1 ? '' : 's') + (task.horaire == 'Journée' ? ' toute la journée': (' de ' + task.horaire.replace('-', ' à ').replace(':', 'h').replace(':', 'h'))) + '</div><table style="padding: 1%; width: 100%">'
 
           if (task.note['C'].length > 0)
             html += '<tr><td style="width: 15%">Salle' + (task.note['C'].length == 1 ? '' : 's') + ' de cours</td><td style="width: 85%"> ' + task.note['C'].join(', ') + '</td></tr>';
           if (task.note['D'].length > 0)
             html += '<tr><td style="width: 15%">Salle' + (task.note['D'].length == 1 ? '' : 's') + ' de TD</td><td style="width: 85%"> ' + task.note['D'].join(', ') + '</td></tr>';
 
-          popup(html + '</table>');
+          popup(html + '</table>', task.bgColor, task.fgColor);
         });
         card.append($('<div class="time">' + (task.startTime < (window.HOUR_MAX - window.HOUR_MIN) ? (task.duration - Math.floor(task.duration) > 0.25 ? Math.ceil(task.duration) : Math.floor(task.duration)) + 'h' : task.horaire) + '</div><div class="uvType"><span>' + task.uv + '</span></div>')).appendTo(placeholder);
         return;
@@ -327,7 +331,7 @@ $.fn.skeduler = function( options ) {
   var classDay = '';
 
   settings.headers.forEach(function(element) {
-    if (window.mode === 'planifier') {
+    if (window.mode === 'planifier' || window.mode === 'organiser') {
       if (d < currentDay)
         classDay = 'passedDay';
       else if (d == currentDay)
@@ -356,31 +360,27 @@ $.fn.skeduler = function( options ) {
     gridColumnElement[right] = div.clone();
 
   var hour = date.getHours();
-  var passedHour = div.clone().addClass('passedHour');
-  var currentHour = div.clone().addClass('currentHour');
-  var futureHour = div.clone().addClass('futureHour');
+  var classHour = '';
 
   // Populate timeline
   for (var i = window.HOUR_MIN; i < window.HOUR_MAX; i++) {
-    if (window.mode === 'planifier') {
+    if (window.mode === 'planifier' || window.mode === 'organiser') {
       if (currentDay == -1)
-        divHour = futureHour;
+        classHour = 'futureHour';
       else if (currentDay == 7)
-        divHour = passedHour;
+        classHour = 'passedHour';
       else if (i < hour)
-        divHour = passedHour;
+        classHour = 'passedHour';
       else if (i === hour)
-        divHour = currentHour;
+        classHour = 'currentHour';
       else
-        divHour = futureHour;
+        classHour = 'futureHour';
     }
-    else if (window.mode == 'organiser')
-      divHour = futureHour;
     else
-      divHour = div.clone();
+      classHour = '';
 
-    divHour.clone().text(toTimeString(i)).appendTo(scheduleTimelineEl);
-    divHour.clone().appendTo(scheduleTimelineEl);
+    div.clone().addClass(classHour).text(toTimeString(i)).appendTo(scheduleTimelineEl);
+    div.clone().addClass(classHour).appendTo(scheduleTimelineEl);
 
     for (right = 0; right < window.columnPerDay; right++) {
       gridColumnElement[right].append(div.clone().addClass(settings.cellCssClass + window.columnPerDay + right));
@@ -388,8 +388,10 @@ $.fn.skeduler = function( options ) {
     }
   }
 
-  if (window.mode === 'planifier') {
-    futureHour.clone().text('').addClass('allDay').appendTo(scheduleTimelineEl);
+  if (window.mode === 'planifier' || window.mode === 'organiser') {
+    if (classHour == 'currentHour')
+      classHour = 'futureHour';
+    div.clone().text('').addClass(classHour).addClass('allDay').appendTo(scheduleTimelineEl);
     gridColumnElement[0].append(div.clone().addClass('allDay').addClass(settings.cellCssClass + '10'));
   }
 
@@ -400,16 +402,29 @@ $.fn.skeduler = function( options ) {
 
     var el = gridColumnElement[j % window.columnPerDay].clone();
 
-    if (window.mode === 'planifier') {
-      if (j == currentDay)
-        el.addClass('currentDay');
+    if (window.mode === 'planifier' || window.mode === 'organiser') {
+      if (j == currentDay) {
+        el = div.clone();
+
+        for (var i = window.HOUR_MIN; i < window.HOUR_MAX; i++) {
+          if (i < hour)
+            classHour = 'passedHour';
+          else if (i === hour)
+            classHour = 'currentHour';
+          else
+            classHour = 'futureHour';
+
+          el.append(div.clone().addClass(classHour).addClass(settings.cellCssClass + '10'));
+          el.append(div.clone().addClass(classHour).addClass(settings.cellCssClass + '10'));
+        }
+
+        el.append(div.clone().addClass('allDay').addClass(classHour).addClass(settings.cellCssClass + '10'));
+      }
       else if (j > currentDay)
         el.addClass('futureDay');
       else
         el.addClass('passedDay');
     }
-    else if (window.mode == 'organiser')
-      el.addClass('futureDay');
 
     el.addClass('days');
     el.prepend(placeholder);

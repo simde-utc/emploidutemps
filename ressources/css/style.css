@@ -116,16 +116,16 @@ body {
 background-color: #FFFFFF;
 }
 
-.skeduler-headers .passedDay, .skeduler-main-body .passedDay .skeduler-cell10, .skeduler-main-timeline .passedHour {
+.skeduler-headers .passedDay, .skeduler-main-body .passedDay .skeduler-cell10, .skeduler-main-timeline .passedHour, .skeduler-main-body div.skeduler-cell10.passedHour {
   background-color: #CCCCCC;
 }
 
-.skeduler-headers .currentDay, .skeduler-main-body .currentDay .skeduler-cell10, .skeduler-main-timeline .currentHour {
+.skeduler-headers .currentDay, .skeduler-main-body .currentDay .skeduler-cell10, .skeduler-main-timeline .currentHour, .skeduler-main-body div.skeduler-cell10.currentHour {
   background-color: #576D7C;
   color: #FFF;
 }
 
-.skeduler-headers .futureDay, .skeduler-main-body .futureDay .skeduler-cell10, .skeduler-main-timeline .futureHour {
+.skeduler-headers .futureDay, .skeduler-main-body .futureDay .skeduler-cell10, .skeduler-main-timeline .futureHour, .skeduler-main-body div.skeduler-cell10.futureHour {
   background-color: #D3E0EF;
 }
 
@@ -269,7 +269,6 @@ background-color: #FFFFFF;
   visibility: hidden;
   width: 80%;
   max-height: 80%;
-  max-width: 1000px;
   opacity: 0;
   top: 50%;
   left: 10%;
@@ -314,6 +313,24 @@ background-color: #FFFFFF;
 #searchResult {
   display: flex;
   flex-wrap: wrap;
+}
+
+.optionCard {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  width: 100%;
+  margin: 0.5%;
+  margin-top: 2.5px;
+  margin-bottom: 2.5px;
+  border: 2px SOLID #CCCCCC;
+  border-radius: 5px;
+  background-color: #CCCCCC;
+}
+
+.optionCard button {
+  width: 25%;
+  text-align: center;
 }
 
 .searchCard {

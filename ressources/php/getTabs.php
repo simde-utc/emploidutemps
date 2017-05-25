@@ -50,29 +50,26 @@ $nbrAnnule = count(getRecuesList($_SESSION['login'], NULL, 1, 1)) + count(getEnv
 echo (($mode != 'organiser' && (($mode != 'modifier' && (!isset($_GET['uv']) || $_GET['uv'] == '')) || ($mode == 'modifier' && (!isset($_GET['envoi']) || $nbrEnvoi == 0) && (!isset($_GET['recu']) || $nbrRecu == 0) && (!isset($_GET['annule']) || $nbrAnnule == 0) && !isset($_GET['original']) && !isset($_GET['changement'])) || $_GET == array('mode' => 'modifier', 'login' => '', 'addTab' => '')) && (!isset($_GET['login']) || isset($_GET['login']) && is_string($_GET['login']) && (($_GET['login'] == $_SESSION['login']) || ($_GET['login'] == '')) || empty($_GET) || (isset($_GET['tab']) && $_GET['tab'] == 1)) && ($mode != 'planifier' || !((isset($_GET['cours']) && $_GET['cours'] == 1) && !(isset($_GET['event']) && $_GET['event'] == 1)) && !(isset($_GET['reu']) && $_GET['reu'] == 1) && !(isset($_GET['salle']) && is_string($_GET['salle']) && !empty($_GET['salle'])))) ? '\'active\'>' : '\'notActive\' onClick="edtEtu(\'\');">');
 echo $_SESSION['nom'], ' ', $_SESSION['prenom'], '</button>';
 
-if ($mode == 'planifier') {
-  echo '<div style="border: 1px SOLID #000000;"></div>';
+if ($mode == 'planifier' || $mode == 'organiser') {
+  $date = new DateTime($_SESSION['week']);
+  $date->modify('-7 day');
+  echo '<button ', (isAGoodDate($date->format('Y-m-d')) ? 'class="notActive" onClick="planifier(\'\', \''.$date->format('Y-m-d').'\')"' : 'style="cursor: default;  background-color: #555555;" disabled'), '><i class="fa fa-arrow-left" aria-hidden="true"></i></button>';
+  $date->modify('7 day');
+  echo '<button class="notActive" onClick="planifier(\'\', \'', date('Y-m-d', strtotime('monday this week')), '\')">Sem. ', $date->format('d/m'), '</button>';
+  $date->modify('7 day');
+  echo '<button ', (isAGoodDate($date->format('Y-m-d')) ? 'class="notActive" onClick="planifier(\'\', \''.$date->format('Y-m-d').'\')"' : 'style="cursor: default;  background-color: #555555;" disabled'), '><i class="fa fa-arrow-right" aria-hidden="true"></i></button>';
 
-  if ($mode == 'planifier') {
-    $date = new DateTime($_SESSION['week']);
-    $date->modify('-7 day');
-    echo '<button ', (isAGoodDate($date->format('Y-m-d')) ? 'class="notActive" onClick="planifier(\'\', \''.$date->format('Y-m-d').'\')"' : 'style="cursor: default;  background-color: #555555;" disabled'), '><i class="fa fa-arrow-left" aria-hidden="true"></i></button>';
-    $date->modify('7 day');
-    echo '<button class="notActive" onClick="planifier(\'\', \'', date('Y-m-d', strtotime('monday this week')), '\')">Sem. ', $date->format('d/m'), '</button>';
-    $date->modify('7 day');
-    echo '<button ', (isAGoodDate($date->format('Y-m-d')) ? 'class="notActive" onClick="planifier(\'\', \''.$date->format('Y-m-d').'\')"' : 'style="cursor: default;  background-color: #555555;" disabled'), '><i class="fa fa-arrow-right" aria-hidden="true"></i></button>';
-  }
-
-  echo '<div style="border: 1px SOLID #000000;"></div>
-  <button class="', (isset($_GET['cours']) && $_GET['cours'] == '1' ? 'active"' : 'notActive" onClick="planifier(\'cours=1\')"'), '>Cours</button>
-  <button class="', (isset($_GET['salle']) && $_GET['salle'] == '1' ? 'active"' : 'notActive" onClick="planifier(\'salle=1\')"'), '>1-2h</button>
-  <button class="', (isset($_GET['salle']) && $_GET['salle'] == '3' ? 'active"' : 'notActive" onClick="planifier(\'salle=3\')"'), '>3-4h</button>
-  <button class="', (isset($_GET['salle']) && $_GET['salle'] == '5' ? 'active"' : 'notActive" onClick="planifier(\'salle=5\')"'), '>5-6h</button>
-  <button class="', (isset($_GET['salle']) && $_GET['salle'] == '7' ? 'active"' : 'notActive" onClick="planifier(\'salle=7\')"'), '>7-8h</button>
-  <button class="', (isset($_GET['salle']) && $_GET['salle'] == '-8' ? 'active"' : 'notActive" onClick="planifier(\'salle=-8\')"'), '>+ 8h</button>
-  <div style="border: 1px SOLID #000000;"></div>
-  <button class="notActive" onClick="planifier(\'event=1\')" style="cursor: default; background-color: #555555;" disabled>Evènements</button>
-  <button class="notActive" onClick="planifier(\'reu=1\')" style="cursor: default;  background-color: #555555;" disabled>Réunions</button>';
+  if ($mode == 'planifier')
+    echo '<div style="border: 1px SOLID #000000;"></div>
+    <button class="', (isset($_GET['cours']) && $_GET['cours'] == '1' ? 'active"' : 'notActive" onClick="planifier(\'cours=1\')"'), '>Cours</button>
+    <button class="', (isset($_GET['salle']) && $_GET['salle'] == '1' ? 'active"' : 'notActive" onClick="planifier(\'salle=1\')"'), '>1-2h</button>
+    <button class="', (isset($_GET['salle']) && $_GET['salle'] == '3' ? 'active"' : 'notActive" onClick="planifier(\'salle=3\')"'), '>3-4h</button>
+    <button class="', (isset($_GET['salle']) && $_GET['salle'] == '5' ? 'active"' : 'notActive" onClick="planifier(\'salle=5\')"'), '>5-6h</button>
+    <button class="', (isset($_GET['salle']) && $_GET['salle'] == '7' ? 'active"' : 'notActive" onClick="planifier(\'salle=7\')"'), '>7-8h</button>
+    <button class="', (isset($_GET['salle']) && $_GET['salle'] == '-8' ? 'active"' : 'notActive" onClick="planifier(\'salle=-8\')"'), '>+ 8h</button>
+    <div style="border: 1px SOLID #000000;"></div>
+    <button class="notActive" onClick="planifier(\'event=1\')" style="cursor: default; background-color: #555555;" disabled>Evènements</button>
+    <button class="notActive" onClick="planifier(\'reu=1\')" style="cursor: default;  background-color: #555555;" disabled>Réunions</button>';
 }
 elseif ($mode == 'modifier') {
   if ($nbrRecu != 0)
@@ -137,10 +134,10 @@ foreach ($_SESSION['tab']['uv'] as $uv) {
 <div id='option'>
   <button id='addTab' onClick='searchTab();'<?php
     if ($mode == 'modifier' || $mode == 'planifier')
-    echo 'class="blocked"'; ?>><i class="fa fa-search" aria-hidden="true"></i></button>
+      echo 'class="blocked"';
 
-  <select id='mode' onChange="window.card = ''; selectMode('', this.options[this.selectedIndex].value);">
-  <?php
+    echo '><i class="fa fa-search" aria-hidden="true"></i></button>
+    <select id="mode" onChange="changeMode(this.options[this.selectedIndex].value, \'', (strtotime($_SESSION['week']) < time() - 604800 ? date('Y-m-d', strtotime('monday this week')) : $_SESSION['week']), '\');">';
     $query = $GLOBALS['bdd']->prepare('SELECT login FROM etudiants WHERE login = ?');
     $GLOBALS['bdd']->execute($query, array($_SESSION['login']));
 

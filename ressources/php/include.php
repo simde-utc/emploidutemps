@@ -113,24 +113,6 @@
     </div>';
   }
 
-  function printSelf($etu) {
-    $pic = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/pic/'.$_SESSION['login'].'.jpg';
-
-    if (!file_exists($pic))
-      $pic = 'https://'.$_SERVER['SERVER_NAME'].'/pic/'.$_SESSION['login'].'.jpg';
-    else
-      $pic = $GLOBALS['voidPic'];
-
-    echo '<div class="searchCard" style="width: 100%;" onClick="popupClose(); window.login = \'\'; window.uv = \'\'; selectMode("", window.mode);">
-      <img class="searchImg" src="https://demeter.utc.fr/pls/portal30/portal30.get_photo_utilisateur?username='.$etu['login'].'" alt="" />
-      <div>
-        <div>', $_SESSION['nom'], ' ', $_SESSION['prenom'], '</div>
-        <div>', $etu['semestre'], '</div>
-        <div>', $_SESSION['mail'], '</div>
-      </div>
-    </div>';
-  }
-
   function printEtuList($idUV) {
     $etus = getEtuFromIdUV($idUV);
     $uv = getUVFromIdUV($idUV);
@@ -145,19 +127,18 @@
       }
     }
 
+
+    echo '<div class="optionCard">
+      <button onClick="uvMoodle(', $idUV, ');"><i class="fa fa-external-link" aria-hidden="true"></i> Moodle</button>';
     if ($where != FALSE) {
-      //printSelf($etus[$where]);
+      $mails = array();
+      foreach ($etus as $etu)
+        array_push($mails, $etu['mail']);
+
+        echo '<button onClick="location.href=\'mailto:', implode(',', $mails), '\'"><i class="fa fa-envelope" aria-hidden="true"></i> Envoyer un mail au groupe</button>';
       unset($etus[$where]);
     }
-
-    $mailto = array();
-    foreach ($etus as $etu)
-      array_push($mailto, $etu['mail']);
-
-    echo '<div class="searchCard" style="width: 100%;">
-      <a href="mailto:', implode(';', $mailto), '">Envoyer un mail au groupe</a>
-      <button onClick="uvMoodle(' + $idUV + ');"><i class="fa fa-external-link" aria-hidden="true"></i> Moodle</button>
-      <button onClick="uvWeb(' + $idUV + ');"><i class="fa fa-external-link" aria-hidden="true"></i> UVWeb</button>
+    echo '<button onClick="uvWeb(', $idUV, ');"><i class="fa fa-external-link" aria-hidden="true"></i> UVWeb</button>
     </div>';
 
     foreach ($etus as $etu)
@@ -280,11 +261,14 @@
     return $query->fetchAll();
   }
 
-  function getEtu($login) {
-    $query = $GLOBALS['bdd']->prepare('SELECT login, semestre, mail, prenom, nom, uvs FROM etudiants WHERE login = ?');
-    $GLOBALS['bdd']->execute($query, array($login));
+  function getEtu($login = NULL) {
+    $query = $GLOBALS['bdd']->prepare('SELECT login, semestre, mail, prenom, nom, uvs FROM etudiants WHERE (? IS NULL OR login = ?)');
+    $GLOBALS['bdd']->execute($query, array($login, $login));
 
-    return $query->fetch();
+    if ($query->rowCount() == 1)
+      return $query->fetch();
+    else
+      return $query->fetchAll();
   }
 
   function getEdtSalle($ecart, $useless1, $useless2, $day = NULL) {
@@ -311,7 +295,7 @@
 
       $edt['salle'] = '';
       $edt['note'] = array('C' => array(), 'D' => array());
-      $edt['id'] = NULL;
+      $edt['id'] = 'salle';
       $edt['uv'] = $nbrSameTime.' dispo'.($nbrSameTime == 1 ? '' : 's');
 
       foreach($passed as $j => $elem) {
@@ -454,6 +438,9 @@
     $query = $GLOBALS['bdd']->prepare('SELECT * FROM days WHERE begin <= ? AND end >= ? LIMIT 1');
     $GLOBALS['bdd']->execute($query, array($week, $week));
 
+    if (isset($_GET['mode']) && $_GET['mode'] == 'organiser' && strtotime($week) < time() - 604800)
+      return FALSE;
+
     return $query->rowCount() == 1;
   }
 
@@ -467,4 +454,6 @@
 
   if (isset($_GET['week']) && isAGoodDate($_GET['week']))
     $_SESSION['week'] = $_GET['week'];
+  elseif (isset($_GET['mode']) && $_GET['mode'] == 'organiser' && isset($_GET['week']))
+    $_SESSION['week'] = date('Y-m-d', strtotime('monday this week'));
 ?>

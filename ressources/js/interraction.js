@@ -75,7 +75,7 @@ function selectMode(get, mode) {
     window.compare = 1;
     window.idUV = '';
 
-    newRequest(get, '');
+    newRequest(get + (window.week === '' ? '' : '&week=' + window.week), '');
 
     setTimeout(function () {
       if ($('#menu button').length === 1)
@@ -99,7 +99,16 @@ function planifier(get, week) {
   else
     window.planifierGet = '&' + get;
 
-  selectMode('', 'planifier');
+  selectMode('', window.mode);
+}
+
+function changeMode(mode, weekForOrganiser) {
+  window.card = '';
+
+  if (mode == 'organiser')
+    window.week = weekForOrganiser;
+
+  selectMode('', mode);
 }
 
 function loading() {
@@ -250,12 +259,19 @@ function uvMoodle(uv) {
   window.open('http://moodle.utc.fr/course/search.php?search=' + uv);
 }
 
-function popup(info) {
+function popup(html, bgColor, fgColor) {
   window.click = true;
-  $('#popup').html(info);
+  $('#popup').html(html);
   $('#popup').css('visibility', 'visible');
   $('#popup').css('opacity', '1');
   $('#zonePopup').addClass('focused');
+
+  bgColor = bgColor || '#BBBBBB';
+  fgColor = fgColor || '#000000';
+  $('#popup').css('border', '5px SOLID' + bgColor);
+  $('#popupHead').css('border', '5px SOLID' + bgColor);
+  $('#popupHead').css('background-color', bgColor);
+  $('#popupHead').css('color', fgColor);
 
   if ($('.focusedInput').length != 0)
     $('.focusedInput')[0].focus();
@@ -293,10 +309,10 @@ function unFocus() {
   $('#' + window.card.id).click();
 }
 
-function seeEtu(idUV) {
+function seeEtu(idUV, bgColor, fgColor) {
   window.click = true;
   $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getEtuList.php?idUV=' + idUV, function (etus) {
-    popup(etus);
+    popup(etus, bgColor, fgColor);
   });
 }
 
