@@ -111,6 +111,24 @@ function changeMode(mode, weekForOrganiser) {
   selectMode('', mode);
 }
 
+function deconnexion() {
+  popup('<iframe id="Example" \
+  name="Example2" \
+  title="Example2" \
+  frameborder="0" \
+  scrolling="no" \
+  height="100%" \
+  width="100%" \
+  src="https://assos.utc.fr/emploidutemps/deconnexion.php"> \
+</iframe>');
+
+  $('#popup').css('height', '100%').css('overflow', 'hidden');
+
+  setTimeout(function() {
+    window.location.reload();
+  }, 3000);
+}
+
 function loading() {
   var img = document.createElement('img');
   img.id = 'loading';

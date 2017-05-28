@@ -230,13 +230,11 @@
     echo '<iframe id="Example"
     name="Example2"
     title="Example2"
-    width="4000"
-    height="3000"
     frameborder="0"
     scrolling="no"
     marginheight="0"
     marginwidth="0"
-    src="https://assos.utc.fr/emploidutemps/">
+    src="http://wwwetu.utc.fr/sme">
 </iframe>';
   }
   else

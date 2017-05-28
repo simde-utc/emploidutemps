@@ -17,6 +17,12 @@
     $_SESSION['MODCASID'] = $_GET['MODCASID'];
 
   $bdd = new BDD();
+
+  function shutdown() {
+    $GLOBALS['bdd'] = null;
+  }
+  register_shutdown_function('shutdown');
+
   $curl = new CURL(strpos($_SERVER['HTTP_HOST'],'utc') !== false);
   if (isset($_SESSION['MODCASID']))
     $curl->setCookies('MODCASID='.$_SESSION['MODCASID']);

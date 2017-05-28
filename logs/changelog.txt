@@ -263,3 +263,8 @@ Stable 1.4.3: 2017-05-26
   - Correction d'un bug d'affichage dans le mode planifier
   - Suppression d'un fichier js inutile
   - Ajout d'un lien calendar qui n'affichge uniquement que le calendrier (peut-être utile pour une inclusion dans une page)
+
+Stable 1.4.4: 2017-05-28
+  - Amélioration de l'affichage des onglets
+  - Meilleure gestion de la base de données
+  - Amélioration du système de déconnexion
