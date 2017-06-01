@@ -35,12 +35,12 @@
 
   	if ($info != -1) 	{
   		$_SESSION['login'] = $info['cas:user'];
-      $_SESSION['mail'] = $info['cas:attributes']['cas:mail'];
-      $_SESSION['prenom'] = $info['cas:attributes']['cas:givenName'];
-      $_SESSION['nom'] = strtoupper($info['cas:attributes']['cas:sn']);
+      $_SESSION['email'] = $info['cas:attributes']['cas:mail'];
+      $_SESSION['firstname'] = $info['cas:attributes']['cas:givenName'];
+      $_SESSION['surname'] = strtoupper($info['cas:attributes']['cas:sn']);
   		$_SESSION['ticket'] = $_GET['ticket'];
-      $_SESSION['tab'] = array('uv' => array(), 'etu' => array());
-      $_SESSION['etuActive'] = array();
+      $_SESSION['tabs'] = array('uv' => array(), 'etu' => array());
+      $_SESSION['activeEtus'] = array();
       $_SESSION['week'] = (isset($_GET['week']) && is_string($_GET['week']) && isAGoodDate($_GET['week'])) ? $_GET['week'] : date('Y-m-d', strtotime('monday this week'));
 
       $get = '?';
@@ -282,7 +282,7 @@
   }
 
   function getEtu($login = NULL) {
-    $query = $GLOBALS['bdd']->prepare('SELECT login, semestre, mail, prenom, nom, uvs FROM students WHERE (? IS NULL OR login = ?)');
+    $query = $GLOBALS['bdd']->prepare('SELECT * FROM students WHERE (? IS NULL OR login = ?)');
     $GLOBALS['bdd']->execute($query, array($login, $login));
 
     if ($query->rowCount() == 1)
@@ -318,7 +318,7 @@
       if ($where == array()) {
         array_push($tasks, array(
           'subject' => 1,
-          'begin' => $room['begin'], 
+          'begin' => $room['begin'],
           'end' => $room['end'],
           'description' => array($room['type'] => array($room['room']))));
         array_push($passed, $toTest);

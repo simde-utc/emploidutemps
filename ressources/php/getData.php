@@ -1,5 +1,7 @@
 <?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/include.php');
 
+  $title = '';
+  $tabs = array();
   $tasks = array();
   $id = 0;
 
@@ -7,6 +9,8 @@
     header('Content-Type: application/json');
 
     echo json_encode(array(
+      'title' => $GLOBALS['title'],
+      'tabs' => $GLOBALS['tabs'],
       'tasks' => $GLOBALS['tasks'],
       'infos' => array(
         'login' => $_SESSION['login'],
@@ -87,7 +91,7 @@
         if ($infosArray['week'] != '')
           $task['week'] = $infosArray['week'];
       }
-      elseif ($taskType == 'many') {
+      elseif ($taskType == 'organize') {
         $task['subject'] = (isset($infosArray['subject']) ? $infosArray['subject'] : $infosArray['uv']);
         $task['location'] = $infosArray['room'];
       }
@@ -111,6 +115,37 @@
     }
 
     array_push($GLOBALS['tasks'], $tasks);
+  }
+
+  function addGroupTabs($name, $group) {
+    $GLOBALS['tabs'][$name] = array(
+      'active' => FALSE,
+    );
+    $groupActive = 1;
+
+    foreach ($group as $sub_name => $sub_group) {
+      if (is_string($sub_group)) {
+        $sub_name = 'all';
+        $sub_group = array($sub_group);
+      }
+
+      foreach ($sub_group as $login) {
+        $data = getEtu($login);
+        $notActive = array_keys($_SESSION['etuActive'], $login) == -1;
+        $groupActive += $notActive;
+
+        $GLOBALS['tabs'][$name][$sub_name][$login] = array(
+          'login' => $login,
+          'surname' => $data['surname'],
+          'firstname' => $data['firstname'],
+          //'role' =>
+          'isActive' => !$notActive
+        );
+      }
+    }
+
+    if ($groupActive == 1)
+      $GLOBALS['tabs'][$name]['active'] = TRUE;
   }
 
   // Affichage de les cours d'une personne sur une semaine générale
@@ -271,7 +306,7 @@
       printWeek($login, $week, array('uv_followed', 'event', 'meeting'));
 
     for ($i = 0; $i < count($GLOBALS['tasks']); $i++) {
-      $GLOBALS['tasks'][$i]['type'] = 'many';
+      $GLOBALS['tasks'][$i]['type'] = 'organize';
     }
   }
 
@@ -322,6 +357,7 @@
       addTask($taskType, $info, $tasks);
     }
   }
+
 
   // Traitrement de la demande
   if (isset($_GET['mode']) && is_string($_GET['mode']) && !empty($_GET['mode']))
@@ -383,9 +419,10 @@
       printWeek($_SESSION['login'], $_SESSION['week'], 'event');
     elseif ($type == 'meetings')
       printWeek($_SESSION['login'], $_SESSION['week'], 'meeting');
-    elseif ($mode == 'organise') {
-      $_SESSION['etuActive'] = array('jderrien');
-      printManyTasks(array_merge(array($_SESSION['login']), $_SESSION['etuActive']), $_SESSION['week']);
+    elseif ($type == 'organize') {
+      $_SESSION['activeEtus'] = array('jderrien');
+      printManyTasks(array_merge(array($_SESSION['login']), $_SESSION['activeEtus']), $_SESSION['week']);
+      addGroupTabs('logins', $_SESSION['activeEtus']);
     }
     elseif ($type == 'rooms')
       printWeek(isset($_GET['gap']) && is_numeric($_GET['gap']) ? intval($_GET['gap']) : 2, $_SESSION['week'], 'room');

@@ -232,6 +232,7 @@ class MAJ
 
   private static function insertEtu ($lineFromEtu) {
     $infoFromLine = array_values(array_filter(explode(' ', preg_replace('/, /', '', preg_replace('/ ([A-Z0-9]{3,8}) /', '\\1,', $lineFromEtu)))));
+    $infoFromLine[3] = substr($infoFromLine[3], 0, -1);
 
     try { $infoFromGinger = $GLOBALS['ginger']->getUser($infoFromLine[0]); }
     catch (Exception $e) {
