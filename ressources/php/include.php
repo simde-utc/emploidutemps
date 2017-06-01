@@ -271,10 +271,18 @@
     $query = $GLOBALS['bdd']->prepare('SELECT login, semestre, mail, prenom, nom, uvs FROM etudiants WHERE (? IS NULL OR login = ?)');
     $GLOBALS['bdd']->execute($query, array($login, $login));
 
-    if ($query->rowCount() == 1)
-      return $query->fetch();
+    $length = $query->rowCount();
+    $etus = $query->fetchAll();
+
+    for($i = 0; $i < $length; $i++) {
+      $etus[$i]['uvs'] = substr($etus[$i]['uvs'], 0, -1);
+      $etus[$i]['branche'] = substr($etus[$i]['semestre'], 0, -2);
+    }
+
+    if ($length == 1)
+      return $etus[0];
     else
-      return $query->fetchAll();
+      return $etus;
   }
 
   function getEdtSalle($ecart, $useless1, $useless2, $day = NULL) {

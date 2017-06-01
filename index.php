@@ -9,6 +9,7 @@
   <script type="text/javascript" src="ressources/js/jquery-3.1.1.min.js"></script>
   <script type="text/javascript" src="ressources/js/interraction.js"></script>
   <script type="text/javascript" src="ressources/js/jquery.skeduler.js"></script>
+  <script type="text/javascript" src="ressources/js/jsPDF.js"></script>
   <script type="text/javascript" src="ressources/js/jquery.touchSwipe.min.js"></script>
   <script type="text/javascript">
     function main () {

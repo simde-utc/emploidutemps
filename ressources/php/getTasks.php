@@ -289,7 +289,7 @@
             if (($day['semaine'] === 'A' && $edt['semaine'] === 'B') || ($day['semaine'] === 'B' && $edt['semaine'] === 'A'))
               continue;
 
-            $edt['note'] = 'Cette semaine A';
+            $edt['note'] = 'Cette semaine '.$day['semaine'];
           }
 
           $edt['jour'] = $i;

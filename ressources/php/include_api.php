@@ -10,4 +10,6 @@
       header('HTTP/1.0 401 Unauthorized');
       exit;
     }
+    else
+      header('Content-Type: application/json');
   }

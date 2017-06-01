@@ -268,3 +268,9 @@ Stable 1.4.4: 2017-05-28
   - Amélioration de l'affichage des onglets
   - Meilleure gestion de la base de données
   - Amélioration du système de déconnexion
+
+Stable 1.4.5: 2017-06-01
+  - Ajout dans le branche dans les infos reçues concernant les étudiants
+  - Amélioration minime de la mise à jour
+  - Changement du header pour les api (application/json)
+  - Rajout du fichier js jsPDF, supprimé dans la 1.4.3 (les exports ne marchaient plus...)
