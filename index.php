@@ -10,10 +10,11 @@
   <script type="text/javascript" src="ressources/js/interraction.js"></script>
   <script type="text/javascript" src="ressources/js/jquery.skeduler.js"></script>
   <script type="text/javascript" src="ressources/js/jquery.touchSwipe.min.js"></script>
+  <script type="text/javascript" src="ressources/js/jsPDF.js"></script>
   <script type="text/javascript">
     function main () {
       <?php
-        $query = $GLOBALS['bdd']->prepare('SELECT login FROM etudiants WHERE login = ?');
+        $query = $GLOBALS['bdd']->prepare('SELECT login FROM students WHERE login = ?');
         $GLOBALS['bdd']->execute($query, array($_SESSION['login']));
 
         if ($query->rowCount() == 0)
@@ -40,12 +41,12 @@
         else if (isset($_GET['id']) && is_string($_GET['id']) && !empty($_GET['id']))
           echo 'setTimeout(function () { $("#', $_GET['id'], '").click(); }, 1000);';
 
-        $query = $GLOBALS['bdd']->prepare('SELECT nouveau FROM etudiants WHERE login = ?');
+        $query = $GLOBALS['bdd']->prepare('SELECT status FROM students WHERE login = ?');
         $GLOBALS['bdd']->execute($query, array($_SESSION['login']));
         $data = $query->fetch();
 
-        if ($data['nouveau'] == '1') {
-          $query = $bdd->prepare('UPDATE etudiants SET nouveau = 0 WHERE login = ?');
+        if ($data['status'] == '0') {
+          $query = $bdd->prepare('UPDATE students SET status = 0 WHERE login = ?');
           $bdd->execute($query, array($_SESSION['login']));
           echo 'setTimeout(function () { parameters("nouveau"); }, 1500);';
         }

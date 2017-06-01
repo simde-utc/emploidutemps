@@ -14,6 +14,7 @@
     $fgColor = getFgColor($bgColor);
 
     return array(
+      'task' => 'received',
       'id' => 'r'.$recue['idEchange'],
       'login' => $login,
       'column' => $recueInfo['jour'],
@@ -89,6 +90,7 @@
     $fgColor = getFgColor($bgColor);
 
     return array(
+      'task' => 'sent',
       'id' => 'e'.$envoie['idEchange'],
       'login' => $login,
       'column' => $envoieInfo['jour'],
@@ -188,6 +190,7 @@
           $bgColor = $GLOBALS['colors'][array_search($login, $_SESSION['etuActive']) % count($GLOBALS['colors'])];
 
         array_push($arrayEdt, array(
+          'task' => (isset($edt['task']) ? $edt['task'] : 'all'),
           'id' => $GLOBALS['id']++,
           'idUV' => $edt['uv'],
           'salle' => $edt['salle'],
@@ -229,6 +232,7 @@
       $fgColor = getFgColor($bgColor);
 
       array_push($arrayEdt, array(
+        'task' => 'cours',
         'id' => $GLOBALS['id']++,
         'login' => $login,
         'column' => $edt['jour'],
@@ -267,7 +271,7 @@
         $summary = (isset($split[0]) ? $split[0] : $day['infos']);
         $description = (isset($split[1]) ? $split[1] : '');
         $location = (isset($split[2]) ? $split[2] : '');
-        array_push($allEdt, array('uv' => $summary, 'note' => $description, 'idUV' => NULL, 'jour' => $i, 'debut' => '00:00', 'fin' => '23:59', 'type' => 'calendar', 'groupe' => '', 'salle' => $location, 'color' => '#000000'));
+        array_push($allEdt, array('task' => 'calendar', 'login' => NULL, 'uv' => $summary, 'note' => $description, 'semaine' => NULL, 'id' => NULL, 'jour' => $i, 'debut' => '00:00', 'fin' => '23:59', 'type' => 'calendar', 'groupe' => '', 'salle' => $location, 'color' => '#000000'));
       }
       else {
         $query = $GLOBALS['bdd']->prepare('SELECT * FROM days WHERE begin < ? AND end >= ? ORDER BY end DESC');
@@ -279,7 +283,7 @@
           $summary = (isset($split[0]) ? $split[0] : $data['infos']);
           $description = (isset($split[1]) ? $split[1] : '');
           $location = (isset($split[2]) ? $split[2] : '');
-          array_push($allEdt, array('uv' => $summary, 'note' => $description, 'idUV' => NULL, 'jour' => $i, 'debut' => '00:00', 'fin' => '23:59', 'type' => '', 'groupe' => '', 'salle' => $location, 'color' => '#000000'));
+          array_push($allEdt, array('task' => 'calendar', 'login' => NULL, 'uv' => $summary, 'note' => $description, 'semaine' => NULL, 'id' => NULL, 'jour' => $i, 'debut' => '00:00', 'fin' => '23:59', 'type' => '', 'groupe' => '', 'salle' => $location, 'color' => '#000000'));
         }
       }
 
@@ -293,6 +297,7 @@
           }
 
           $edt['jour'] = $i;
+          $edt['login'] = $login;
           array_push($allEdt, $edt);
         }
       }
@@ -317,6 +322,7 @@
       $fgColor = getFgColor($bgColor);
 
       array_push($arrayEdt, array(
+        'task' => 'week',
         'id' => $GLOBALS['id']++,
         'login' => $login,
         'column' => $edt['jour'],
@@ -333,7 +339,6 @@
         'note' => ((isset($edt['note'])) ? $edt['note'] : ''),
         'fgColor' => $fgColor,
         'bgColor' => $bgColor,
-        'columnPerDay' => $columnPerDay,
         'session' => ($login == $_SESSION['login'])
       ));
     }
@@ -345,14 +350,8 @@
   function printEdtUV($uv, $columnPerDay = 0, $type = NULL, $userColor = NULL) {
     $allEdt = getEdtUV($uv, $type);
     $arrayEdt = array();
-    $passed = array();
-
-    foreach ($allEdt as $edt)
-      array_push($passed, array($edt['jour'], $edt['debut'], $edt['fin']));
 
     foreach ($allEdt as $edt) {
-      $nbrSameTime = count(array_keys($passed, array($edt['jour'], $edt['debut'], $edt['fin'])));
-
       // Conversion de minutes en heures
       $exploded = explode(':', $edt['debut'], 2);
       $debut = join('.', array($exploded[0], 100/60*$exploded[1]));
@@ -375,6 +374,7 @@
       $fgColor = getFgColor($bgColor);
 
       array_push($arrayEdt, array(
+        'task' => 'uv',
         'id' => $GLOBALS['id']++,
         'column' => $edt['jour'],
         'duration' => $fin - $debut,
@@ -390,8 +390,6 @@
         'note' => (($edt['semaine'] == '') ? '' : 'Sem '.$edt['semaine'].'<br>').$edt['nbrEtu'].' étudiants',
         'fgColor' => $fgColor,
         'bgColor' => $bgColor,
-        'nbrSameTime' => $nbrSameTime,
-        'columnPerDay' => $columnPerDay,
         'session' => FALSE
       ));
     }

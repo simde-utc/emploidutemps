@@ -332,7 +332,7 @@ class MAJ
 
         if ($query->rowCount() == 0) {
           $insert = $GLOBALS['bdd']->prepare('INSERT INTO salles(salle, type, jour, debut, fin, ecart) VALUES(?, ?, ?, ?, ?, ?)');
-          $GLOBALS['bdd']->execute($insert, array($salle['salle'], $salle['type'], $jour, '00:00', '23:59', 24));
+          $GLOBALS['bdd']->execute($insert, array($salle['salle'], $salle['type'], $jour, '00:00', '24:00', 24));
         }
         else {
           $infos = $query->fetchAll();

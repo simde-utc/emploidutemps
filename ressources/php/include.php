@@ -3,7 +3,7 @@
   mb_internal_encoding("UTF-8");
   session_start();
 
-  // ini_set('display_errors', 1);  ini_set('display_startup_errors', 1);  error_reporting(E_ALL);
+  ini_set('display_errors', 1);  ini_set('display_startup_errors', 1);  error_reporting(E_ALL);
 
   $etuPic = '<i class="searchImg fa fa-4x fa-user-o" style="padding-left: 1px; padding-top: 3px;" aria-hidden="true"></i>';
   $uvPic = '<i class="searchImg fa fa-4x fa-graduation-cap" style="margin-left:10%;" aria-hidden="true"></i>';
@@ -59,7 +59,7 @@
   }
 
   function sendMail($mail, $subject, $message, $from = 'emploidutemps@assos.utc.fr') {
-    $query = $GLOBALS['bdd']->prepare('SELECT desinscrit FROM etudiants WHERE mail = ?');
+    $query = $GLOBALS['bdd']->prepare('SELECT desinscrit FROM students WHERE mail = ?');
     $GLOBALS['bdd']->execute($query, array($mail));
     $data = $query->fetch();
 
@@ -88,7 +88,7 @@
     // Faire la notif'
   }
 */
-  function printEtu($etu) {
+  function printEtuCard($etu) {
     if ($etu['mail'] == NULL) {
       $mail = $etu['login'].'@etu.utc.fr';
       $name = $etu['login'];
@@ -109,7 +109,7 @@
     </div>';
   }
 
-  function printUV($uv) {
+  function printUVCard($uv) {
     echo '<div class="searchCard">
     ', $GLOBALS['uvPic'], '
       <div>
@@ -203,51 +203,65 @@
     }
   }
 
-  function getRecuesList($login = NULL, $idExchange = NULL, $disponible = NULL, $echange = NULL, $idUV = NULL, $for = NULL, $date = NULL) {
-    $query = $GLOBALS['bdd']->prepare('SELECT login, recues.idEchange, echanges.idUV, echanges.pour, recues.date, recues.disponible, recues.echange, echanges.active FROM recues, echanges WHERE (? IS NULL OR recues.login = ?) AND (? IS NULL OR echanges.idUV = ?) AND (? IS NULL OR echanges.pour = ?) AND (? IS NULL OR recues.idEchange = ?) AND (? IS NULL OR recues.disponible = ?) AND (? IS NULL OR recues.echange = ?) AND (? IS NULL OR recues.date = ?) AND echanges.idEchange = recues.idEchange');
-    $GLOBALS['bdd']->execute($query, array($login, $login, $idUV, $idUV, $for, $for, $idExchange, $idExchange, $disponible, $disponible, $echange, $echange, $date, $date));
+  function getExchangesReceived($login = NULL, $id = NULL, $idExchange = NULL, $available = NULL, $exchanged = NULL, $idUV = NULL, $idUV2 = NULL, $date = NULL, $idSent = NULL) {
+    $query = $GLOBALS['bdd']->prepare(
+      'SELECT exchanges_received.id, idExchange, login, exchanges.idUV, exchanges.idUV2, exchanges_received.date, exchanges_received.available, exchanges_received.exchanged, exchanges.enabled, idSent
+      FROM exchanges_received, exchanges
+      WHERE (? IS NULL OR login = ?) AND (? IS NULL OR exchanges_received.id = ?) AND (? IS NULL OR exchanges.idUV = ?) AND (? IS NULL OR exchanges.idUV2 = ?) AND (? IS NULL OR idExchange = ?)
+      AND (? IS NULL OR exchanges_received.available = ?) AND (? IS NULL OR exchanges_received.exchanged = ?) AND (? IS NULL OR exchanges_received.date = ?) AND (? IS NULL OR idSent = ?)
+      AND exchanges.id = exchanges_received.idExchange');
+    $GLOBALS['bdd']->execute($query, array($login, $login, $id, $id, $idUV, $idUV, $idUV2, $idUV2, $idExchange, $idExchange, $available, $available, $exchanged, $exchanged, $date, $date, $idSent, $idSent));
 
     return $query->fetchAll();
   }
 
-  function getEchange($idUV, $pour, $active = NULL) {
-    $query = $GLOBALS['bdd']->prepare('SELECT idEchange, active FROM echanges WHERE idUV = ? AND pour = ? AND (? IS NULL OR active = ?)');
-    $GLOBALS['bdd']->execute($query, array($idUV, $pour, $active, $active));
+  function getExchanges($idUV, $idUV2, $enabled = NULL) {
+    $query = $GLOBALS['bdd']->prepare(
+      'SELECT id, enabled
+      FROM exchanges
+      WHERE idUV = ? AND idUV2 = ? AND (? IS NULL OR enabled = ?)');
+    $GLOBALS['bdd']->execute($query, array($idUV, $idUV2, $enabled, $enabled));
 
     return $query->fetchAll();
   }
 
-  function getEnvoiesList($login = NULL, $idExchange = NULL, $disponible = NULL, $echange = NULL, $idUV = NULL, $for = NULL, $date = NULL) {
-    $query = $GLOBALS['bdd']->prepare('SELECT login, envoies.idEchange, idUV, pour, date, note, envoies.disponible, envoies.echange FROM echanges, envoies WHERE (? IS NULL OR echanges.idEchange = ?) AND (? IS NULL OR envoies.login = ?) AND (? IS NULL OR envoies.disponible = ?) AND (? IS NULL OR envoies.echange = ?) AND (? IS NULL OR echanges.idUV = ?) AND (? IS NULL OR echanges.pour = ?) AND (? IS NULL OR envoies.date = ?) AND echanges.idEchange = envoies.idEchange ORDER BY date');
-    $GLOBALS['bdd']->execute($query, array($idExchange, $idExchange, $login, $login, $disponible, $disponible, $echange, $echange, $idUV, $idUV, $for, $for, $date, $date));
+  function getExchangesSent($login = NULL, $id = NULL, $idExchange = NULL, $available = NULL, $exchanged = NULL, $idUV = NULL, $idUV2 = NULL, $date = NULL, $idReceived = NULL) {
+    $query = $GLOBALS['bdd']->prepare(
+      'SELECT exchanges_sent.id, idExchange, login, exchanges.idUV, exchanges.idUV2, exchanges_sent.date, exchanges_sent.note, exchanges_sent.available, exchanges_sent.exchanged, idReceived
+      FROM exchanges_sent, exchanges
+      WHERE (? IS NULL OR login = ?) AND (? IS NULL OR exchanges_sent.id = ?) AND (? IS NULL OR exchanges.idUV = ?) AND (? IS NULL OR exchanges.idUV2 = ?) AND (? IS NULL OR idExchange = ?)
+      AND (? IS NULL OR exchanges_sent.available = ?) AND (? IS NULL OR exchanges_sent.exchanged = ?) AND (? IS NULL OR exchanges_sent.date = ?) AND (? IS NULL OR idReceived = ?)
+      AND exchanges.id = exchanges_sent.idExchange
+      ORDER BY date');
+    $GLOBALS['bdd']->execute($query, array($login, $login, $id, $id, $idUV, $idUV, $idUV2, $idUV2, $idExchange, $idExchange, $available, $available, $exchanged, $exchanged, $date, $date, $idReceived, $idReceived));
 
     return $query->fetchAll();
   }
 
-  function getAnnulationList($login) {
-    $list = array();
-    $envoies = getEnvoiesList($login, NULL, 0, 1); // On récupère tous nos échanges envoyés acceptés
-    $recues = getRecuesList($login, NULL, 0, 1); // On récupère tous nos échanges recus acceptés
+  function getExchangesCanceled($login) {
+    $exchanges_canceled = array();
+    $exchanges_sent = getExchangesSent($login, NULL, NULL, 0, 1); // On récupère tous nos échanges envoyés acceptés
+    $exchanges_received = getExchangesReceived($login, NULL, NULL, 0, 1); // On récupère tous nos échanges recus acceptés
 
-    foreach ($envoies as $envoie) {
-      $recue = getRecuesList(NULL, $envoie['idEchange'], 1, 1, NULL, NULL, $envoie['date']);
+    foreach ($exchanges_sent as $exchange_sent) {
+      $exchange_received = getExchangesReceived(NULL, $exchange_sent['idReceived'], $exchange_sent['idExchange'], 1, 1);
 
-      if (count($recue) == 1)
-        array_push($list, $recue[0]);
+      if (count($exchange_received) == 1)
+        array_push($exchanges_canceled, $exchange_received[0]);
     }
 
-    foreach ($recues as $recue) {
-      $envoie = getRecuesList(NULL, $recue['idEchange'], 1, 1, NULL, NULL, $recue['date']);
+    foreach ($exchanges_received as $exchange_received) {
+      $exchange_sent = getExchangesReceived(NULL, $exchange_received['idReceived'], $exchange_received['idExchange'], 1, 1);
 
-      if (count($envoie) == 1)
-        array_push($list, $envoie[0]);
+      if (count($exchange_sent) == 1)
+        array_push($exchanges_canceled, $exchange_sent[0]);
     }
 
-    return $list;
+    return $exchanges_canceled;
   }
 
   function getEtuListFromSearch($search) {
-    $query = $GLOBALS['bdd']->prepare('SELECT login, semestre, mail, prenom, nom FROM etudiants WHERE lower(login) LIKE lower(CONCAT("%", ?, "%")) OR lower(CONCAT(prenom, "_", nom, "_", prenom)) LIKE lower(CONCAT("%", ?, "%")) ORDER BY nom, prenom, login');
+    $query = $GLOBALS['bdd']->prepare('SELECT login, semestre, mail, prenom, nom FROM students WHERE lower(login) LIKE lower(CONCAT("%", ?, "%")) OR lower(CONCAT(prenom, "_", nom, "_", prenom)) LIKE lower(CONCAT("%", ?, "%")) ORDER BY nom, prenom, login');
     $GLOBALS['bdd']->execute($query, array($search, $search));
 
     return $query->fetchAll();
@@ -261,14 +275,14 @@
   }
 
   function getEtuFromIdUV($idUV, $desinscrit = NULL, $actuel = 1) {
-    $query = $GLOBALS['bdd']->prepare('SELECT etudiants.login, etudiants.semestre, etudiants.mail, etudiants.prenom, etudiants.nom, etudiants.nouveau, etudiants.desinscrit, cours.actuel, cours.echange FROM etudiants, cours WHERE cours.id = ? AND cours.actuel = ? AND (? IS NULL OR desinscrit = ?) AND etudiants.login = cours.login ORDER BY nom, prenom, login');
+    $query = $GLOBALS['bdd']->prepare('SELECT students.login, students.semestre, students.mail, students.prenom, students.nom, students.nouveau, students.desinscrit, cours.actuel, cours.echange FROM students, cours WHERE cours.id = ? AND cours.actuel = ? AND (? IS NULL OR desinscrit = ?) AND students.login = cours.login ORDER BY nom, prenom, login');
     $GLOBALS['bdd']->execute($query, array($idUV, $actuel, $desinscrit, $desinscrit));
 
     return $query->fetchAll();
   }
 
   function getEtu($login = NULL) {
-    $query = $GLOBALS['bdd']->prepare('SELECT login, semestre, mail, prenom, nom, uvs FROM etudiants WHERE (? IS NULL OR login = ?)');
+    $query = $GLOBALS['bdd']->prepare('SELECT login, semestre, mail, prenom, nom, uvs FROM students WHERE (? IS NULL OR login = ?)');
     $GLOBALS['bdd']->execute($query, array($login, $login));
 
     if ($query->rowCount() == 1)
@@ -277,49 +291,48 @@
       return $query->fetchAll();
   }
 
-  function getEdtSalle($ecart, $useless1, $useless2, $day = NULL) {
-    if ($ecart < 0)
-      $query = $GLOBALS['bdd']->prepare('SELECT salles.salle, salles.type, salles.jour, salles.debut, salles.fin, salles.ecart FROM salles WHERE (salles.ecart >= -? OR salles.ecart >= -? + 1) AND (? IS NULL OR salles.jour = ?) ORDER BY salles.jour, salles.debut, salles.fin, salles.salle');
-    else
-      $query = $GLOBALS['bdd']->prepare('SELECT salles.salle, salles.type, salles.jour, salles.debut, salles.fin, salles.ecart FROM salles WHERE (salles.ecart = ? OR salles.ecart = ? + 1) AND (? IS NULL OR salles.jour = ?) ORDER BY salles.jour, salles.debut, salles.fin, salles.salle');
-
-    $GLOBALS['bdd']->execute($query, array($ecart, $ecart, $day, $day));
-
-    $data = $query->fetchAll();
-
+  function getRooms($gap, $day = NULL) {
+    $tasks = array();
     $passed = array();
-    foreach ($data as $edt)
-      array_push($passed, array($edt['jour'], $edt['debut'], $edt['fin']));
 
-    $edts = array();
-    foreach ($data as $i => $edt) {
-      $info = array($edt['jour'], $edt['debut'], $edt['fin']);
-      $nbrSameTime = count(array_keys($passed, $info));
+    if ($gap < 0)
+      $query = $GLOBALS['bdd']->prepare(
+        'SELECT uvs_rooms.room, uvs_rooms.type, uvs_rooms.day, uvs_rooms.begin, uvs_rooms.end, uvs_rooms.gap
+        FROM uvs_rooms
+        WHERE (uvs_rooms.gap >= -? OR uvs_rooms.gap >= -? + 1) AND (? IS NULL OR uvs_rooms.day = ?)
+        ORDER BY uvs_rooms.day, uvs_rooms.begin, uvs_rooms.end, uvs_rooms.room');
+    else
+      $query = $GLOBALS['bdd']->prepare(
+        'SELECT uvs_rooms.room, uvs_rooms.type, uvs_rooms.day, uvs_rooms.begin, uvs_rooms.end, uvs_rooms.gap
+        FROM uvs_rooms
+        WHERE (uvs_rooms.gap = ? OR uvs_rooms.gap = ? + 1) AND (? IS NULL OR uvs_rooms.day = ?)
+        ORDER BY uvs_rooms.day, uvs_rooms.begin, uvs_rooms.end, uvs_rooms.room');
 
-      if ($nbrSameTime == 0)
-        continue;
+    $GLOBALS['bdd']->execute($query, array($gap, $gap, $day, $day));
+    $rooms = $query->fetchAll();
 
-      $edt['salle'] = '';
-      $edt['note'] = array('C' => array(), 'D' => array());
-      $edt['id'] = 'salle';
-      $edt['uv'] = $nbrSameTime.' dispo'.($nbrSameTime == 1 ? '' : 's');
+    foreach ($rooms as $room) {
+      $toTest = array($room['day'], $room['begin'], $room['end']);
+      $where = array_keys($passed, $toTest);
 
-      foreach($passed as $j => $elem) {
-        if($elem == $info) {
-          unset($passed[$j]);
-          array_push($edt['note'][$data[$j]['type']], $data[$j]['salle']);
-        }
+      if ($where == array()) {
+        array_push($tasks, array(
+          'subject' => 1,
+          'begin' => $room['begin'], 
+          'end' => $room['end'],
+          'description' => array($room['type'] => array($room['room']))));
+        array_push($passed, $toTest);
       }
+      else {
+        $tasks[$where[0]]['subject']++;
 
-      array_push($edts, $edt);
+        if (!isset($tasks[$where[0]]['description'][$room['type']]))
+          $tasks[$where[0]]['description'][$room['type']] = array();
+        array_push($tasks[$where[0]]['description'][$room['type']], $room['room']);
+      }
     }
 
-    foreach ($edts as $i => $edt) {
-      $edts[$i]['type'] = '';
-      $edts[$i]['groupe'] = '';
-    }
-
-    return $edts;
+    return $tasks;
   }
 
   function getDays($startingDay, $nbrOfDays) {
@@ -332,12 +345,13 @@
         continue;
       }
 
-      $query = $GLOBALS['bdd']->prepare('SELECT * FROM days WHERE begin <= ? ORDER BY begin DESC LIMIT 1');
+      $query = $GLOBALS['bdd']->prepare('SELECT * FROM uvs_days WHERE begin <= ? ORDER BY begin DESC LIMIT 1');
       $GLOBALS['bdd']->execute($query, array($date->format('Y-m-d')));
 
-      $data = $query->fetch();
+      $day = $query->fetch();
+      $day['date'] = $date->format('Y-m-d');
 
-      array_push($days, array('date' => $date->format('Y-m-d'), 'jour' => $data['day'], 'semaine' => $data['alternance'], 'alternance' => $data['semaine'], 'cours' => $data['cours'], 'td' => $data['td'], 'tp' => $data['tp'], 'infos' => $data['infos']));
+      array_push($days, $day);
       $date->modify('+1 day');
     }
 
@@ -354,7 +368,7 @@
 
       $days = getDays($date->format('Y-m-d'), 1);
       $today = $days[0];
-      $allEdt = getEdtEtu($login, 1, NULL, $today['jour']);
+      $allEdt = getEdtEtu($login, 1, NULL, $today['day']);
 
       if (count($allEdt) != 0) {
         foreach ($allEdt as $edt) {
@@ -370,40 +384,49 @@
     }
   }
 
-  function getEdtEtu($login, $actuel = 1, $echange = NULL, $day = NULL) {
-    $query = $GLOBALS['bdd']->prepare('SELECT uvs.id, uvs.uv, uvs.type, uvs.groupe, uvs.jour, uvs.debut, uvs.fin, uvs.salle, uvs.frequence, uvs.semaine, cours.color, couleurs.color AS colorUV FROM uvs, cours, couleurs WHERE cours.login = ? AND cours.actuel = ? AND (? IS NULL OR cours.echange = ?) AND (? IS NULL OR uvs.jour = ?) AND uvs.uv = couleurs.uv AND uvs.id=cours.id ORDER BY uvs.jour, uvs.debut, semaine, groupe');
-    $GLOBALS['bdd']->execute($query, array($login, $actuel, $echange, $echange, $day, $day));
+  function getUVsFollowed($login, $enabled = 1, $exchanged = NULL, $day = NULL) {
+    $query = $GLOBALS['bdd']->prepare(
+      'SELECT uvs_followed.id, uvs_followed.idUV, uvs.uv, uvs.type, uvs.groupe, uvs.day, uvs.begin, uvs.end, uvs.room, uvs.frequency, uvs.week, uvs_followed.color, uvs_colors.color AS colorUV
+      FROM uvs, uvs_followed, uvs_colors
+      WHERE uvs_followed.login = ? AND uvs_followed.enabled = ? AND (? IS NULL OR uvs_followed.exchanged = ?) AND (? IS NULL OR uvs.day = ?) AND uvs.uv = uvs_colors.uv AND uvs.id = uvs_followed.idUV
+      ORDER BY uvs.day, uvs.begin, week, groupe'
+    );
+    $GLOBALS['bdd']->execute($query, array($login, $enabled, $exchanged, $exchanged, $day, $day));
 
     return $query->fetchAll();
   }
 
   function getEdtUV($uv, $type = NULL) {
-    $query = $GLOBALS['bdd']->prepare('SELECT id, uvs.uv, type, groupe, jour, debut, fin, salle, frequence, semaine, nbrEtu, color FROM uvs, couleurs WHERE uvs.uv = couleurs.uv AND uvs.uv = ? AND (? IS NULL OR type = ?) ORDER BY uv, jour, debut, semaine, groupe');
+    $query = $GLOBALS['bdd']->prepare(
+      'SELECT uvs.id, uvs.uv, type, groupe, day, begin, end, room, frequency, week, nbrEtu, color
+      FROM uvs, uvs_colors
+      WHERE uvs.uv = uvs_colors.uv AND uvs.uv = ? AND (? IS NULL OR type = ?)
+      ORDER BY uv, day, begin, week, groupe');
     $GLOBALS['bdd']->execute($query, array($uv, $type, $type));
 
     return $query->fetchAll();
   }
 
   function getUVFromIdUV($idUV) {
-    $query = $GLOBALS['bdd']->prepare('SELECT uv, type, jour, debut, fin, salle, groupe, frequence, semaine, nbrEtu FROM uvs WHERE uvs.id = ?');
+    $query = $GLOBALS['bdd']->prepare('SELECT uv, type, day, begin, end, room, groupe, frequency, week, nbrEtu FROM uvs WHERE uvs.id = ?');
     $GLOBALS['bdd']->execute($query, array($idUV));
 
     return $query->fetch();
   }
 
-  function isEdtEtuVoid($login, $actuel = 1, $echange = NULL) {
-    return getEdtEtu($login, $actuel, $echange) == array();
+  function isEdtEtuVoid($login, $enabled = 1, $exchanged = NULL) {
+    return getEdtEtu($login, $enabled, $exchanged) == array();
   }
 
   function isUV($uv) { // Ici on utilise couleurs pour accélérer la recherche
-    $query = $GLOBALS['bdd']->prepare('SELECT uv FROM couleurs WHERE uv = ?');
+    $query = $GLOBALS['bdd']->prepare('SELECT uv FROM uvs_colors WHERE uv = ?');
     $GLOBALS['bdd']->execute($query, array($uv));
 
     return $query->rowCount() == 1;
   }
 
   function isEtu($login) {
-    $query = $GLOBALS['bdd']->prepare('SELECT login FROM etudiants WHERE login = ?');
+    $query = $GLOBALS['bdd']->prepare('SELECT login FROM students WHERE login = ?');
     $GLOBALS['bdd']->execute($query, array($login));
 
     return $query->rowCount() == 1;
@@ -441,7 +464,7 @@
   }
 
   function isAGoodDate($week) {
-    $query = $GLOBALS['bdd']->prepare('SELECT * FROM days WHERE begin <= ? AND end >= ? LIMIT 1');
+    $query = $GLOBALS['bdd']->prepare('SELECT * FROM uvs_days WHERE begin <= ? AND end >= ? LIMIT 1');
     $GLOBALS['bdd']->execute($query, array($week, $week));
 
     if (isset($_GET['mode']) && $_GET['mode'] == 'organiser' && strtotime($week) < time() - 604800)
@@ -459,7 +482,7 @@
   }
 
   if (isset($_GET['week']) && isAGoodDate($_GET['week']))
-    $_SESSION['week'] = $_GET['week'];
+    $_SESSION['week'] = date('Y-m-d', strtotime('monday this week', strtotime($_GET['week'])));
   elseif (isset($_GET['mode']) && $_GET['mode'] == 'organiser' && isset($_GET['week']))
     $_SESSION['week'] = date('Y-m-d', strtotime('monday this week'));
 ?>

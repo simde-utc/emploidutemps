@@ -1,6 +1,6 @@
 var HOUR_MIN = 7;
 var HOUR_MAX = 21;
-var get = '';
+var get = {'mode': 'afficher'};
 var phpGet = false;
 var card = '';
 var columnPerDay = 1;
@@ -19,21 +19,30 @@ var focusedDay = (date.getDay() + 6) % 7;
 var planifierGet = '';
 var week = '';
 
-function newRequest(get, tab) {
+function newRequest() {
   loading();
-  window.get = get;
 
   $('#zoneGrey').removeClass('focused');
   $('#zoneFocus').removeClass('focused');
   $('#zonePopup').removeClass('focused');
 
-  $('#bar').load('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getTabs.php?mode=' + window.mode + get + tab, function() {
-    $('#sTitle').load('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getTitle.php?&mode=' + window.mode + get, function () {
-      $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getTasks.php?mode=' + window.mode + get, function (tasks) {
-        schedule(JSON.parse(tasks));
-        setSkeduler();
-      });
-    });
+
+  get = ''
+  window.get.forEach(function (element, index) {
+      get += '&' + index + '=' + element;
+  });
+
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/getData.php?mode=' + window.mode + get, function (json) {
+    data = JSON.parse(json);
+
+    window.sessionLogin = data.infos.login;
+    window.week = data.infos.week;
+    window.get = data.infos.get;
+    window.get.mode = data.infos.mode;
+
+    setTitle(data.title);
+    setTabs(data.tabs);
+    setSkeduler(data.tasks);
   });
 }
 
