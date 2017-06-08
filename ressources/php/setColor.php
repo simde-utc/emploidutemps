@@ -1,20 +1,17 @@
-<?php session_start();
+<?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/include.php');
+  header('Content-Type: application/json');
 
   if (isset($_GET['idUV']) && is_string($_GET['idUV']) && isset($_GET['color']) && is_string($_GET['color'])) {
-    $login = $_SESSION['login'];
-    $idUV = $_GET['idUV'];
     if ($_GET['color'] == 'NULL')
       $color = NULL;
     else
       $color = '#'.$_GET['color'];
 
-    include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/class/class.bdd.php');
-    $bdd = new BDD();
+    $query = $bdd->prepare('UPDATE uvs_followed SET color = ? WHERE login = ? AND idUV = ?');
 
-    $query = $bdd->prepare('UPDATE cours SET color = ? WHERE login = ? AND id = ?;');
-
-    $bdd->execute($query, array($color, $login, $idUV));
+    $bdd->execute($query, array($color, $_SESSION['login'], $_GET['idUV']));
+    echo json_encode(array('status' => 'ok'));
   }
-  header('Location: /');
-  exit;
+  else
+    header('HTTP/1.0 400 Bad Request');
 ?>
