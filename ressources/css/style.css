@@ -1,30 +1,335 @@
-html, body {
-  height: 100%;
-}
-
-html {
-  display: table;
-  margin: auto;
-}
-
 body {
-  background-color: #384047;
-  padding-top: 135px;
   display: table-cell;
   font-family: Helvetica, ​Arial, ​sans-serif;
   -webkit-print-color-adjust: exact;
   overflow-x: hidden;
+  background-color: #273036;
+}
+
+button {
+  background-color: #444A58;
+  border: none;
+  border-radius: 2px;
+  padding: 2px 1px;
+  margin: 1px 0px;
+  color: #FFF;
+}
+
+button:hover:not(:disabled) {
+  background-color: #505666;
+}
+
+/* Header */
+#header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background-color: #273036;
+  padding-top: 10px;
+  padding-left: 10px;
+  z-index: 50;
+  color: #FFFFFF;
+}
+
+#navButton,
+#parametersButton {
+  display: none;
+  margin-left: 5px;
+  padding-right: 10px;
+  background-color: transparent;
+  border: none;
+  color: #FFF;
+  cursor: pointer;
+}
+
+#name {
+  font-size: 30px;
+  color: #FFFFFF;
+  text-decoration: none;
+}
+
+#search {
+  position: fixed;
+  right: 25px;
+  margin-left: 5px;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  color: #FFF;
+  cursor: pointer;
+}
+
+#parametersButton {
+  position: fixed;
+  right: 25px;
+  margin-left: 5px;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  color: #FFF;
+  cursor: pointer;
+}
+
+/* Nav */
+#nav {
+  position: absolute;
+  width: 250px;
+  top: 50px;
+  left: 0;
+  bottom: 0;
+  overflow-x: hidden;
+  background-color: #273036;
+  padding-top: 5px;
+  padding-left: 5px;
+  padding-right: 10px;
+  z-index: 50;
+  -webkit-transition: 0.5s; /* Safari */
+  transition: 0.5s;
+}
+
+#parameters {
+  position: absolute;
+  width: 250px;
+  top: 50px;
+  right: 0;
+  bottom: 0;
+  overflow-x: hidden;
+  background-color: #273036;
+  padding-top: 5px;
+  padding-left: 5px;
+  padding-right: 10px;
+  z-index: 50;
+  -webkit-transition: 0.5s; /* Safari */
+  transition: 0.5s;
+}
+
+.menu {
+  color: #FFFFFF;
+  padding-bottom: 25px;
+}
+
+.menu input {
+  padding-left: 5px;
+}
+
+.sub-menu {
+  overflow-y: auto;
+  padding-left: 5px;
+}
+
+#week {
+  display: flex;
+}
+
+#before {
+  flex: 1;
+  margin: 1px;
+}
+
+#actual {
+  flex: 2;
+}
+
+#after {
+  flex: 1;
+  margin: 1px;
+}
+
+#myTab {
+  font-style: italic;
+}
+
+.sub-menu div {
+  width: 100%;
+}
+
+.sub-menu > div > button {
+  width: 100%;
+  padding-right: 20px;
+  padding-left: 20px;
+  overflow: hidden;
+}
+
+.sub-menu > div > button > i.fa-caret-up,
+.sub-menu > div > button > i.fa-caret-down,
+.sub-menu > div > button > i.fa-times {
+  position: absolute;
+  right: 20px;
+}
+
+#organize {
+  display: none;
+}
+
+label {
+  cursor: pointer;
+}
+
+div.options {
+  height: 0;
+  overflow: hidden;
+}
+
+button.option {
+  width: 50%;
+  font-size: 11px;
+  margin: 0px;
+  border: 1px SOLID #273036;
+}
+
+#printed button {
+  border: none;
+}
+
+button.option:last-child:nth-child(2n+1) {
+  width: 100%;
+}
+
+.active {
+  color: #4CAF50;
+}
+
+.partialyActive {
+  color: #FAA012;
+}
+
+#tools {
+  padding-bottom: 10px;
+}
+
+@media screen and (max-width: 1600px) {
+  #main,
+  #title {
+    padding-left: 225px;
+  }
+
+  #search {
+    right: 75px;
+  }
+
+  #parametersButton {
+    display: inline;
+  }
+
+  #parameters {
+    width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    border: none;
+  }
+
+  #parameters div {
+    opacity: 0;
+  }
+
+  #main,
+  #title {
+    margin-left: 0;
+  }
+
+  #parameters.see {
+    width: 250px;
+    padding-left: 5px;
+    padding-right: 10px;
+    border-right: SOLID 2px #000000;
+  }
+
+  #parameters.see div {
+    opacity: 1;
+  }
+}
+
+@media screen and (max-width: 1350px) {
+  #main,
+  #title {
+    padding-left: 0px;
+  }
+
+  #search {
+    right: 75px;
+  }
+
+  #navButton,
+  #parametersButton {
+    display: inline;
+  }
+
+  #nav,
+  #parameters {
+    width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    border: none;
+  }
+
+  #nav div,
+  #parameters div {
+    opacity: 0;
+  }
+
+  #main {
+    margin-left: 0;
+  }
+
+  #nav.see,
+  #parameters.see {
+    width: 250px;
+    padding-left: 5px;
+    padding-right: 10px;
+    border-right: SOLID 2px #000000;
+  }
+
+  #nav.see div,
+  #parameters.see div {
+    opacity: 1;
+  }
+}
+
+#title {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  padding-top: 50px;
+  color: #FFF;
+  font-size: 20px;
+  height: 50px;
+}
+
+
+/* Calendar */
+#otherDay {
+  display: none;
+  position: absolute;
+  top: 108px;
+  background-color: transparent;
+  border: none;
+  height: 30px;
+  width: 60px;
+  z-index: 20;
+  text-align: center;
+  padding: 0;
+  margin: auto;
+  left: 50%;
+  transform: translate(-50%, 0);
+}
+
+#otherDay button {
+  width: 30px;
+  height: 30px;
+  background-color: transparent;
+  border: none;
+  color: #FFF;
 }
 
 .calendar-container {
-  z-index: 1;
-  margin: auto;
+  margin-top: 100px;
 }
 
 .calendar-container * {
   box-sizing: content-box;
 }
-
 
 .calendar-headers {
   display: flex;
@@ -55,6 +360,10 @@ body {
   display: flex;
 }
 
+.calendar-main-timeline {
+  border-bottom: 1px solid #AABBBB;
+}
+
 .calendar-main-timeline div {
   width: 50px;
   height: 17px;
@@ -74,6 +383,7 @@ body {
 
 .calendar-main-body {
   display: flex;
+  border-bottom: 1px solid #AABBBB;
 }
 
 .calendar-main-timeline div {
@@ -159,6 +469,18 @@ background-color: #FFFFFF;
   background-color: #3A4852;
 }
 
+#main {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#loading {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .card {
   z-index: 15;
   width: 132px;
@@ -166,12 +488,21 @@ background-color: #FFFFFF;
 }
 
 .card.focus {
-  z-index: 25;
+  z-index: 100;
   opacity: 1;
+  border: none;
 }
 
-.card.sameCard {
+.sameCard {
   border: 2px SOLID #000000;
+}
+
+.card.sameCard1 {
+  border-right: none;
+}
+
+.card.sameCard2 {
+  border-left: none;
 }
 
 .card.sameCard .interraction {
@@ -203,19 +534,10 @@ background-color: #FFFFFF;
   cursor: pointer;
 }
 
-#loading {
-  position: absolute;
-  display: block;
-  z-index: 100;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
 #zoneFocus, #zonePopup {
   position: fixed;
   visibility: hidden;
-  z-index: 10;
+  z-index: 75;
   top: 0;
   left: 0;
   width: 100%;
@@ -233,7 +555,7 @@ background-color: #FFFFFF;
   height: 100%;
   background-color: #000000;
   opacity: 0;
-  z-index: 20;
+  z-index: 75;
   -webkit-transition: all 0.5s ease;
   -moz-transition: all 0.5s ease;
   -ms-transition: all 0.5s ease;
@@ -255,7 +577,7 @@ background-color: #FFFFFF;
 
 #zonePopup {
   background-color: #000000;
-  z-index: 50;
+  z-index: 75;
   -webkit-transition: all 0.5s ease;
   -moz-transition: all 0.5s ease;
   -ms-transition: all 0.5s ease;
@@ -265,8 +587,8 @@ background-color: #FFFFFF;
 
 #popup {
   flex-wrap: wrap;
-  position: fixed;
-  overflow: auto;
+  position: absolute;
+  left: 50%;
   visibility: hidden;
   width: 80%;
   max-height: 80%;
@@ -278,12 +600,13 @@ background-color: #FFFFFF;
   border: 5px SOLID #BBBBBB;
   background-color: #FFFFFF;
   border-radius: 10px;
-  z-index: 50;
+  z-index: 1000;
   -webkit-transition: all 0.5s ease;
   -moz-transition: all 0.5s ease;
   -ms-transition: all 0.5s ease;
   -o-transition: all 0.5s ease;
   transition: all 0.5s ease;
+  overflow-y: auto;
 }
 
 #popupHead {
@@ -296,6 +619,10 @@ background-color: #FFFFFF;
   border: 5px SOLID #BBBBBB;
   background-color: #BBBBBB;
   z-index: 2;
+}
+
+#popupContent {
+  overflow: auto;
 }
 
 #noteExchange {
@@ -311,16 +638,10 @@ background-color: #FFFFFF;
   margin-bottom: 5px;
 }
 
-#searchResult {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.optionCards {
+.subCard ,.optionCards {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-around;
-  width: 100%;
   margin: 0.5%;
   margin-top: 2.5px;
   margin-bottom: 2.5px;
@@ -329,12 +650,24 @@ background-color: #FFFFFF;
   background-color: #CCCCCC;
 }
 
-.optionCards button {
+.optionCards button, .subCard button {
   width: 25%;
   text-align: center;
 }
 
-.allCards {
+.studentCards, .uvCards {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.studentCardsText, .uvCardsText {
+  text-align: center;
+  padding: 5px;
+  padding-top: 15px;
+  background-color: #BBBBBB;
+}
+
+.studentCard, .uvCard {
   display: flex;
   flex-grow: 1;
   min-width: 300px;
@@ -348,35 +681,20 @@ background-color: #FFFFFF;
   background-color: #CCCCCC;
 }
 
-@media screen and (max-width: 500px) {
-  .allCards {
-    min-width: 200px;
-  }
-
-  .allCards div, .allCards button {
-    display: block;
-  }
+.voidCard {
+  margin: 0.5%;
+  margin-bottom: 2.5px;
+  padding: 5px;
+  border: 2px SOLID #CCCCCC;
+  border-radius: 5px;
+  background-color: #CCCCCC;
 }
 
-@media screen and (max-width: 350px) {
-  .allCards {
-    min-width: 0;
-  }
-
-  .allCards div, .allCards button {
-    display: none;
-  }
-}
-
-.allCards button {
-  cursor: pointer;
-}
-
-.allCards:hover {
+.studentCard:hover {
   background-color: #BBBBBB;
 }
 
-.searchImg {
+.imgCard * {
   position: absolute;
   cursor: pointer;
   margin: 5px;
@@ -386,137 +704,65 @@ background-color: #FFFFFF;
   font-size: 25px;
 }
 
-.allCards div {
+.studentCard .infosCard, .uvCard .infosCard {
   margin: auto;
-  border: 0px;
-}
-
-.allCards > div {
   margin-left: 68px;
   overflow-y: auto;
+  border: 0px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.login {
-  background-color: #FF0000;
+.optionsCard {
+  margin-left: 5px;
+  height: 100%;
 }
 
-.tab {
+.optionsCard button {
   display: block;
-  margin-bottom: 10px;
-}
-
-#tab div span {
+  height: 50%;
+  width: 50px;
+  padding: auto;
   cursor: pointer;
-  background-color: #FFFFFF;
-  padding: 2px;
-  margin: 0;
 }
 
-.delTab {
-  background-color: #FF0000;
-  cursor: not-allowed;
-}
-
-#header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 125px;
-  background-color: #273036;
-  text-align: center;
-  color: #FFFFFF;
-}
-
-#title {
-  margin: 5px;
-  font-size: 25px;
-  color: #FFFFFF;
-  text-decoration: none;
-}
-
-#sTitle {
-  font-size: 16px;
-}
-
-#bar {
+.cardButtons {
   display: flex;
-  flex-wrap: nowrap;
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  justify-content: space-between;
-  width: 80%;
-  margin-left: 10%;
-  margin-right: 10%;
 }
 
-#tabs {
-  display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  background-color: #273036;
-  overflow-y: visible;
+.cardButtons button {
+  margin-top: 25px;
+  flex: 1;
 }
 
-#tabs div {
-  min-height: 20px;
-  max-height: 55px;
+.subCard {
+  border-radius: 10px 10px 0 0;
+  padding-bottom: 0px;
+  margin-bottom: 0;
+  border-bottom: 1px SOLID;
 }
 
-#tabs div:hover:not(.active):not(.blocked) {
-  background-color: #222;
+/*
+@media screen and (max-width: 500px) {
+  .studentCard {
+    min-width: 200px;
+  }
+
+  .studentCard div, .optionsCard button {
+    display: block;
+  }
 }
 
-#tabs button {
-  border: none;
-  padding: 12px;
-  max-width: 150px;
-  color: white;
-  text-align: center;
-  vertical-align: middle;
-  text-align: center;
-  vertical-align: middle;
-  text-decoration: none;
-}
+@media screen and (max-width: 350px) {
+  .studentCard {
+    min-width: 0;
+  }
 
-#tabs select {
-  max-width: 150px;
-  min-width: 100px;
+  .studentCard div, .optionsCard {
+    display: none;
+  }
 }
-
-.active {
-  background-color: #4CAF50;
-  cursor: default;
-}
-
-.notActive {
-  background-color: transparent;
-  cursor: pointer;
-}
-
-.blocked {
-  cursor: default;
-  background-color: #555555;
-}
-
-.etu.active {
-  cursor: pointer;
-}
-
-.etu.notActive {
-  cursor: pointer;
-}
-
-#myTab {
-  background-color: #770000;
-  cursor: pointer;
-}
-
-.separatorTab {
-  border: 2px SOLID #000000;
-}
-
+*/
 #option {
   display: flex;
   flex-wrap: nowrap;
@@ -554,49 +800,6 @@ background-color: #FFFFFF;
   cursor: pointer;
 }
 
-#search {
-  padding: 10px;
-}
-
-#otherDay {
-  display: none;
-  position: absolute;
-  top: 135px;
-  background-color: transparent;
-  border: none;
-  height: 30px;
-  width: 60px;
-  z-index: 20;
-  text-align: center;
-  padding: 0;
-  margin: auto;
-  left: 50%;
-  transform: translate(-50%, 0);
-}
-
-#otherDay button {
-  width: 30px;
-  height: 30px;
-  background-color: transparent;
-  border: none;
-  color: #FFF;
-}
-
-#parameters {
-  position: absolute;
-  top: 0;
-  left: 0;
-  margin: 2px;
-  margin-left: 5px;
-  padding: 0;
-  background-color: transparent;
-  border: none;
-  color: #FFF;
-  cursor: pointer;
-  text-align: center;
-  z-index: 10;
-}
-
 .parameters {
   padding: 5px;
 }
@@ -628,7 +831,7 @@ background-color: #FFFFFF;
   padding: 1px;
 }
 
-.option {
+.interraction .option {
   text-align: center;
   font-size: 11px;
   margin: 1px;

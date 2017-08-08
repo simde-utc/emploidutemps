@@ -167,7 +167,7 @@ Beta 1.8: 2017-03-02
   - Ajout d'un message de non disponibilité
   - Préparation pour la version alpha
 
-Stable 1.0: 2017-03-03
+Release 1.0: 2017-03-03
   - Réparation de l'export Ical/.ics
   - Résolution du bug d'envoi de confirmation d'échange
   - Ajout de l'option de suppression d'un échange qui a été refusé
@@ -179,7 +179,7 @@ Stable 1.0: 2017-03-03
   - Correction de l'acceptation d'échange et donc du mauvais échange de propositions
   - Réparation de la déconnexion
 
-Stable 1.1: 2017-03-05
+Release 1.1: 2017-03-05
   - Suppression du mode de suppression des refus d'échange
   - Changement de l'affichage des onglets du mode modifier
   - Distinction maintenant possible entre les différents "types" de demandes (acceptée/refusée/en cours)
@@ -190,7 +190,7 @@ Stable 1.1: 2017-03-05
   - Réaffichage des noms prénoms dans la liste des demandeurs
   - C'EST MON ANNIV' LES BBS <3
 
-Stable 1.2: 2017-04-01
+Release 1.2: 2017-04-01
   - Correction du bug de désinscription qui supprimait toutes les demandes (même en cours d'annulation)
   - Ajout de l'affichage des demandes d'annulation
   - Ajout d'une confirmation à la validation d'échange
@@ -203,11 +203,11 @@ Stable 1.2: 2017-04-01
   - Modification du téléchargement sous format iCal, ajout de l'option de dates pour les apprenti(e)s
   - Ajout d'un répertoire API pour les projets API comme le PicBot qui souhaiterait afficher le prochain cours
 
-Stable 1.2.1: 2017-04-02
+Release 1.2.1: 2017-04-02
   - Amélioration de l'export PDF (affichage ou non de chaque jour de la semaine, avec centrages)
   - Ajout du mode d'affichage: Planifier (qui permettra plus tard de planifier en fonction de la semaine)
 
-Stable 1.3: 2017-04-17
+Release 1.3: 2017-04-17
   - Création de l'affichage Planifier en fonction de la semaine pour les cours et les salles libres en fonction des jours et du nombre d'heures
   - Ajout de catégories pour le mode Planifier avec un affichage en fonction de la semaine
   - Adapatation du code pour la future mise à jour avec l'ajout de l'affichage des évenements, réunions
@@ -224,11 +224,11 @@ Stable 1.3: 2017-04-17
   - Ajout d'une rubrique à la place de soi-même lors du listing des étudiants d'un groupe
   - Correction de bugs
 
-Stable 1.3.1: 2017-04-19
+Release 1.3.1: 2017-04-19
   - Mise à jour de l'affichage des tâches du mode Planifier
   - Correction de bugs d'affichage et de changement de mode
 
-Stable 1.4: 2017-04-20
+Release 1.4: 2017-04-20
   - Correction de bugs CSS
   - Transformation du code CSS sous format JS gérant donc les tailles des créneaux
   - Mise à jour du fichier CSS
@@ -243,14 +243,14 @@ Stable 1.4: 2017-04-20
   - Amélioration de l'affichage du mode Planifier (semaine avant ou après celle en cours)
   - Amélioration de l'api pour le PICBOT
 
-Stable 1.4.1: 2017-04-21
+Release 1.4.1: 2017-04-21
   - Correction de bugs (requêtes get, db)
   - Correction au niveau de Git
   - Ajout de l'export sous format image
   - Correction d'écriture
   - Amélioration significative des exports pdf et img
 
-Stable 1.4.2: 2017-05-25
+Release 1.4.2: 2017-05-25
   - Correction de bugs d'affichage (affichage des étudiants, développement des cards)
   - Ajout d'options à l'affichage des étudiants: envoi d'un mail groupé, accès Moodle et UVWeb
   - Adaptation de l'affichage des horaires en fonction de l'heure actuelle
@@ -259,12 +259,28 @@ Stable 1.4.2: 2017-05-25
   - Remise en marche du mode organiser (marche maintenant en fonction de la semaine courante)
   - Début de définition des types d'évènemets
 
-Stable 1.4.3: 2017-05-26
+Release 1.4.3: 2017-05-26
   - Correction d'un bug d'affichage dans le mode planifier
   - Suppression d'un fichier js inutile
   - Ajout d'un lien calendar qui n'affichge uniquement que le calendrier (peut-être utile pour une inclusion dans une page)
 
-Stable 1.4.4: 2017-05-28
+Release 1.4.4: 2017-05-28
   - Amélioration de l'affichage des onglets
   - Meilleure gestion de la base de données
   - Amélioration du système de déconnexion
+
+
+Beta 2.0: 2017-08-08
+  - Création d'une nouvelle branche pour la création de la version 2.0 d'Emploi d'UTemps
+  - Création d'une nouvelle interface
+  - Réécriture complète du code
+  - Nouvelle gestion du backend et du frontend
+  - Supression de la gestion de "tabs"
+  - Ajout de la gestion de groupes: création, modification, ajout, affichage...
+  - Ajout de la gestion des assos
+  - Amélioration du système d'affichage par semaine
+  - Optimisation poussée de la BDD
+  - Correction d'une montagne de mini-bugs
+  - Amélioration du système d'export
+  - Amélioration du Trombi (par page avec distinction entre étudiant et UV)
+  - Séparation du code en fichiers spécifiques

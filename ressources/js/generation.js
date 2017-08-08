@@ -6,8 +6,9 @@ var get = {};
 var colors = [];
 var task = null;
 
-getRequest = function (url, get, callback) {
-  request = ''
+var getRequest = function (url, get, callback) {
+  var request = '';
+
   for (var key in get) {
     if (typeof get[key] == 'string' || typeof get[key] == 'number')
       request += '&' + key + '=' + get[key];
@@ -17,21 +18,24 @@ getRequest = function (url, get, callback) {
     }
   }
 
-  $.getJSON('https://' + window.location.hostname + '/emploidutemps/ressources/php/' + url + '?' + request.substr(1), function(data) { callback(data) });
+  console.log('https://' + window.location.hostname + '/emploidutemps/ressources/php/' + url + ($.isEmptyObject(get) ? '' : '?') + request.substr(1))
+  $.getJSON('https://' + window.location.hostname + '/emploidutemps/ressources/php/' + url + ($.isEmptyObject(get) ? '' : '?') + request.substr(1), function(data) {
+    callback(data)
+  });
 }
 
-addGet = function (get) {
+var addGet = function (get) {
   for (var key in get) {
     window.get[key] = get[key];
   };
 }
 
-changeMode = function (mode) {
+var changeMode = function (mode) {
   window.get.mode = mode;
   generate();
 }
 
-generate = function () {
+var generate = function () {
   console.time('generate');
   popupClose();
   loading();
@@ -40,57 +44,83 @@ generate = function () {
   $('#zoneFocus').removeClass('focused');
   $('#zonePopup').removeClass('focused');
 
-  getRequest('getData.php', window.get, function (data) {
+  getRequest('calendar.php', window.get, function (data) {
     console.timeEnd('generate');
+    console.log(data);
     window.sessionLogin = data.infos.login;
+    window.active = data.infos.active;
     window.colors = data.infos.colors;
     window.get = data.infos.get;
-    window.get.addActiveTabs = undefined;
-    window.get.setActiveTabs = undefined;
-    window.get.delActiveTabs = undefined;
+    window.sides = data.infos.sides
+    delete window.get.addActive;
+    delete window.get.setActiveTabs;
+    delete window.get.delActive;
 
-    $('#sTitle').text(data.title);
-    generateTabs(data.tabs);
+    getRequest('groups.php', {
+      'mode': 'get',
+    }, function (groups) {
+      generatePrinted(groups.groups);
+    });
+
+    generateTitle(data.title);
+    generateWeeks(data.infos.week, data.infos.get.week);
+    generateSubMenu(data.tabs, 'tab');
+    generateSubMenu(data.groups, 'group');
     generateCalendar(data.tasks, data.infos.sides, data.infos.uvs);
+
     unFocus();
     window.task = null;
-    $('#option option[value="' + window.get.mode + '"]').prop('selected', true);
     setCalendar();
+
+    //  Animer l'affichage d'une UV à échanger lors de la réception du mail
+    if (window.get.id != undefined) {
+      setTimeout(function () {
+        $('#' + window.get.id).click();
+        console.log(window.get.id)
+      }, 500);
+    }
   });
 }
 
-loading = function () {
+var loading = function () {
   $('<img>').attr('id', 'loading').attr('src', 'https://' + window.location.hostname + '/emploidutemps' + '/ressources/img/loading.gif').appendTo($('#calendar-container'))
 }
 
-endLoading = function () {
+var endLoading = function () {
   $('#loading').remove();
 }
 
-popup = function (popupHead, html, bgColor, fgColor) {
+var popup = function (popupHead, content, bgColor, fgColor) {
   window.click = true;
   $('#zonePopup').addClass('focused');
+  $('#nav').removeClass('see');
+  $('#parameters').removeClass('see');
 
-  bgColor = bgColor || '#BBBBBB';
-  fgColor = fgColor || '#000000';
+  var bgColor = bgColor || '#BBBBBB';
+  var fgColor = fgColor || '#000000';
   $('#popup').css('border', '5px SOLID' + bgColor);
 
-  $('#popup').html($('<div></div>').append($('<div></div>').attr('id', 'popupHead').css('border', '5px SOLID' + bgColor).css('background-color', bgColor).css('color', fgColor).html(popupHead)).html()).append(html);
+  var div = $('<div></div>').attr('id', 'popupHead').css('border', '5px SOLID' + bgColor).css('background-color', bgColor).css('color', fgColor).html(popupHead);
+  $('#popup').empty().append(div).append(content.attr('id', 'popupContent'));
   $('#popup').css('visibility', 'visible');
   $('#popup').css('opacity', '1');
 
-  if ($('.focusedInput').length != 0)
-    $('.focusedInput')[0].focus();
+  setTimeout(function() {
+    if ($('.focusedInput').length != 0)
+      $('.focusedInput')[0].focus();
 
-  if ($(".submitedInput").length != 0 && $(".submitedButton").length != 0)
+    if ($(".submitedInput").length != 0 && $(".submitedButton").length != 0)
     $(".submitedInput").last().keyup(function (event) {
-      code = event.keyCode || event.which;
+      var code = event.keyCode || event.which;
       if(code == 13)
-        $(".submitedButton")[0].click();
+      $(".submitedButton")[0].click();
     });
+  }, 100);
+
+  endLoading();
 }
 
-unFocus = function () {
+var unFocus = function () {
   $('#zoneGrey').removeClass('focused');
   $('#zoneFocus').removeClass('focused');
 
@@ -98,9 +128,309 @@ unFocus = function () {
     $('#' + window.task.id).click();
 }
 
-seeUVCards = function (uv) {
-  if (window.get.mode == 'comparaison')
-    window.get = { 'mode': 'comparaison' };
+
+/* Groupes */
+
+var addGroup = function () {
+  var corps = $('<div></div>');
+
+  if ($('#group').length > 0) {
+    var name = $('#group').val();
+    getRequest('groups.php', {
+      'mode': 'add',
+      'group': encodeURIComponent(name)
+    }, function (data) {
+      console.log(data)
+      if (data.error === undefined)
+        generate();
+      else {
+        corps.append($('<div></div>').text(data.error))
+        $('#group').val(name);
+      }
+    });
+  }
+
+  popup('Création d\'un nouveau groupe', corps.append(
+    $('<div></div>').addClass('optionCards')
+      .append($('<input /><br />').attr('id', 'group').addClass('focusedInput').addClass('submitedInput'))
+      .append($('<button></button>').text('Créer').attr('onClick', 'addGroup()').addClass('submitedButton'))));
+}
+
+var delGroup = function (idGroup) {
+  getRequest('groups.php', {
+    'mode': 'del',
+    'group': idGroup,
+  }, function (data) {
+    if (data.status == 'ok') {
+      $('#group-' + idGroup).remove();
+      popupClose();
+    }
+    else
+      console.log(data.error);
+  });
+}
+
+var seeGroup = function (group, edit) {
+  getRequest('groups.php', {
+    'mode': 'get',
+    'group': group
+   }, function (data) {
+   console.log(data)
+    var corps = $('<div></div>');
+
+    if (data[group].type == 'asso') {
+      var optionCards = $('<div></div>').addClass('optionCards');
+      $('<button></button>').html('<i class="fa fa-external-link" aria-hidden="true"></i> Voir sur le portail').attr('onClick', 'assoPortail("' + group + '")').appendTo(optionCards);
+      $('<button></button>').html('<i class="fa fa-mail" aria-hidden="true"></i> Envoyer un email à l\'asso').attr('onClick', 'assoEmail("' + group + '")').appendTo(optionCards);
+      optionCards.appendTo(corps);
+    }
+
+    var div;
+    $.each(data[group].subgroups, function (name, sub_group) {
+      div = $('<div></div>').addClass('studentCards');
+      $('<div></div>').addClass('subCard').text(sub_group.name).css('color', (edit && sub_group.type == 'asso' ? '#FF0000' : '#000000')).appendTo(corps);
+
+
+      if (sub_group.elements.length == 0) {
+        if (edit)
+          return div.addClass('optionCards').append($('<button></button>').html('<i class="fa fa-remove" aria-hidden="true"></i> Supprimer ce sous-groupe vide').prop('disabled', sub_group.type != 'custom').attr('onClick', 'delSubGroup("' + group + '", "' + name + '")')).appendTo(corps);
+        else
+          return div.append(div.addClass('voidCard').css('margin-top', 0).text(name == 'resps' ? 'Aucun responsable' : (name == 'members' ? 'Aucun membre' : (name == 'admins' ? 'Aucun breau (il faudrait que quelqu\'un fasse la demande de passation)' : 'Sous-groupe vide')))).appendTo(corps);
+      }
+
+      $.each(sub_group.elements, function (login, infos) {
+        if (infos.uv == undefined) {
+          infos.login = login;
+          if (edit)
+            generateStudentCard(infos, undefined, group, name, sub_group.type).appendTo(div);
+          else
+            generateStudentCard(infos, undefined, window.get.mode == 'organiser' ? group : undefined).appendTo(div);
+        }
+        else {
+          if (edit)
+            generateUVCard(infos, undefined, undefined, group, name, sub_group.type).appendTo(div);
+          else
+            generateUVCard(infos, undefined, undefined, window.get.mode == 'organiser' ? group : undefined).appendTo(div);
+        }
+      });
+      div.appendTo(corps);
+    });
+
+    if (data[group].subgroups.length == 0) {
+      if (edit)
+        corps = $('<div></div>').append($('<div></div>').addClass('optionCards').append($('<button></button>').html('<i class="fa fa-remove" aria-hidden="true"></i> Supprimer ce groupe vide').prop('disabled', data[group].type != 'custom').attr('onClick', 'delGroup("' + group + '")')));
+      else
+        corps = $('<div></div>').append($('<div></div>').addClass('voidCard').text('Vide'));
+    }
+
+    optionCards = $('<div></div>').addClass('optionCards');
+    if (group.type != 'others')
+      $('<button></button>').html('<i class="fa fa-plus" aria-hidden="true"></i> Créer un sous-groupe').attr('onClick', 'addSubGroup("' + group + '", "' + data[group].name + '")').appendTo(optionCards);
+
+    if (edit)
+      $('<button></button>').html('<i class="fa fa-eye" aria-hidden="true"></i> Afficher le groupe').attr('onClick', 'seeGroup("' + group + '")').appendTo(optionCards);
+    else
+      $('<button></button>').html('<i class="fa fa-gear" aria-hidden="true"></i> Paramétrer le groupe').attr('onClick', 'seeGroup("' + group + '", true)').appendTo(optionCards);
+    optionCards.appendTo(corps);
+
+    popup((edit ? 'Paramétrage du groupe ' : '') + data[group].name, corps);
+  });
+}
+
+var addSubGroup = function (idGroup, group) {
+  var corps = $('<div></div>');
+
+  if ($('#subGroup').length) {
+    var name = $('#subGroup').val();
+    getRequest('groups.php', {
+      'mode': 'add',
+      'group': idGroup,
+      'sub_group': encodeURIComponent(name)
+    }, function (data) {
+      console.log(data)
+      if (data.error === undefined)
+        generate();
+      else {
+        corps.append($('<div></div>').text(data.error))
+        $('#subGroup').val(name);
+      }
+    });
+  }
+
+  popup('Création d\'un sous-groupe pour le groupe ' + group, corps
+    .append($('<input />').attr('id', 'subGroup').addClass('focusedInput').addClass('submitedInput'))
+    .append($('<button></button>').text('Créer').attr('onClick', 'addSubGroup("' + idGroup + '")').addClass('submitedButton')));
+}
+
+var delSubGroup = function (idGroup, idSubGroup) {
+  getRequest('groups.php', {
+    'mode': 'del',
+    'group': idGroup,
+    'sub_group': idSubGroup,
+  }, function (data) {
+    if (data.status == 'ok')
+      seeGroup(idGroup, true);
+    else
+      console.log(data.error);
+  });
+}
+
+var addToGroup = function (element, text) {
+  getRequest('groups.php', {
+    'mode': 'get',
+   }, function (data) {
+    console.log(data)
+    var corps = $('<div></div>');
+
+    var groups = $('<select></select>').attr('id', 'selectedGroup').on('change', function () {
+      $($( this ).data('selected')).css('display', 'none');
+      $('#sub_' + this.value).css('display', 'block');
+      $( this ).data('selected', '#sub_' + this.value);
+
+      if ($('#sub_' + this.value).prop('disabled'))
+        $('#sub1').click();
+      else
+        $('#sub0').click();
+    });
+    var subgroups = $('<div></div>');
+    $.each(data.groups, function (name, group) {
+      if (name == 'others')
+        return;
+
+      $('<option></option>').attr('value', name).text(group.name).appendTo(groups);
+
+      var hidden = $('<select></select>').css('display', 'none').prop('disabled', true).attr('id', 'sub_' + name);
+      var option;
+      $.each(group.subgroups, function (subname, subgroup) {
+        option = $('<option></option>').attr('value', subname).text(subgroup.name);
+
+        if (subgroup.type == 'asso')
+          option.prop('disabled', true);
+        else
+          hidden.prop('disabled', false);
+
+        option.appendTo(hidden);
+      });
+      hidden.appendTo(subgroups);
+    });
+
+    $(groups).data('selected', '#' + $(subgroups).children().first().css('display', 'block').attr('id'));
+
+    groups.appendTo(corps);
+    $('<input></input').attr('type', 'radio').attr('id', 'sub0').attr('name', 'sub').prop("checked", true).val(0).appendTo(corps);
+    subgroups.attr('onClick', '$("#sub0").prop("checked", true)').appendTo(corps);
+    $('<input></input').attr('type', 'radio').attr('id', 'sub1').attr('name', 'sub').val(1).appendTo(corps);
+    $('<input></input').attr('id', 'newSubGroup').attr('onClick', '$("#sub1").prop("checked", true)').attr('placeholder', 'Nouveau sous-groupe').appendTo(corps);
+    $('<input></input').attr('id', 'info').attr('placeholder', 'Commentaire').appendTo(corps);
+    $('<button></button>').html('<i class="fa fa-send" aria-hidden="true"></i> Ajouter').on('click', function () {
+      var group = $('#selectedGroup').val();
+      var subGroup = $('#sub_' + group).val();
+      var createSubGroup = $('input[name=sub]:checked').val();
+      var info = $('#info').val();
+
+      if (createSubGroup == 1)
+        subGroup = $('#newSubGroup').val();
+
+      getRequest('groups.php', {
+        'mode': 'add',
+        'group': group,
+        'sub_group': encodeURIComponent(subGroup),
+        'createSubGroup': createSubGroup,
+        'element': element,
+        'info': encodeURIComponent(info)
+      }, function (data) {
+        if (data.status == 'ok')
+          popupClose();
+        else
+          console.log(data.error);
+      });
+    }).appendTo(corps);
+    popup(text, corps);
+  });
+}
+
+var delFromGroup = function (idGroup, idSubGroup, element) {
+  getRequest('groups.php', {
+    'mode': 'del',
+    'group': idGroup,
+    'sub_group': idSubGroup,
+    'element': encodeURIComponent(element),
+  }, function (data) {
+    if (data.status == 'ok')
+      seeGroup(idGroup, true);
+    else
+      console.log(data.error);
+  });
+}
+
+var editFromGroup = function (idGroup, idSubGroup, element, text, info) {
+  popup('Changement de l\'information concernant ' + text, $('<div></div>')
+    .append($('<input />').attr('id', 'info').val(info).addClass('focusedInput').addClass('submitedInput'))
+    .append($('<button></button>').text('Modifier').on('click', function () {
+      getRequest('groups.php', {
+        'mode': 'del',
+        'group': idGroup,
+        'sub_group': idSubGroup,
+        'element': element
+      }, function (data) {
+        if (data.status === 'ok') {
+          getRequest('groups.php', {
+            'mode': 'add',
+            'group': idGroup,
+            'sub_group': idSubGroup,
+            'element': element,
+            'info': $('#info').val()
+          }, function (data) {
+            if (data.status === 'ok') {
+              seeGroup(idGroup);
+            }
+            else {
+              console.log(data)
+            }
+          });
+        }
+        else {
+          console.log(data)
+        }
+      });
+    }).addClass('submitedButton')));
+}
+
+
+var addActive = function (element) {
+  window.get.addActive = [element];
+  delete window.get.delActive;
+  generate();
+}
+
+var delActive = function (element) {
+  window.get.delActive = [element];
+  delete window.get.addActive;
+  generate();
+}
+
+var seeStudent = function (login, info) {
+  if (window.get.mode == 'comparer' || window.get.mode == 'modifier')
+    window.get = { 'mode': 'comparer' };
+  else
+    window.get = { 'mode': 'classique' };
+
+  window.get.login = login;
+
+
+  if (info != undefined)
+    window.get.info = info;
+
+  generate();
+}
+
+var seeUV = function (uv) {
+  if (window.get.mode == 'comparer')
+    window.get = { 'mode': 'comparer' };
+  else if (window.get.mode == 'modifier')
+    window.get = { 'mode': 'modifier' };
+  else if (window.get.mode == 'semaine')
+    window.get = { 'mode': 'semaine' };
   else
     window.get = { 'mode': 'classique' };
 
@@ -109,22 +439,27 @@ seeUVCards = function (uv) {
   generate();
 }
 
-seeUVInformations = function (task) {
-  getRequest('getInfos.php', {
+var seeUVInformations = function (task) {
+  loading();
+  getRequest('lists.php', {
     'idUV': task.idUV
   }, function (data) {
-    popupHead = 'Liste des ' + task.nbrEtu + ' étudiants en ' + (task.type == 'D' ? 'TD' : (task.type == 'T' ? 'TP' : 'cours')) + ' de ' + task.subject + ' de ' + task.timeText.replace('-', ' à ');
-    corps = $('<div></div>').attr('id', 'allCards');
-    optionCards = $('<div></div>').addClass('optionCards');
-    button = $('<button></button>');
-    button.clone().html('<i class="fa fa-external-link" aria-hidden="true"></i> Moodle').on('click', function () { moodle(task.subject); }).appendTo(optionCards);
-    button.clone().html('<i class="fa fa-external-link" aria-hidden="true"></i> UVWeb').on('click', function () { UVWeb(task.subject); }).appendTo(optionCards);
+    var popupHead = 'Liste des ' + task.nbrEtu + ' étudiants en ' + (task.type == 'D' ? 'TD' : (task.type == 'T' ? 'TP' : 'cours')) + ' de ' + task.subject + ' de ' + task.timeText.replace('-', ' à ');
+    var corps = $('<div></div>');
+    var optionCards = $('<div></div>').addClass('optionCards');
+    $('<button></button>').html('<i class="fa fa-external-link" aria-hidden="true"></i> Moodle').attr('onClick', 'uvMoodle("' + task.subject + '")').appendTo(optionCards);
+    $('<button></button>').html('<i class="fa fa-external-link" aria-hidden="true"></i> UVWeb').attr('onClick', 'uvWeb("' + task.subject + '")').appendTo(optionCards);
     optionCards.appendTo(corps);
-    popup(popupHead, $('<div></div>').append(corps).html(), task.bgColor, task.fgColor);
+    var div = $('<div></div>').addClass('studentCards');
+    data.students.forEach(function (student) {
+      generateStudentCard(student).appendTo(div);
+    });
+    div.appendTo(corps);
+    popup(popupHead, corps, task.bgColor, task.fgColor);
   });
 }
 
-seeOthers = function (uv, type, idUV) {
+var seeOthers = function (uv, type, idUV) {
   window.get = {
     'mode': 'modifier',
     'uv': uv,
@@ -135,8 +470,16 @@ seeOthers = function (uv, type, idUV) {
   generate();
 }
 
-changeColor = function(idUV, color) {
-  getRequest('setColor.php', {
+var uvWeb = function (uv) {
+  window.open('https://assos.utc.fr/uvweb/uv/' + uv);
+}
+
+var uvMoodle = function (uv) {
+  window.open('http://moodle.utc.fr/course/search.php?search=' + uv);
+}
+
+var changeColor = function(idUV, color) {
+  getRequest('colors.php', {
     'idUV': idUV,
     'color': color.substr(1)
   }, function (data) {
@@ -145,21 +488,249 @@ changeColor = function(idUV, color) {
 }
 
 
+/* Trombi */
+
+var search = function () {
+  popup(
+    $('<div></div>')
+      .append($('<div></div>').text('Chercher un étudiant ou une UV pour l\'ajouter'))
+      .append($('<input />').attr('id', 'addTabText').attr('onInput', 'checkSearch(this.value)'))
+      .append($('<button></button>').attr('id', 'searchButton').attr('onClick', 'printSearch(this.value)').text('Chercher')).html(),
+    $('<div></div>')
+      .append($('<div></div>').addClass('studentCardsText'))
+      .append($('<div></div>').addClass('studentCards'))
+      .append($('<div></div>').addClass('uvCardsText'))
+      .append($('<div></div>').addClass('uvCards'))
+      .append($('<div></div>').addClass('cardButtons')));
+
+  $("#addTabText").keyup(function (event) {
+    if(event.keyCode == 13){
+      if (!$('#searchButton').prop('disabled'))
+        printSearch();
+    }
+  });
+
+  $('#searchButton').prop('disabled', true);
+
+  setTimeout(function () { // La fonction ne marche pas sans Timeout..
+    $("#addTabText").focus();
+  }, 100);
+}
+
+var checkSearch = function (input) {
+  var text = input.replace(/\s+/g, ' ').replace(/^\s+/g, '').replace(/(\s.+)\s$/g, '$1');
+  $('#addTabText').val(text);
+
+  $('#searchButton').prop('disabled', text.length < 2);
+}
+
+var printSearch = function (begin) {
+  loading();
+
+  if (begin == undefined || begin == '')
+    begin = 0;
+    console.log({
+      'search': $('#addTabText').val().replace(/^\s+|\s+$/g, '').replace(/_/g, '').replace(/\s/, '%\\_%\\'),
+      'begin': begin,
+      'nbr': 50
+    })
+  $('#searchButton').prop('disabled', true);
+  getRequest('lists.php', {
+    'search': $('#addTabText').val().replace(/^\s+|\s+$/g, '').replace(/_/g, '').replace(/\s/, '%\\_%\\'),
+    'begin': begin,
+    'nbr': 50
+  }, function(data) {
+    endLoading();
+    $('.studentCards').empty();
+    $('.studentCardsText').text(data.students.length + ' étudiant' + (data.students.length > 1 ? 's' : '') + ' trouvé' + (data.students.length > 1 ? 's' : ''));
+    data.students.forEach(function (student) {
+      $('.studentCards').append(generateStudentCard(student, 'Ajouté(e) depuis le trombi'));
+    });
+
+    $('.uvCards').empty();
+    $('.uvCardsText').text(data.uvs.length + ' UV' + (data.uvs.length > 1 ? 's' : '') + ' trouvée' + (data.uvs.length > 1 ? 's' : ''));
+    data.uvs.forEach(function (uv) {
+      $('.uvCards').append(generateUVCard(uv, data.infos.uvs));
+    });
+
+    $('.cardButtons').empty();
+    if (data.infos.begin != 0 || data.infos.more)
+      $('.cardButtons')
+        .append($('<button></button>').text('Précédent').attr('onClick', 'printSearch(' + (data.infos.begin - 50) + ')').prop('disabled', data.infos.begin == 0))
+        .append($('<button></button>').text('Suivant').attr('onClick', 'printSearch(' + (data.infos.begin + 50) + ')').prop('disabled', !data.infos.more));
+
+    $('#popup').scrollTop(0);
+  });
+}
+
+
+/* Outils */
+
+var exportDownload = function (type) {
+  if (type) {
+    if (type == 'ical') {
+
+    }
+    else if (type == 'pdf') {
+      popup('Obtenir sous format PDF', $('<div></div>').addClass('parameters')
+        .append($('<input></input>').attr('type', 'checkbox').attr('id', 'pdfCheck0').prop('checked', true)).append($('<label></label><br />').attr('for', 'pdfCheck0').text('Afficher le lundi'))
+        .append($('<input></input>').attr('type', 'checkbox').attr('id', 'pdfCheck1').prop('checked', true)).append($('<label></label><br />').attr('for', 'pdfCheck1').text('Afficher le mardi'))
+        .append($('<input></input>').attr('type', 'checkbox').attr('id', 'pdfCheck2').prop('checked', true)).append($('<label></label><br />').attr('for', 'pdfCheck2').text('Afficher le mercredi'))
+        .append($('<input></input>').attr('type', 'checkbox').attr('id', 'pdfCheck3').prop('checked', true)).append($('<label></label><br />').attr('for', 'pdfCheck3').text('Afficher le jeudi'))
+        .append($('<input></input>').attr('type', 'checkbox').attr('id', 'pdfCheck4').prop('checked', true)).append($('<label></label><br />').attr('for', 'pdfCheck4').text('Afficher le vendredi'))
+        .append($('<input></input>').attr('type', 'checkbox').attr('id', 'pdfCheck5').prop('checked', true)).append($('<label></label><br />').attr('for', 'pdfCheck5').text('Afficher le samedi'))
+        .append($('<input></input>').attr('type', 'checkbox').attr('id', 'pdfCheck6').prop('checked', true)).append($('<label></label><br />').attr('for', 'pdfCheck6').text('Afficher le dimanche'))
+        .append($('<input></input>').addClass('focusedInput').addClass('submitedInput').attr('id', 'pdfTitle').val($('#title').text()))
+        .append($('<input></input>').addClass('submitedInput').attr('id', 'pdfName').val('edt_' + window.get.mode + '_' + (window.get.login ? window.get.login : window.sessionLogin)))
+        .append($('<button></button>').addClass('submitedButton').text('Générer et télécharger mon emploi du temps').attr('onClick', 'getPDF()'))
+      );
+    }
+    else if (type == 'img') {
+      popup('Obtenir sous format image', $('<div></div>').addClass('parameters')
+        .append($('<input></input>').attr('type', 'checkbox').attr('id', 'imgCheck0').prop('checked', true)).append($('<label></label><br />').attr('for', 'imgCheck0').text('Afficher le lundi'))
+        .append($('<input></input>').attr('type', 'checkbox').attr('id', 'imgCheck1').prop('checked', true)).append($('<label></label><br />').attr('for', 'imgCheck1').text('Afficher le mardi'))
+        .append($('<input></input>').attr('type', 'checkbox').attr('id', 'imgCheck2').prop('checked', true)).append($('<label></label><br />').attr('for', 'imgCheck2').text('Afficher le mercredi'))
+        .append($('<input></input>').attr('type', 'checkbox').attr('id', 'imgCheck3').prop('checked', true)).append($('<label></label><br />').attr('for', 'imgCheck3').text('Afficher le jeudi'))
+        .append($('<input></input>').attr('type', 'checkbox').attr('id', 'imgCheck4').prop('checked', true)).append($('<label></label><br />').attr('for', 'imgCheck4').text('Afficher le vendredi'))
+        .append($('<input></input>').attr('type', 'checkbox').attr('id', 'imgCheck5').prop('checked', true)).append($('<label></label><br />').attr('for', 'imgCheck5').text('Afficher le samedi'))
+        .append($('<input></input>').attr('type', 'checkbox').attr('id', 'imgCheck6').prop('checked', true)).append($('<label></label><br />').attr('for', 'imgCheck6').text('Afficher le dimanche'))
+        .append($('<button></button>').addClass('submitedButton').text('Générer mon emploi du temps').attr('onClick', 'getImg()'))
+        .append($('<div></div>').attr('id', 'generatedImg'))
+      );
+    }
+  }
+  else
+    popup('Exporter/Télécharger', $('<div></div>').addClass('parameters')
+      .append($('<button></button>').attr('onClick', 'exportDownload("ical")').text('Obtenir son calendrier sous format iCal (.ics)')).prop('disabled', true);
+      .append($('<button></button>').attr('onClick', 'exportDownload("pdf")').text('Obtenir son calendrier sous format PDF (.pdf)'))
+      .append($('<button></button>').attr('onClick', 'exportDownload("img")').text('Obtenir son calendrier sous format image (.png/.jpg)'))
+      .append($('<button></button>').attr('onClick', 'window.location.href = "http://wwwetu.utc.fr/sme/EDT/' + window.sessionLogin + '"').text('Obtenir son calendrier sous format SME (mail reçu)'))
+      .append($('<button></button>').attr('onClick', 'window.location.href = "https://' + window.location.hostname + '/emploidutemps' + '/ressources/pdf/alternances.pdf"').text('Télécharger le calendrier des alternances'))
+      .append($('<button></button>').attr('onClick', 'window.location.href = "https://' + window.location.hostname + '/emploidutemps' + '/ressources/pdf/infosRentree.pdf"').text('Télécharger l\'info rentrée'))
+    );
+
+/*  <div onClick="parameters()" style="cursor: pointer" id="popupHead">Exporter/Télécharger</div>
+    <div class="parameters" style="text-align: center;">
+      <button onClick="parameters(\'ical\');">Obtenir son calendrier sous format iCal (.ics)</button>
+      <button onClick="parameters(\'pdf\');">Obtenir son calendrier sous format PDF (.pdf)</button>
+      <button onClick="parameters(\'img\');">Obtenir son calendrier sous format image (.png/jpg)</button>
+      <button onClick="window.location.href = \'http://wwwetu.utc.fr/sme/EDT/', $_SESSION['login'], '.edt\';"></button>
+      <button onClick="window.location.href = \'https://\' + window.location.hostname + \'/emploidutemps\' + \'/ressources/pdf/alternances.pdf\';"></button>
+      <button onClick="window.location.href = \'https://\' + window.location.hostname + \'/emploidutemps\' + \'/ressources/pdf/infosRentree.pdf\';"></button>
+    </div>*/
+}
+
+var getImg = function () {
+  var headers = $('.calendar-headers div');
+  var days = $('.calendar-main-body .days');
+  var length = window.headers.length;
+  var displays = [];
+  var hidden = 0;
+  doc = new jsPDF('l', 'mm', [297, 210]);
+
+  for (var i = 0; i < length; i++) {
+    displays[i] = $(headers[i]).css('display');
+
+    if ($('#imgCheck' + i).prop('checked')) {
+      $(headers[i]).css('display', 'block');
+      $(days[i * window.sides]).css('display', 'block');
+
+      if (window.sides == 2)
+        $(days[(i * window.sides) + 1]).css('display', 'block');
+    }
+    else {
+      $(headers[i]).css('display', 'none');
+      $(days[i * window.sides]).css('display', 'none');
+
+      if (window.sides == 2)
+        $(days[(i * window.sides) + 1]).css('display', 'none');
+      hidden += 1;
+    }
+  }
+
+  var calendar = $('#calendar-container');
+  var width = calendar.css('width');
+  calendar.css('width', 1032 + 'px');
+
+  html2canvas(calendar[0], { onrendered: function(canvas) {
+    for (var i = 0; i < length; i++) {
+      $(headers[i]).css('display', displays[i]);
+      $(days[i * window.sides]).css('display', displays[i]);
+
+      if (window.sides == 2)
+        $(days[(i * window.sides) + 1]).css('display', displays[i]);
+    }
+
+    setCalendar(window.focusedDay);
+    $('#generatedImg').html('<img src="' + canvas.toDataURL('image/' + type || 'png', 1.0) + '">');
+  }});
+}
+
+var getPDF = function () {
+  var headers = $('.calendar-headers div');
+  var days = $('.calendar-main-body .days');
+  var length = window.headers.length;
+  var displays = [];
+  var hidden = 0;
+  doc = new jsPDF('l', 'mm', [297, 210]);
+
+  doc.text($('#pdfTitle').val(), 148, 14, null, null, 'center');
+  for (var i = 0; i < length; i++) {
+    displays[i] = $(headers[i]).css('display');
+
+    if ($('#pdfCheck' + i).prop('checked')) {
+      $(headers[i]).css('display', 'block');
+      $(days[i * window.sides]).css('display', 'block');
+
+      if (window.sides == 2)
+        $(days[(i * window.sides) + 1]).css('display', 'block');
+    }
+    else {
+      $(headers[i]).css('display', 'none');
+      $(days[i * window.sides]).css('display', 'none');
+
+      if (window.sides == 2)
+        $(days[(i * window.sides) + 1]).css('display', 'none');
+      hidden += 1;
+    }
+  }
+
+  var calendar = $('#calendar-container');
+  var width = calendar.css('width');
+  calendar.css('width', 1036 + 'px');
+
+  html2canvas(calendar[0], { onrendered: function(canvas) {
+    doc.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', 12 + (hidden * 18), 26);
+
+    for (var i = 0; i < length; i++) {
+      $(headers[i]).css('display', displays[i]);
+      $(days[i * window.sides]).css('display', displays[i]);
+
+      if (window.sides == 2)
+        $(days[(i * window.sides) + 1]).css('display', displays[i]);
+    }
+
+    setCalendar(window.focusedDay);
+    doc.save($('#pdfName').val() + '.pdf');
+  }});
+}
+
+
 /* Echanges */
 
-exchange = function (get) {
+var exchange = function (get) {
   getRequest('exchange.php', get, function(data) {
     popup(data);
   });
 }
 
-askForExchange = function (idUV, idUV2) {
+var askForExchange = function (idUV, idUV2) {
   exchange({
     'idUV': idUV,
     'idUV2': idUV2
   });
 }
-
+/*
 function addExchange(idUV, forIdUV, note) {
   $.post('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?add=1&idUV=' + idUV + '&for=' + forIdUV, {note: note}, function (info) {
     popupInfo(info);
@@ -218,85 +789,300 @@ function refuseExchange(idExchange) {
   });
 }
 
+*/
+var getFgColor = function (bgColor) {
+  if (bgColor == null)
+    return null;
 
-getFgColor = function (bgColor) {
-  if ((((parseInt(bgColor.substr(1, 2), 16) * 299) + (parseInt(bgColor.substr(3, 4), 16) * 587) + (parseInt(bgColor.substr(5, 6), 16) * 114))) > 127000)
+  if ((((parseInt(bgColor.substr(1, 2), 16) * 299) + (parseInt(bgColor.substr(3, 2), 16) * 587) + (parseInt(bgColor.substr(5, 2), 16) * 114))) > 127000)
     return '#000000';
   else
     return '#FFFFFF';
 }
 
 
+/* Génération */
 
-generateTabs = function (tabs) {
-  console.time('tabs');
-  $('#tabs').empty();
+var generateStudentCard = function (infos, info, idGroup, idSubGroup, type) {
+  var text = infos.firstname + ' ' + infos.surname;
+  var option;
 
+  if (idGroup && idSubGroup && type) {
+    option = $('<div></div>').addClass('optionsCard')
+      .append($('<button></button>').html('<i class="fa fa-edit"></i>').attr('disabled',  type == 'asso').attr('onClick', 'editFromGroup("' + idGroup + '", "' + idSubGroup + '", "' + infos.login + '", "' + text + '", "' + infos.info + '")'))
+      .append($('<button></button>').html('<i class="fa fa-remove"></i>').attr('disabled',  type == 'asso').attr('onClick', 'delFromGroup("' + idGroup + '", "' + idSubGroup + '", "' + infos.login + '", "' + infos.info + '")'));
+  }
+  else if (window.get.mode == 'organiser' && infos.info) {
+    option = $('<div></div>').addClass('optionsCard')
+      .append($('<button></button>').html('<i class="fa fa-' + (infos.active ? 'eye-slash' : 'eye') + '"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).attr('onClick', (infos.active ? 'delActive' : 'addActive') + '("' + infos.login + '"); seeGroup("' + idGroup + '")'))
+      .append($('<button></button>').html('<i class="fa fa-plus"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).attr('onClick', 'addToGroup("' + infos.login + '", "' + text + '")'));
+  }
+  else {
+    option = $('<div></div>').addClass('optionsCard')
+      .append($('<button></button>').html('<i class="fa fa-eye"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).attr('onClick', 'seeStudent("' + infos.login + (info == undefined ? '' : '", "' + info) + '")'))
+      .append($('<button></button>').html('<i class="fa fa-plus"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).attr('onClick', 'addToGroup("' + infos.login + '", "' + text + '")'));
+  }
+
+  var card = $('<div></div>').addClass('studentCard')
+    .append($('<div></div>').addClass('imgCard')
+      .append($('<i class="fa fa-4x fa-user-o"></i>').css('padding-top', '3px').css('padding-left', '1px'))
+      .append($('<img />').attr('src', 'https://demeter.utc.fr/pls/portal30/portal30.get_photo_utilisateur?username=' + infos.login)))
+    .append($('<div></div>').addClass('infosCard')
+      .append($('<b></b>').text(text)).append($('<br />'))
+      .append($('<span></span>').text(infos.info === undefined ? infos.semester + ' - ' + infos.login : infos.info)).append($('<br />'))
+      .append($('<a></a>').attr('href', 'mailto:' + infos.email).text(infos.email)))
+    .append(option);
+
+  if (infos.active && window.active[infos.login])
+    card.css('background-color', window.active[infos.login] + 'CC').css('color', getFgColor(window.active[infos.login]));
+
+  return card;
+}
+
+var generateUVCard = function (infos, uvs, info, idGroup, idSubGroup, type) {
+  var option;
+
+  if (idGroup && idSubGroup && type) {
+    option = $('<div></div>').addClass('optionsCard')
+      .append($('<button></button>').html('<i class="fa fa-edit"></i>').attr('disabled',  type == 'asso').attr('onClick', 'editFromGroup("' + idGroup + '", "' + idSubGroup + '", "' + infos.uv + '", "' + infos.uv + '", "' + infos.info + '")'))
+      .append($('<button></button>').html('<i class="fa fa-remove"></i>').attr('disabled',  type == 'asso').attr('onClick', 'delFromGroup("' + idGroup + '", "' + idSubGroup + '", "' + infos.uv + '")'));
+  }
+  else if (window.get.mode == 'organiser' && infos.info) {
+    option = $('<div></div>').addClass('optionsCard')
+      .append($('<button></button>').html('<i class="fa fa-' + (infos.active ? 'eye-slash' : 'eye') + '"></i>').attr('onClick', (infos.active ? 'delActive' : 'addActive') + '("' + infos.uv + '"); seeGroup("' + idGroup + '")'))
+      .append($('<button></button>').html('<i class="fa fa-plus"></i>').attr('onClick', 'addToGroup("' + infos.uv + '", "' + infos.uv + '")'));
+  }
+  else {
+    option = $('<div></div>').addClass('optionsCard')
+      .append($('<button></button>').html('<i class="fa fa-eye"></i>').attr('onClick', 'seeUV("' + infos.uv + '")'))
+      .append($('<button></button>').html('<i class="fa fa-plus"></i>').attr('onClick', 'addToGroup("' + infos.uv + '", "' + infos.uv + '")'));
+  }
+
+  var card = $('<div></div>').addClass('uvCard')
+    .append($('<div></div>').addClass('imgCard')
+      .append($('<i class="fa fa-4x fa-book"></i>').css('padding-top', '3px').css('padding-left', '1px')))
+    .append($('<div></div>').addClass('infosCard').css('padding-left', '5px')
+      .append($('<b></b>').text(infos.uv))
+      .append($('<br />'))
+      .append($('<span></span>').text(uvs == undefined ? infos.info : (uvs.search(infos.uv) != -1 ? 'UV suivie' : ''))))
+    .append(option);
+
+    if (infos.active && window.active[infos.uv])
+      card.css('background-color', window.active[infos.uv] + 'CC').css('color', getFgColor(window.active[infos.uv]));
+
+    return card;
+}
+
+var generateTitle = function (title) {
+  $('#title').text(title);
+}
+
+var generateWeeks = function (weeks, week) {
+  console.log(weeks)
+  if (window.get.mode == 'semaine') {
+    $('#mode_semaine').prop('checked', true);
+    $('#mode_week').text(' Semaine du ' + week.split('-')[2] + '/' + week.split('-')[1]);
+  }
+  else if (window.get.mode == 'comparer')
+    $('#mode_comparer').prop('checked', true);
+  else if (window.get.mode == 'modifier')
+    $('#mode_modifier').prop('checked', true);
+  else if (window.get.mode == 'organiser') {
+    $('#mode_organiser').prop('checked', true);
+    $('#mode_week').text(' Semaine du ' + week.split('-')[2] + '/' + week.split('-')[1]);
+  }
+  else
+    $('#mode_classique').prop('checked', true);
+
+  if (!weeks.before)
+    $('#before').prop('disabled', true);
+  else
+    $('#before').prop('disabled', false).attr('onClick', 'window.get.week="' + weeks.before + '"; generate()');
+
+  if (!weeks.actual)
+    $('#actual').prop('disabled', true);
+  else
+    $('#actual').prop('disabled', false).attr('onClick', 'window.get.week="' + weeks.actual + '"; generate()');
+
+  if (!weeks.after)
+    $('#after').prop('disabled', true);
+  else
+    $('#after').prop('disabled', false).attr('onClick', 'window.get.week="' + weeks.after + '"; generate()');
+}
+
+var generateSubMenu = function (tabs, id) {
+  var submenu = $('#' + id + 's');
+  submenu.empty();
+
+  if ($.isEmptyObject(tabs))
+    $('#affichage_' + id + 's').prop('checked', false).css('display', 'none');
+  else
+    $('#affichage_' + id + 's').prop('checked', true).css('display', 'block');
+
+  var div, menu, text;
   $.each(tabs, function (key, tab) {
-    console.log(tab)
+    div = $('<div></div>').attr('id', id + '-' + key);
+    menu = $('<button></button>');
 
-    if (tab.type == 'button') {
-      container = $('<button></button>').clone().html(tab.text);
+    if (tab.name == undefined)
+      text = tab.text;
+    else
+      text = tab.name;
 
-      if (key == 'me')
-        container.attr('id', 'myTab');
+    if (tab.type == 'asso')
+      text = '<i class="fa fa-address-book" aria-hidden="true"></i> ' + text;
+    else if (tab.type == 'custom')
+      text = '<i class="fa fa-user-circle" aria-hidden="true"></i> ' + text;
+    else if (tab.type == 'others')
+      text = '<i class="fa fa-eye" aria-hidden="true"></i> ' + text;
+    else if (tab.type == 'new')
+      text = '<i class="fa fa-plus" aria-hidden="true"></i> ' + text;
 
+    if (key == 'me')
+      menu.attr('id', 'myTab');
+
+    if (tab.active)
+      menu.addClass('active');
+    else if (tab.partialyActive)
+      menu.addClass('partialyActive');
+
+    if (tab.disabled)
+      menu.prop('disabled', true);
+
+    if (tab.options == undefined) {
       if (tab.action == undefined) {
-        container.on('click', function() {
+        menu.on('click', function () {
           addGet(tab.get);
 
           generate();
         });
       }
       else {
-        container.attr('onClick', tab.action);
+        if (tab.action == 'paramGroup')
+          menu.on('click', function () {
+            paramGroup(tab);
+          });
+        else
+          menu.attr('onClick', tab.action);
       }
+
+      menu.html(text).appendTo(div);
     }
-    else if (tab.type == 'select') {
-      container = $('<select></select>').append($('<option></option>').attr('disabled', true).attr('selected', true).val('disabled').text(tab.text)).attr('id', 'tab-' + key).on('change', function () {
-        if (tab.get != undefined)
-          addGet(tab.get);
-
-        toAdd = tab.options[$( this ).val()].get;
-        if (toAdd != undefined)
-          addGet(toAdd);
-
-          console.log(get)
-        $( this ).val('disabled');
-        generate();
+    else {
+      menu.html(text + '<i class="fa fa-caret-up" aria-hidden="true"></i>').on('click', function () {
+        if ($( this ).children().last().hasClass('fa-caret-up')) {
+          $( this ).children().last().removeClass('fa-caret-up').addClass('fa-caret-down');
+          $( this ).next().css('height', 'auto');
+        }
+        else {
+          $( this ).children().last().removeClass('fa-caret-down').addClass('fa-caret-up');
+          $( this ).next().css('height', 0);
+        }
       });
 
-      for (var value in tab.options) {
-        option = $('<option></option>').attr('value', value);
-        text = tab.options[value].text;
+      var container = $('<div></div>').addClass('options');
 
-        if (tab.options[value].active)
-          text += ' ✓';
+      $.each(tab.options, function (value, option) {
+        var button = $('<button></button>').html(option.text).addClass('option');
 
-        option.html(text).appendTo(container);
-      }
+        if (option.action == undefined) {
+          button.on('click', function () {
+            if (tab.get != undefined)
+              addGet(tab.get);
+            if (option.get != undefined)
+              addGet(option.get);
+
+            generate();
+          });
+        }
+        else {
+          if (button.action == 'paramGroup')
+            button.on('click', function () {
+              paramGroup(tab);
+            });
+          else
+            button.attr('onClick', option.action);
+        }
+
+        if (option.active)
+          button.addClass('active');
+        else if (option.partialyActive)
+          button.addClass('partialyActive');
+
+        if (option.disabled)
+          button.prop('disabled', true);
+
+        button.appendTo(container);
+      });
+
+      menu.appendTo(div);
+      div.append(container);
     }
 
-    if (tab.active)
-      container.addClass('active');
-
-    container.appendTo($('#tabs'));
+    div.appendTo(submenu);
 
     if (tab.separate)
-      $('<div></div>').addClass('separatorTab').appendTo($('#tabs'));
+      $('<div></div>').addClass('separatorTab').appendTo(submenu);
   });
-  console.timeEnd('tabs');
 }
 
-cardClick = function (task) {
-  var end = (window.get.mode == 'semaine' ? 629 : 588);
+var generatePrinted = function (groups) {
+  $('#printed').empty();
+
+  if (window.get.mode == 'organiser') {
+    $('#printed').css('display', 'block');
+    $('#nbr_printed').css('display', 'block');
+
+    if (window.active && Object.keys(window.active).length > 1)
+      $('#nbr_printed').text(Object.keys(window.active).length + ' affichés:');
+    else
+      $('#nbr_printed').text('1 seul affiché:');
+
+    $('<div></div>').attr('id', 'printed-' + window.sessionLogin).append($('<button></button>').html('<span>Moi</span>').css('background-color', window.active[window.sessionLogin] || '#222222').css('color', getFgColor(window.active[window.sessionLogin] || '#222222'))).appendTo($('#printed'));
+
+    $.each(window.active, function (element, color) {
+      if (element != window.sessionLogin)
+      $('<div></div>').attr('id', 'printed-' + element).append($('<button></button>').html('<span>' + element + '</span><i class="fa fa-times" aria-hidden="true"></i>').css('background-color', window.active[element] || '#222222').css('color', getFgColor(window.active[element] || '#222222'))).appendTo($('#printed'));
+    });
+
+    console.log(groups);
+    var elem;
+    $.each(groups, function (name, group) {
+      if (!group.partialyActive)
+        return;
+
+      $.each(group.subgroups, function (sub_name, sub_group) {
+        $.each(sub_group.elements, function (element, infos) {
+          if (!infos.active && element != window.sessionLogin)
+            return;
+
+          elem = $('#printed-' + element).children();
+
+          elem.children().first().text(infos.firstname + ' ' + infos.surname);
+          if (name != 'others')
+            $('<div></div>').html('<i class="fa fa-angle-right" aria-hidden="true"></i> ' + group.name + ' - ' + sub_group.name + (infos.info != '' ? ' (' + infos.info + ')' : '')).appendTo(elem);
+        });
+      });
+    });
+  }
+  else {
+    $('#printed').css('display', 'none');
+    $('#nbr_printed').css('display', 'none');
+
+    var text = window.get.login ? groups.others.subgroups.students.elements[window.get.login].firstname + ' ' + groups.others.subgroups.students.elements[window.get.login].surname : (window.get.uv ? groups.others.subgroups.uvs.elements[window.get.uv].uv : '');
+
+    if (window.get.login || window.get.uv)
+      $('<div></div>').attr('id', 'addTool').append($('<button></button>').attr('onClick', 'addToGroup("' + (window.get.login || window.get.uv) + '")').html('<i class="fa fa-plus" aria-hidden="true"></i> Ajouter ' + text)).insertAfter($('#toolsText'));
+  }
+}
+
+var cardClick = function (task) {
+  var end = (window.get.mode === 'semaine' || window.get.mode === 'organiser' ? 629 : 588);
 
   if (window.task == null) {
     if (task.top + 150 > end) // Détecter si la tache ne dépasse pas le calendrier en s'ouvrant
       $('#' + task.id).css('top', end - 150);
-    if (task.height < 150)
-      $('#' + task.id).css('height', 150);
-    $('#' + task.id).css('left', -2).css('width', 135).addClass('focus');
+    $('#' + task.id).css('left', -2).css('height', 150).css('width', 135).addClass('focus');
     $('#' + task.id + ' .interraction').css('display', 'block');
 
     $('#zoneGrey').addClass('focused');
@@ -321,9 +1107,7 @@ cardClick = function (task) {
 
     if (task.top + 150 > end) // Détecter si la tache ne dépasse pas le calendrier en s'ouvrant
       $('#' + task.id).css('top', end - 150);
-    if (task.height < 150)
-      $('#' + task.id).css('height', 150);
-    $('#' + task.id).css('left', -2).css('width', 135).addClass('focus');
+    $('#' + task.id).css('left', -2).css('height', 150).css('width', 135).addClass('focus');
     $('#' + task.id + ' .interraction').css('display', 'block');
 
     $('#zoneGrey').addClass('focused');
@@ -333,11 +1117,12 @@ cardClick = function (task) {
   }
 }
 
-cardRoomClick = function (task) {
-  toAdd = (task.subject > 1 ? 's' : '');
-  popupHead = task.subject + ' salle' + toAdd + ' disponible' + toAdd + (task.timeText == 'Journée' ? ' toute la journée' : (' vers ' + Math.ceil(task.startTime) + 'h pour ' + task.timeText));
-  table = $('<table></table').css('padding', '1%').css('width', '100%');
+var cardRoomClick = function (task) {
+  var toAdd = (task.subject > 1 ? 's' : '');
+  var popupHead = task.subject + ' salle' + toAdd + ' disponible' + toAdd + (task.timeText == 'Journée' ? ' toute la journée' : (' vers ' + Math.ceil(task.startTime) + 'h pour ' + task.timeText));
+  var table = $('<table></table').css('padding', '1%').css('width', '100%');
 
+  var rooms, tr;
   for (key in task.description) {
     rooms = task.description[key]
     tr = $('<tr></tr>');
@@ -346,11 +1131,10 @@ cardRoomClick = function (task) {
     tr.appendTo(table);
   }
 
-  popup(popupHead, $('<div></div>').append(table).html(), task.bgColor, task.fgColor);
+  popup($('<div></div>').text(popupHead), $('<div></div>').append(table), task.bgColor, task.fgColor);
 }
 
-generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
-  console.time('cards');
+var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
   var passed = [];
   var toPass = [];
   var nbrPassed = 0;
@@ -358,6 +1142,7 @@ generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
   var div = $('<div></div>');
   var button = $('<button/>');
 
+  var card, style;
   tasks.forEach(function(group) {
     group.data.forEach(function(task) {
       if (task.day != day)
@@ -393,7 +1178,7 @@ generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
           if ((group.side === groupToCompare.side && ((task.startTime >= toCompare.startTime && task.startTime < toCompare.startTime + toCompare.duration) || (toCompare.startTime >= task.startTime && toCompare.startTime < task.startTime + task.duration))) && ((task.duration < (window.HOUR_MAX - window.HOUR_MIN) && toCompare.duration < (window.HOUR_MAX - window.HOUR_MIN)) || task.duration == toCompare.duration))
             nbrSameTime++;
 
-          if ((window.get.mode == 'comparaison' || window.get.mode == 'modifier') && task.idUV == toCompare.idUV)
+          if ((window.get.mode == 'comparer' || window.get.mode == 'modifier') && task.idUV == toCompare.idUV)
             card.addClass('sameCard');
         });
       });
@@ -412,9 +1197,33 @@ generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
         });
         passed.push(toPass);
 
-        task.width = 133 / ((sides * nbrSameTime) + (nbrSameTime == 1 && task.week != undefined));
-        task.left = (group.side == undefined ? 0 : ((group.side - 1) * 69)) - sides + (nbrPassed * task.width) + ((nbrSameTime == 1 && task.week != undefined) * 33);
+        task.width = 133 / ((sides * nbrSameTime) + (nbrSameTime == 1 && task.week != undefined) + (sides == 2 && nbrSameTime == 1 && task.week != undefined)) - ((sides * nbrSameTime == 2) || (nbrSameTime == 1 && task.week != undefined));
+        task.left = (group.side == undefined ? 0 : ((group.side - 1) * 69)) - sides + (nbrPassed * task.width) + ((nbrSameTime == 1 && task.week == 'B') * 66 / sides);
+/*
+        if (card.hasClass('sameCard')) {
+          if (window.get.mode == 'comparer') {
+            if (group.side == 1) {
+              if (task.week == undefined) {
+                task.width = 133;
+                task.left = -1;
+              }
+              else {
+                task.width = 66;
+                task.left = 33;
+              }
+            }
+            else
+            return;
+          }
+          else {
+            card.addClass('sameCard' + group.side);
+            task.width += 2;
 
+            if (group.side == 2)
+              task.left -= 2;
+          }
+        }
+*/
         style.width = task.width;
         style.left = task.left;
 
@@ -452,7 +1261,7 @@ generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
               option = button.clone().addClass('option').css('background-color', task.bgColor).css('color', getFgColor(task.bgColor));
 
               if (window.get.mode_type == null) {
-                option.clone().html("<i class='fa fa-calendar-o' aria-hidden='true'></i> Voir l'edt de l'UV").on('click', function() { seeUVCards(task.subject); }).appendTo(interraction);
+                option.clone().html("<i class='fa fa-calendar-o' aria-hidden='true'></i> Voir l'edt de l'UV").on('click', function() { seeUV(task.subject); }).appendTo(interraction);
                 option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Informations").on('click', function() { seeUVInformations(task); }).appendTo(interraction);
                 option.clone().html('<i class="fa fa-handshake-o" aria-hidden="true"></i> Proposer un échange').on('click', function() {
                   askForExchange();
@@ -476,8 +1285,11 @@ generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
           option = button.clone().addClass('option').css('background-color', task.bgColor).css('color', getFgColor(task.bgColor));
 
           if (group.type == 'uv_followed') {
-            option.clone().html("<i class='fa fa-calendar-o' aria-hidden='true'></i> Voir l'edt de l'UV").on('click', function() { seeUVCards(task.subject); }).appendTo(interraction);
-            option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Echanger cet UV").on('click', function() { seeOthers(task.subject, task.type, task.idUV); }).appendTo(interraction);
+            option.clone().html("<i class='fa fa-calendar-o' aria-hidden='true'></i> Voir l'edt de l'UV").on('click', function() { seeUV(task.subject); }).appendTo(interraction);
+
+            if (uvs.search(task.subject) != -1)
+              option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Echanger cet UV").on('click', function() { seeOthers(task.subject, task.type, task.idUV); }).appendTo(interraction);
+
             option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Informations").on('click', function() { seeUVInformations(task); }).appendTo(interraction);
 
             if (window.sessionLogin == group.info) {
@@ -516,10 +1328,9 @@ generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
       card.appendTo(schedulerTasks);
     });
   });
-  console.timeEnd('cards');
 }
 
-generateCalendar = function(tasks, sides, uvs) {
+var generateCalendar = function(tasks, sides, uvs) {
   console.time('calendar');
   var div = $('<div></div>');
   var schedule = div.clone().addClass('calendar-container');
@@ -540,7 +1351,7 @@ generateCalendar = function(tasks, sides, uvs) {
   // Préparation du header
   var classDay = '';
   window.headers.forEach(function(element, day) {
-    if (window.get.mode === 'semaine') {
+    if (window.get.mode === 'semaine' || window.get.mode === 'organiser') {
       if (day < currentDay)
         classDay = 'passedDay';
       else if (day == currentDay)
@@ -565,11 +1376,11 @@ generateCalendar = function(tasks, sides, uvs) {
   // Création des heures
   var classHour = '';
   for (var i = window.HOUR_MIN; i < window.HOUR_MAX; i++) {
-    if (window.get.mode === 'semaine') {
-      if (currentDay == 7 || i < hour)
-        classHour = 'passedHour';
-      else if (currentDay == -1 || i > hour)
+    if (window.get.mode === 'semaine' || window.get.mode === 'organiser') {
+      if (currentDay == -1 || i > hour)
         classHour = 'futureHour';
+      else if (currentDay == 7 || i < hour)
+        classHour = 'passedHour';
       else
         classHour = 'currentHour';
     }
@@ -587,9 +1398,14 @@ generateCalendar = function(tasks, sides, uvs) {
   }
 
   // Ajout de la case toute la journée
-  if (window.get.mode === 'semaine') {
-    if (classHour == 'currentHour')
+  if (window.get.mode === 'semaine' || window.get.mode === 'organiser' || window.get.mode_type == 'rooms') {
+    if (window.get.mode === 'semaine' || window.get.mode === 'organiser') {
+      if (classHour == 'currentHour')
       classHour = 'futureHour';
+    }
+    else
+    classHour = '';
+
     div.clone().text('').addClass(classHour).addClass('allDay').appendTo(scheduleTimeline);
     gridColumnElement[0].append(div.clone().addClass('allDay').addClass('calendar-cell' + '10'));
   }
@@ -601,7 +1417,7 @@ generateCalendar = function(tasks, sides, uvs) {
 
     var grid = gridColumnElement[j % sides].clone();
 
-    if (window.get.mode === 'semaine') {
+    if (window.get.mode === 'semaine' || window.get.mode === 'organiser') {
       if (j == currentDay) {
         grid = div.clone();
 
@@ -640,7 +1456,7 @@ generateCalendar = function(tasks, sides, uvs) {
 };
 
 // Il faut modifier l'affichage du calendrier en fonction de la taille de l'écran
-function setCalendar(day) {
+var setCalendar = function (day) {
   var headers = $('.calendar-headers div');
   var days = $('.calendar-main-body .days');
   var sides = days.length / (headers.length - 1);

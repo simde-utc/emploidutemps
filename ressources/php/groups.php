@@ -1,0 +1,84 @@
+<?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/include.php');
+  include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/functions/groups.php');
+
+  header('Content-Type: application/json');
+
+  function returnJSON($array) {
+    echo json_encode($array);
+    exit;
+  }
+
+  if (isset($_GET['mode']) && is_string($_GET['mode']))
+    $mode = $_GET['mode'];
+  else
+    $mode = 'get';
+
+  if (isset($_GET['group']) && is_string($_GET['group']))
+    $group = $_GET['group'];
+  else
+    $group = FALSE;
+
+  if ($mode == 'add' && $group) {
+    if (isset($_GET['sub_group']) && is_string($_GET['sub_group'])) {
+      if (empty($_GET['sub_group']))
+        returnJSON(array('error' => 'Le sous-groupe n\'a pas de nom'));
+
+      if (isset($_GET['element']) && is_string($_GET['element']) && isset($_GET['info']) && is_string($_GET['info'])) {
+        if (isset($_GET['createSubGroup']) && $_GET['createSubGroup'] == '1') {
+          $sub = addSubGroup($group, $_GET['sub_group']);
+
+          if ($sub == FALSE)
+            returnJSON(array('error' => 'Le sous-groupe existe déjà'));
+        }
+        else
+          $sub = $_GET['sub_group'];
+
+        if (addToGroup($group, $sub, $_GET['element'], $_GET['info']))
+          returnJSON(array('status' => 'ok'));
+        else
+          returnJSON(array('error' => 'Déjà présent dans le groupe'));
+      }
+      elseif (addSubGroup($group, $_GET['sub_group']))
+        returnJSON(array('status' => 'ok'));
+      else
+        returnJSON(array('error' => 'Le sous-groupe existe déjà'));
+    }
+    else {
+      if (addGroup($group))
+        returnJSON(array('status' => 'ok'));
+      else
+        returnJSON(array('error' => 'Le groupe existe déjà'));
+    }
+  }
+  elseif ($mode == 'del' && $group) {
+    if (isset($_GET['sub_group']) && is_string($_GET['sub_group'])) {
+      if (isset($_GET['element']) && is_string($_GET['element'])) {
+        if (delFromGroup($group, $_GET['sub_group'], $_GET['element']))
+          returnJSON(array('status' => 'ok'));
+        else
+          returnJSON(array('error' => 'L\'élément n\'a pas été supprimé'));
+      }
+      elseif (delSubGroup($group, $_GET['sub_group']))
+        returnJSON(array('status' => 'ok'));
+      else
+        returnJSON(array('error' => 'Le sous-groupe n\'a pas été supprimé'));
+    }
+    else {
+      if (delGroup($group))
+        returnJSON(array('status' => 'ok'));
+      else
+        returnJSON(array('error' => 'Le groupe n\'a pas été supprimé'));
+    }
+  }
+  elseif ($mode == 'get' && !$group) {
+    $groups = array();
+    foreach ($_SESSION['groups'] as $name => $group) {
+      $groups[$name] = getGroupInfos($name, $group);
+    }
+    returnJSON(array('groups' => $groups));
+  }
+  elseif (isset($_SESSION['groups'][$group]))
+    returnJSON(array($group => getGroupInfos($group, $_SESSION['groups'][$group])));
+  else
+    returnJSON(array('error' => 'Aucun groupe donné ou trouvé'));
+?>

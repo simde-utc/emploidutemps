@@ -7,11 +7,12 @@
     else
       $color = '#'.$_GET['color'];
 
-    $query = $bdd->prepare('UPDATE uvs_followed SET color = ? WHERE login = ? AND idUV = ?');
-
-    $bdd->execute($query, array($color, $_SESSION['login'], $_GET['idUV']));
+    $query = $db->request(
+      'UPDATE uvs_followed SET color = ? WHERE login = ? AND idUV = ?',
+      array($color, $_SESSION['login'], $_GET['idUV'])
+    );
     echo json_encode(array('status' => 'ok'));
   }
   else
-    header('HTTP/1.0 400 Bad Request');
+    echo json_encode(array('error' => 'Aucune info donnée'));
 ?>
