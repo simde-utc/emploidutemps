@@ -80,7 +80,7 @@
       }
 
       $query = $GLOBALS['db']->request(
-        'INSERT INTO uvs_days(login) VALUES(?)',
+        'INSERT INTO debug(login) VALUES(?)',
         array($_SESSION['login'])
       );
 
