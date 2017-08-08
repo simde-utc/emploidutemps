@@ -79,6 +79,11 @@
         $_SESSION['week'] = $data['end'];
       }
 
+      $query = $GLOBALS['db']->request(
+        'INSERT INTO uvs_days(login) VALUES(?)',
+        array($_SESSION['login'])
+      );
+
       include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/functions/groups.php');
       setGroups();
 

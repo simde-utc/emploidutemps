@@ -601,7 +601,7 @@ var exportDownload = function (type) {
   }
   else
     popup('Exporter/Télécharger', $('<div></div>').addClass('parameters')
-      .append($('<button></button>').attr('onClick', 'exportDownload("ical")').text('Obtenir son calendrier sous format iCal (.ics)')).prop('disabled', true);
+      .append($('<button></button>').attr('onClick', 'exportDownload("ical")').text('Obtenir son calendrier sous format iCal (.ics)').prop('disabled', true))
       .append($('<button></button>').attr('onClick', 'exportDownload("pdf")').text('Obtenir son calendrier sous format PDF (.pdf)'))
       .append($('<button></button>').attr('onClick', 'exportDownload("img")').text('Obtenir son calendrier sous format image (.png/.jpg)'))
       .append($('<button></button>').attr('onClick', 'window.location.href = "http://wwwetu.utc.fr/sme/EDT/' + window.sessionLogin + '"').text('Obtenir son calendrier sous format SME (mail reçu)'))
