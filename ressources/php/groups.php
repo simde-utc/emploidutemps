@@ -18,6 +18,9 @@
   else
     $group = FALSE;
 
+  if ($group == '')
+    $group = FALSE;
+
   if ($mode == 'add' && $group) {
     if (isset($_GET['sub_group']) && is_string($_GET['sub_group'])) {
       if (empty($_GET['sub_group']))
@@ -36,7 +39,7 @@
         if (addToGroup($group, $sub, $_GET['element'], $_GET['info']))
           returnJSON(array('status' => 'ok'));
         else
-          returnJSON(array('error' => 'Déjà présent dans le groupe'));
+          returnJSON(array('error' => 'Déjà présent.e dans le groupe'));
       }
       elseif (addSubGroup($group, $_GET['sub_group']))
         returnJSON(array('status' => 'ok'));
@@ -68,6 +71,31 @@
         returnJSON(array('status' => 'ok'));
       else
         returnJSON(array('error' => 'Le groupe n\'a pas été supprimé'));
+    }
+  }
+  elseif ($mode == 'set' && $group && isset($_GET['info']) && is_string($_GET['info'])) {
+    $info = $_GET['info'];
+
+    if (isset($_GET['sub_group']) && is_string($_GET['sub_group'])) {
+      if (empty($_GET['sub_group']))
+        returnJSON(array('error' => 'Le sous-groupe n\'a pas de nom'));
+
+      if (isset($_GET['element']) && is_string($_GET['element'])) {
+        if (setToGroup($group, $_GET['sub_group'], $_GET['element'], $info))
+          returnJSON(array('status' => 'ok'));
+        else
+          returnJSON(array('error' => 'Non présent.e dans le groupe'));
+      }
+      elseif (setSubGroup($group, $_GET['sub_group'], $info))
+        returnJSON(array('status' => 'ok'));
+      else
+        returnJSON(array('error' => 'Le sous-groupe n\'existe pas'));
+    }
+    else {
+      if (setGroup($group, $info))
+        returnJSON(array('status' => 'ok'));
+      else
+        returnJSON(array('error' => 'Le groupe n\'existe pas'));
     }
   }
   elseif ($mode == 'get' && !$group) {

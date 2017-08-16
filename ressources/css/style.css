@@ -1,18 +1,22 @@
 body {
-  display: table-cell;
   font-family: Helvetica, ​Arial, ​sans-serif;
-  -webkit-print-color-adjust: exact;
   overflow-x: hidden;
   background-color: #273036;
+  margin: 0;
 }
 
 button {
   background-color: #444A58;
   border: none;
   border-radius: 2px;
-  padding: 2px 1px;
+  padding: 5px 10px;
   margin: 1px 0px;
-  color: #FFF;
+  color: #FFFFFF;
+}
+
+button:disabled {
+  background-color: #81848C;
+  color: #EEEEEE;
 }
 
 button:hover:not(:disabled) {
@@ -29,7 +33,7 @@ button:hover:not(:disabled) {
   background-color: #273036;
   padding-top: 10px;
   padding-left: 10px;
-  z-index: 50;
+  z-index: 75;
   color: #FFFFFF;
 }
 
@@ -84,7 +88,7 @@ button:hover:not(:disabled) {
   padding-top: 5px;
   padding-left: 5px;
   padding-right: 10px;
-  z-index: 50;
+  z-index: 25;
   -webkit-transition: 0.5s; /* Safari */
   transition: 0.5s;
 }
@@ -100,14 +104,24 @@ button:hover:not(:disabled) {
   padding-top: 5px;
   padding-left: 5px;
   padding-right: 10px;
-  z-index: 50;
+  z-index: 25;
   -webkit-transition: 0.5s; /* Safari */
   transition: 0.5s;
 }
 
+#nav.see {
+  z-index: 51;
+  border-right: SOLID 2px #000000;
+}
+
+#parameters.see {
+  z-index: 50;
+  border-left: SOLID 2px #000000;
+}
+
 .menu {
   color: #FFFFFF;
-  padding-bottom: 25px;
+  padding-bottom: 15px;
 }
 
 .menu input {
@@ -115,12 +129,18 @@ button:hover:not(:disabled) {
 }
 
 .sub-menu {
+  color: #FFFFFF;
   overflow-y: auto;
   padding-left: 5px;
+  padding-bottom: 10px;
 }
 
 #week {
   display: flex;
+}
+
+#week button {
+  padding: 4px 1px;
 }
 
 #before {
@@ -145,16 +165,15 @@ button:hover:not(:disabled) {
   width: 100%;
 }
 
-.sub-menu > div > button {
+.sub-menu > div > div > button {
   width: 100%;
-  padding-right: 20px;
-  padding-left: 20px;
+  padding: 4px 10px;
   overflow: hidden;
 }
 
-.sub-menu > div > button > i.fa-caret-up,
-.sub-menu > div > button > i.fa-caret-down,
-.sub-menu > div > button > i.fa-times {
+.sub-menu > div > div > button i.fa-caret-up,
+.sub-menu > div > div > button i.fa-caret-down,
+.sub-menu > div > div > button i.fa-times {
   position: absolute;
   right: 20px;
 }
@@ -176,6 +195,7 @@ button.option {
   width: 50%;
   font-size: 11px;
   margin: 0px;
+  padding: 2px 1px;
   border: 1px SOLID #273036;
 }
 
@@ -195,12 +215,8 @@ button.option:last-child:nth-child(2n+1) {
   color: #FAA012;
 }
 
-#tools {
-  padding-bottom: 10px;
-}
-
 @media screen and (max-width: 1600px) {
-  #main,
+  #calendar-container,
   #title {
     padding-left: 225px;
   }
@@ -218,6 +234,7 @@ button.option:last-child:nth-child(2n+1) {
     padding-left: 0;
     padding-right: 0;
     border: none;
+    z-index: 50;
   }
 
   #parameters div {
@@ -242,7 +259,7 @@ button.option:last-child:nth-child(2n+1) {
 }
 
 @media screen and (max-width: 1350px) {
-  #main,
+  #calendar-container,
   #title {
     padding-left: 0px;
   }
@@ -264,6 +281,14 @@ button.option:last-child:nth-child(2n+1) {
     border: none;
   }
 
+  #nav {
+    z-index: 51;
+  }
+
+  #parameters {
+    z-index: 50;
+  }
+
   #nav div,
   #parameters div {
     opacity: 0;
@@ -278,7 +303,6 @@ button.option:last-child:nth-child(2n+1) {
     width: 250px;
     padding-left: 5px;
     padding-right: 10px;
-    border-right: SOLID 2px #000000;
   }
 
   #nav.see div,
@@ -290,6 +314,8 @@ button.option:last-child:nth-child(2n+1) {
 #title {
   position: fixed;
   left: 50%;
+  width: 90%;
+  text-align: center;
   transform: translateX(-50%);
   padding-top: 50px;
   color: #FFF;
@@ -302,12 +328,12 @@ button.option:last-child:nth-child(2n+1) {
 #otherDay {
   display: none;
   position: absolute;
-  top: 108px;
+  top: 100px;
   background-color: transparent;
   border: none;
   height: 30px;
   width: 60px;
-  z-index: 20;
+  z-index: 25;
   text-align: center;
   padding: 0;
   margin: auto;
@@ -323,8 +349,13 @@ button.option:last-child:nth-child(2n+1) {
   color: #FFF;
 }
 
-.calendar-container {
-  margin-top: 100px;
+#calendar-container {
+  margin: 0 auto;
+  padding-top: 100px;
+}
+
+#calendar-container.calendar-exported {
+  padding: 0px;
 }
 
 .calendar-container * {
@@ -477,12 +508,14 @@ background-color: #FFFFFF;
 
 #loading {
   position: fixed;
+  top: 40%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
+  z-index: 150;
 }
 
 .card {
-  z-index: 15;
+  z-index: 50;
   width: 132px;
   opacity: 0.9;
 }
@@ -537,7 +570,7 @@ background-color: #FFFFFF;
 #zoneFocus, #zonePopup {
   position: fixed;
   visibility: hidden;
-  z-index: 75;
+  z-index: 50;
   top: 0;
   left: 0;
   width: 100%;
@@ -555,7 +588,7 @@ background-color: #FFFFFF;
   height: 100%;
   background-color: #000000;
   opacity: 0;
-  z-index: 75;
+  z-index: 90;
   -webkit-transition: all 0.5s ease;
   -moz-transition: all 0.5s ease;
   -ms-transition: all 0.5s ease;
@@ -577,7 +610,7 @@ background-color: #FFFFFF;
 
 #zonePopup {
   background-color: #000000;
-  z-index: 75;
+  z-index: 100;
   -webkit-transition: all 0.5s ease;
   -moz-transition: all 0.5s ease;
   -ms-transition: all 0.5s ease;
@@ -621,6 +654,12 @@ background-color: #FFFFFF;
   z-index: 2;
 }
 
+#popupError {
+  color: #FF0000;
+  margin-top: 10px;
+  padding: 2px;
+}
+
 #popupContent {
   overflow: auto;
 }
@@ -638,6 +677,13 @@ background-color: #FFFFFF;
   margin-bottom: 5px;
 }
 
+#popupHead button {
+  position: absolute;
+  top: 5px;
+  right: 2px;
+  width: 50px;
+}
+
 .subCard ,.optionCards {
   display: flex;
   flex-wrap: wrap;
@@ -650,7 +696,7 @@ background-color: #FFFFFF;
   background-color: #CCCCCC;
 }
 
-.optionCards button, .subCard button {
+.optionCards button {
   width: 25%;
   text-align: center;
 }
@@ -740,6 +786,24 @@ background-color: #FFFFFF;
   padding-bottom: 0px;
   margin-bottom: 0;
   border-bottom: 1px SOLID;
+}
+
+.subCard {
+  border-radius: 10px 10px 0 0;
+  padding-bottom: 0px;
+  margin-bottom: 0;
+  border-bottom: 1px SOLID;
+}
+
+.subCard b {
+  padding-top: 2px;
+  padding-left: 5px;
+  flex: 1;
+}
+
+.subCard button {
+  width: 50px;
+  padding: 2px;
 }
 
 /*

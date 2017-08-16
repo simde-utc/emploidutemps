@@ -36,7 +36,7 @@
         $elements = $query->fetchAll();
 
         foreach ($elements as $element)
-          $groups[$group['id']]['subgroups'][$sub['id']]['elements'][$element['element']] = $element['description'];
+          $groups[$group['id']]['subgroups'][$sub['id']]['elements'][$element['element']] = $element['info'];
       }
     }
 
@@ -315,7 +315,7 @@
         array_push($GLOBALS['groups'][$name]['options']['all']['get'][$get], $element);
     }
 
-    $GLOBALS['groups'][$name]['options']['custom'] = array(
+    $GLOBALS['groups'][$name]['options']['more'] = array(
       'text' => 'Plus..',
       'action' => 'seeGroup(\''.$name.'\')'
     );
@@ -464,7 +464,7 @@
       $GLOBALS['groups']['others'] = $others;
     }
 
-    $GLOBALS['groups'][$name]['options']['custom'] = array(
+    $GLOBALS['groups'][$name]['options']['more'] = array(
       'text' => 'Plus..',
       'action' => 'seeGroup(\''.$name.'\')'
     );
@@ -514,6 +514,21 @@
     }
 
     unset($_SESSION['groups'][$idGroup]);
+    return TRUE;
+  }
+
+  function setGroup($idGroup, $name) {
+    if (!isset($_SESSION['groups'][$idGroup]) || $_SESSION['groups'][$idGroup]['type'] != 'custom')
+      return FALSE;
+
+    if ($idGroup != 'others') {
+      $GLOBALS['db']->request(
+        'UPDATE students_groups SET name = ? WHERE id = ? AND login = ?',
+        array($name, $idGroup, $_SESSION['login'])
+      );
+    }
+
+    $_SESSION['groups'][$idGroup]['name'] = $name;
     return TRUE;
   }
 
@@ -574,6 +589,21 @@
     return TRUE;
   }
 
+  function setSubGroup($idGroup, $idSubGroup, $name) {
+    if (!isset($_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]) || $_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]['type'] != 'custom')
+      return FALSE;
+
+    if ($idGroup != 'others') {
+      $GLOBALS['db']->request(
+        'UPDATE students_groups_subs SET name = ? WHERE idGroup = ? AND id = ?',
+        array($name, $idGroup, $idSubGroup)
+      );
+    }
+
+    $_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]['name'] = $name;
+    return TRUE;
+  }
+
   function addToGroup($idGroup, $idSubGroup, $element, $info) {
     if ($element == $_SESSION['login'])
       return FALSE;
@@ -588,7 +618,7 @@
 
     if ($idGroup != 'others') {
       $query = $GLOBALS['db']->request(
-        'INSERT INTO students_groups_elements(idSubGroup, element, description) VALUES(?, ?, ?)',
+        'INSERT INTO students_groups_elements(idSubGroup, element, info) VALUES(?, ?, ?)',
         array($idSubGroup, $element, $info)
       );
     }
@@ -615,11 +645,26 @@
     return TRUE;
   }
 
+  function setToGroup($idGroup, $idSubGroup, $element, $info) {
+    if (!isset($_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]['elements'][$element]) || $_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]['type'] == 'asso')
+      return FALSE;
+
+    if ($idGroup != 'others') {
+      $GLOBALS['db']->request(
+        'UPDATE students_groups_elements SET info = ? WHERE idSubGroup = ? AND element = ?',
+        array($info, $idSubGroup, $element)
+      );
+    }
+
+    $_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]['elements'][$element] = $info;
+    return TRUE;
+  }
+
   function addToOthers($element) {
     if (isAnUV($element))
       return addToGroup('others', 'uvs', $element, (strstr($_SESSION['uvs'], $element) == FALSE ? (isset($_GET['info']) && is_string($_GET['info']) && !empty($_GET['info']) ? $_GET['info'] : 'Ajouté automatiquement') : 'UV suivie'));
     elseif (isAStudent($element) && $element != $_SESSION['login'])
-      return addToGroup('others', 'students', $element, (isset($_GET['info']) && is_string($_GET['info']) && !empty($_GET['info']) ? $_GET['info'] : 'Ajouté(e) depuis un groupe'));
+      return addToGroup('others', 'students', $element, (isset($_GET['info']) && is_string($_GET['info']) && !empty($_GET['info']) ? $_GET['info'] : 'Ajouté.e depuis un groupe'));
     else
       return FALSE;
   }

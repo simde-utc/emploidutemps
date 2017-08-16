@@ -200,7 +200,7 @@ Release 1.2: 2017-04-01
   - Ajout d'un lien mail direct dans le Trombi
   - Regroupement des fichiers PDF
   - Ajout du téléchargement de l'emploi du temps sous format PDF avec différentes options
-  - Modification du téléchargement sous format iCal, ajout de l'option de dates pour les apprenti(e)s
+  - Modification du téléchargement sous format iCal, ajout de l'option de dates pour les apprenti.e.s
   - Ajout d'un répertoire API pour les projets API comme le PicBot qui souhaiterait afficher le prochain cours
 
 Release 1.2.1: 2017-04-02
@@ -284,3 +284,14 @@ Beta 2.0: 2017-08-08
   - Amélioration du système d'export
   - Amélioration du Trombi (par page avec distinction entre étudiant et UV)
   - Séparation du code en fichiers spécifiques
+
+Beta 2.1: 2017-08-15
+  - Amélioration de l'affichage (style css)
+  - Amélioration du template de base (calendrier généré vide de base)
+  - Amélioration des transitions entre les modes
+  - Ajout du volet menu et paramètres
+  - Finalisation de la gestion des groupes (ajout, modification, suppression)
+  - Ajout d'un affichage rapide de tout un (sous-)groupe en 1 clic
+  - Ajout de l'option mailing de ou des étudiant.e.s affiché.e.s
+  - Amélioration de l'export img/pdf
+  - Correction de multiples bugs

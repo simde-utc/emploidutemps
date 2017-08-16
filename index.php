@@ -15,6 +15,9 @@
   <script type="text/javascript" src="ressources/js/jspdf.min.js"></script>
   <script type="text/javascript">
     function main () {
+      generateCalendar([], 1, {});
+      setCalendar();
+
       window.get = <?php
         $query = $GLOBALS['db']->request(
           'SELECT login FROM students WHERE login = ?',
@@ -97,11 +100,9 @@
   <div id='zonePopup' onClick='popupClose();'></div>
   <div id='popup'></div>
 
-  <div id="main">
-    <div id='title'></div>
-    <div id='otherDay'><button onClick='setCalendar(focusedDay - 1);'><i class="fa fa-arrow-left" aria-hidden="true"></i></button><button onClick='setCalendar(focusedDay + 1);'><i class="fa fa-arrow-right" aria-hidden="true"></i></button></div>
-    <div id="calendar-container"></div>
-  </div>
+  <div id='title'></div>
+  <div id='otherDay'><button onClick='setCalendar(focusedDay - 1);'><i class="fa fa-arrow-left" aria-hidden="true"></i></button><button onClick='setCalendar(focusedDay + 1);'><i class="fa fa-arrow-right" aria-hidden="true"></i></button></div>
+  <div id="calendar-container"></div>
 
   <div id="nav">
     <div id='mode' class="menu">
@@ -123,21 +124,26 @@
       <div id='affichageText'>
         Affichage:
       </div>
-      <div id='affichage_tabs' class="sub-menu">Par emploi du temps:</div>
-      <div id='tabs' class='sub-menu'></div>
-      <div id='affichage_groups' class="sub-menu">Par groupe:</div>
-      <div id='groups' class='sub-menu'></div>
+      <div id='affichage_tabs' class="sub-menu">
+        Par emploi du temps:
+        <div id='tabs'></div>
+      </div>
+      <div id='affichage_groups' class="sub-menu">
+        Par groupe:
+        <div id='groups'></div>
+      </div>
     </div>
   </div>
 
-  <div id="parameters">
-    <div id='nbr_printed' class='menu sub-menu'>0 Affiché</div>
-    <div id='printed' class='menu sub-menu'></div>
-    <div id='tools' class="menu sub-menu">
-      <div id='toolsText'>
-        Outils:
-      </div>
-      <div>
+  <div id="parameters" class="menu sub-menu">
+    <div id='affichage_printed' class='sub-menu'>
+      <div id='printedText'></div>
+      <div id='printed'></div>
+    </div>
+    <div id='affichage_tools' class="sub-menu">
+      Outils:
+      <div id='printedTools'></div>
+      <div id='tools'>
         <button id='export' onClick="exportDownload()"><i class="fa fa-download" aria-hidden="true"></i> Exporter/Télécharger</button>
       </div>
     </div>

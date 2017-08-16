@@ -25,6 +25,8 @@
       'sides' => 1,
       'week' => array(),
       'get' => $_GET,
+      'active' => $GLOBALS['active'],
+      'nbrActive' => count($_SESSION['active']) + 1
     ));
 
     if ($GLOBALS['mode'] == 'organiser') {
@@ -231,9 +233,6 @@
 
     printRoomTabs(isset($_GET['mode_type']) ? $_GET['mode_type'] : NULL);
     printGroupTabs();
-
-    if (isset($_GET['mode_type']))
-      unset($_GET['mode_type']);
   }
 
   returnData($mode);

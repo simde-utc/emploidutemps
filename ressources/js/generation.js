@@ -18,22 +18,33 @@ var getRequest = function (url, get, callback) {
     }
   }
 
-  console.log('https://' + window.location.hostname + '/emploidutemps/ressources/php/' + url + ($.isEmptyObject(get) ? '' : '?') + request.substr(1))
+  console.log('https://' + window.location.hostname + '/emploidutemps/ressources/php/' + url + ($.isEmptyObject(get) ? '' : '?') + request.substr(1));
   $.getJSON('https://' + window.location.hostname + '/emploidutemps/ressources/php/' + url + ($.isEmptyObject(get) ? '' : '?') + request.substr(1), function(data) {
-    callback(data)
+    if (data.error) {
+      if ($('#zonePopup').hasClass('focused')) {
+        if ($('#popupError').length == 0)
+          $('#popupHead').append($('<div></div>').attr('id', 'popupError').html(data.error));
+        else
+          $('#popupError').html(data.error);
+      }
+      else
+        popup('Erreur', $('<div></div>').attr('id', 'popupError').html(data.error));
+    }
+    else
+      callback(data);
   });
-}
+};
 
 var addGet = function (get) {
   for (var key in get) {
     window.get[key] = get[key];
-  };
-}
+  }
+};
 
 var changeMode = function (mode) {
   window.get.mode = mode;
   generate();
-}
+};
 
 var generate = function () {
   console.time('generate');
@@ -51,7 +62,7 @@ var generate = function () {
     window.active = data.infos.active;
     window.colors = data.infos.colors;
     window.get = data.infos.get;
-    window.sides = data.infos.sides
+    window.sides = data.infos.sides;
     delete window.get.addActive;
     delete window.get.setActiveTabs;
     delete window.get.delActive;
@@ -61,7 +72,6 @@ var generate = function () {
     }, function (groups) {
       generatePrinted(groups.groups);
     });
-
     generateTitle(data.title);
     generateWeeks(data.infos.week, data.infos.get.week);
     generateSubMenu(data.tabs, 'tab');
@@ -76,18 +86,41 @@ var generate = function () {
     if (window.get.id != undefined) {
       setTimeout(function () {
         $('#' + window.get.id).click();
-        console.log(window.get.id)
+        console.log(window.get.id);
       }, 500);
     }
   });
-}
+};
 
 var loading = function () {
-  $('<img>').attr('id', 'loading').attr('src', 'https://' + window.location.hostname + '/emploidutemps' + '/ressources/img/loading.gif').appendTo($('#calendar-container'))
-}
+  $('<img>').attr('id', 'loading').attr('src', 'https://' + window.location.hostname + '/emploidutemps' + '/ressources/img/loading.gif').appendTo($('#calendar-container'));
+};
 
 var endLoading = function () {
   $('#loading').remove();
+};
+
+var submited = function () {
+  setTimeout(function() {
+    if ($('.focusedInput').length != 0)
+      $('.focusedInput').first().focus();
+
+    if ($(".submitedInput").length != 0 && $(".submitedButton").length != 0)
+      $(".submitedInput").keyup(function (event) {
+        var code = event.keyCode || event.which;
+
+        console.log($(".submitedInput:focus").parents().find('.submitedButton'))
+
+        if (code == 13)
+          $(".submitedInput:focus").parents().find('.submitedButton').first().click();
+      });
+  }, 100);
+};
+
+var setPopupButtons = function (enable) {
+  $('#popup').find('button').each(function () {
+    $(this).prop('disabled', !enable);
+  });
 }
 
 var popup = function (popupHead, content, bgColor, fgColor) {
@@ -96,29 +129,18 @@ var popup = function (popupHead, content, bgColor, fgColor) {
   $('#nav').removeClass('see');
   $('#parameters').removeClass('see');
 
-  var bgColor = bgColor || '#BBBBBB';
-  var fgColor = fgColor || '#000000';
+  bgColor = bgColor || '#BBBBBB';
+  fgColor = fgColor || '#000000';
   $('#popup').css('border', '5px SOLID' + bgColor);
 
-  var div = $('<div></div>').attr('id', 'popupHead').css('border', '5px SOLID' + bgColor).css('background-color', bgColor).css('color', fgColor).html(popupHead);
+  var div = $('<div></div>').attr('id', 'popupHead').css('border', '5px SOLID' + bgColor).css('background-color', bgColor).css('color', fgColor).append($('<b></<b>').html(popupHead));
   $('#popup').empty().append(div).append(content.attr('id', 'popupContent'));
   $('#popup').css('visibility', 'visible');
   $('#popup').css('opacity', '1');
 
-  setTimeout(function() {
-    if ($('.focusedInput').length != 0)
-      $('.focusedInput')[0].focus();
-
-    if ($(".submitedInput").length != 0 && $(".submitedButton").length != 0)
-    $(".submitedInput").last().keyup(function (event) {
-      var code = event.keyCode || event.which;
-      if(code == 13)
-      $(".submitedButton")[0].click();
-    });
-  }, 100);
-
+  submited();
   endLoading();
-}
+};
 
 var unFocus = function () {
   $('#zoneGrey').removeClass('focused');
@@ -126,7 +148,7 @@ var unFocus = function () {
 
   if (window.task != null)
     $('#' + window.task.id).click();
-}
+};
 
 
 /* Groupes */
@@ -140,11 +162,11 @@ var addGroup = function () {
       'mode': 'add',
       'group': encodeURIComponent(name)
     }, function (data) {
-      console.log(data)
+      console.log(data);
       if (data.error === undefined)
         generate();
       else {
-        corps.append($('<div></div>').text(data.error))
+        corps.append($('<div></div>').text(data.error));
         $('#group').val(name);
       }
     });
@@ -154,7 +176,7 @@ var addGroup = function () {
     $('<div></div>').addClass('optionCards')
       .append($('<input /><br />').attr('id', 'group').addClass('focusedInput').addClass('submitedInput'))
       .append($('<button></button>').text('Créer').attr('onClick', 'addGroup()').addClass('submitedButton'))));
-}
+};
 
 var delGroup = function (idGroup) {
   getRequest('groups.php', {
@@ -168,30 +190,38 @@ var delGroup = function (idGroup) {
     else
       console.log(data.error);
   });
-}
+};
 
 var seeGroup = function (group, edit) {
   getRequest('groups.php', {
     'mode': 'get',
     'group': group
    }, function (data) {
-   console.log(data)
+    console.log(data);
     var corps = $('<div></div>');
+    var groupElements = {};
 
     if (data[group].type == 'asso') {
       var optionCards = $('<div></div>').addClass('optionCards');
       $('<button></button>').html('<i class="fa fa-external-link" aria-hidden="true"></i> Voir sur le portail').attr('onClick', 'assoPortail("' + group + '")').appendTo(optionCards);
-      $('<button></button>').html('<i class="fa fa-mail" aria-hidden="true"></i> Envoyer un email à l\'asso').attr('onClick', 'assoEmail("' + group + '")').appendTo(optionCards);
+      $('<button></button>').html('<i class="fa fa-send" aria-hidden="true"></i> Envoyer un email à l\'asso').attr('onClick', 'assoEmail("' + group + '")').appendTo(optionCards);
       optionCards.appendTo(corps);
     }
 
     var div;
     $.each(data[group].subgroups, function (name, sub_group) {
-      div = $('<div></div>').addClass('studentCards');
-      $('<div></div>').addClass('subCard').text(sub_group.name).css('color', (edit && sub_group.type == 'asso' ? '#FF0000' : '#000000')).appendTo(corps);
+      var subGroupElements = {};
+      var actives = [];
 
+      div = $('<div></div>').addClass('studentCards');
 
       if (sub_group.elements.length == 0) {
+        $('<div></div>').addClass('subCard').attr('id', 'sub-' + name).css('color', (edit && sub_group.type == 'asso' ? '#FF0000' : '#000000'))
+          .append($('<b></b>').text(sub_group.name))
+          .append($('<button></button>').html('<i class="fa fa-' + (edit ? 'edit' : 'eye') + '"></i>').prop('disabled', (!edit || (edit && sub_group.type != 'custom')).on('click', edit ? function () {
+            setSubGroup(group, name, 'sub-' + name);
+          } : function () {}))).appendTo(corps);
+
         if (edit)
           return div.addClass('optionCards').append($('<button></button>').html('<i class="fa fa-remove" aria-hidden="true"></i> Supprimer ce sous-groupe vide').prop('disabled', sub_group.type != 'custom').attr('onClick', 'delSubGroup("' + group + '", "' + name + '")')).appendTo(corps);
         else
@@ -199,6 +229,11 @@ var seeGroup = function (group, edit) {
       }
 
       $.each(sub_group.elements, function (login, infos) {
+        if (!edit) {
+          groupElements[login] = infos.active;
+          subGroupElements[login] = infos.active;
+        }
+
         if (infos.uv == undefined) {
           infos.login = login;
           if (edit)
@@ -213,6 +248,25 @@ var seeGroup = function (group, edit) {
             generateUVCard(infos, undefined, undefined, window.get.mode == 'organiser' ? group : undefined).appendTo(div);
         }
       });
+
+      $.each(subGroupElements, function (login, active) {
+        if (active == sub_group.active)
+          actives.push(login);
+      });
+
+      var active = sub_group.active && window.get.mode == 'organiser' ? 'delActive' : 'addActive';
+      $('<div></div>').addClass('subCard').attr('id', 'sub-' + name).css('color', (edit && sub_group.type == 'asso' ? '#FF0000' : '#000000'))
+        .append($('<b></b>').text(sub_group.name))
+        .append($('<button></button>').html('<i class="fa fa-' + (edit ? 'edit' : (sub_group.active && window.get.mode == 'organiser' ? 'eye-slash' : 'eye')) + '"></i>').prop('disabled', (!edit && Object.keys(actives).length == 0) || (edit && sub_group.type != 'custom')).on('click', edit ? function () {
+          setSubGroup(group, name, 'sub-' + name);
+        } : function () {
+          window.get = {
+            'mode': 'organiser'
+          };
+          window.get[active] = actives;
+
+          generate();
+        })).appendTo(corps);
       div.appendTo(corps);
     });
 
@@ -223,7 +277,7 @@ var seeGroup = function (group, edit) {
         corps = $('<div></div>').append($('<div></div>').addClass('voidCard').text('Vide'));
     }
 
-    optionCards = $('<div></div>').addClass('optionCards');
+    var optionCards = $('<div></div>').addClass('optionCards');
     if (group.type != 'others')
       $('<button></button>').html('<i class="fa fa-plus" aria-hidden="true"></i> Créer un sous-groupe').attr('onClick', 'addSubGroup("' + group + '", "' + data[group].name + '")').appendTo(optionCards);
 
@@ -233,12 +287,50 @@ var seeGroup = function (group, edit) {
       $('<button></button>').html('<i class="fa fa-gear" aria-hidden="true"></i> Paramétrer le groupe').attr('onClick', 'seeGroup("' + group + '", true)').appendTo(optionCards);
     optionCards.appendTo(corps);
 
-    popup((edit ? 'Paramétrage du groupe ' : '') + data[group].name, corps);
+    var actives = [];
+    $.each(groupElements, function (login, active) {
+      if (active == data[group].active)
+        actives.push(login);
+    });
+
+    var active = data[group].active && window.get.mode == 'organiser' ? 'delActive' : 'addActive';
+    popup(data[group].name, corps);
+    $('#popupHead').append($('<button></button>').html('<i class="fa fa-' + (edit ? 'edit' : (data[group].active && window.get.mode == 'organiser' ? 'eye-slash' : 'eye')) + '"></i>').prop('disabled', (!edit && Object.keys(actives).length == 0) || (edit && data[group].type != 'custom')).on('click', edit ? function () {
+      setGroup(group, 'popupHead');
+    } : function () {
+      window.get = {
+        'mode': 'organiser'
+      };
+      window.get[active] = actives;
+
+      generate();
+    }));
   });
-}
+};
+
+var setGroup = function (idGroup, id) {
+  setPopupButtons(false);
+
+  $('#' + id + ' b').replaceWith($('<input />').addClass('focusedInput').addClass('submitedInput').val($('#' + id + ' b').text()));
+  $('#' + id + ' button').first().replaceWith($('<button></button>').html('<i class="fa fa-send"></i>').addClass('submitedButton').on('click', function () {
+    setPopupButtons(true);
+    getRequest('groups.php', {
+      'mode': 'set',
+      'group': idGroup,
+      'info': encodeURIComponent($('#' + id + ' input').val())
+    }, function (data) {
+      $('#' + id + ' input').replaceWith($('<b></b>').text($('#' + id + ' input').val()));
+      $('#' + id + ' button').first().replaceWith($('<button></button>').html('<i class="fa fa-edit"></i>').on('click', function () {
+        setGroup(idGroup, id);
+      }));
+    });
+  }));
+
+  submited();
+};
 
 var addSubGroup = function (idGroup, group) {
-  var corps = $('<div></div>');
+/*  var corps = $('<div></div>');
 
   if ($('#subGroup').length) {
     var name = $('#subGroup').val();
@@ -247,20 +339,37 @@ var addSubGroup = function (idGroup, group) {
       'group': idGroup,
       'sub_group': encodeURIComponent(name)
     }, function (data) {
-      console.log(data)
+      console.log(data);
       if (data.error === undefined)
         generate();
       else {
-        corps.append($('<div></div>').text(data.error))
+        corps.append($('<div></div>').text(data.error));
         $('#subGroup').val(name);
       }
-    });
-  }
+    });*/
 
+    setPopupButtons(false);
+
+    $('<div></div>').addClass('subCard').attr('id', 'sub-create')
+      .append($('<input />').addClass('focusedInput').addClass('submitedInput'))
+      .append($('<button></button>').addClass('submitedButton').html('<i class="fa fa-send"></i>').on('click', function () {
+        getRequest('groups.php', {
+          'mode': 'add',
+          'group': idGroup,
+          'sub_group': encodeURIComponent($('#sub-create input').last().val())
+        }, function (data) {
+          seeGroup(idGroup, true);
+        });
+      }))
+      .insertBefore($('.optionCards').last().before());
+
+    submited();
+    /*
+  }
   popup('Création d\'un sous-groupe pour le groupe ' + group, corps
     .append($('<input />').attr('id', 'subGroup').addClass('focusedInput').addClass('submitedInput'))
-    .append($('<button></button>').text('Créer').attr('onClick', 'addSubGroup("' + idGroup + '")').addClass('submitedButton')));
-}
+    .append($('<button></button>').text('Créer').attr('onClick', 'addSubGroup("' + idGroup + '")').addClass('submitedButton')));*/
+};
 
 var delSubGroup = function (idGroup, idSubGroup) {
   getRequest('groups.php', {
@@ -273,13 +382,38 @@ var delSubGroup = function (idGroup, idSubGroup) {
     else
       console.log(data.error);
   });
-}
+};
+
+var setSubGroup = function (idGroup, idSubGroup, id) {
+  setPopupButtons(false);
+
+  $('#' + id + ' b').replaceWith($('<input />').addClass('focusedInput').addClass('submitedInput').val($('#' + id + ' b').text()));
+  $('#' + id + ' button').first().replaceWith($('<button></button>').html('<i class="fa fa-send"></i>').addClass('submitedButton').on('click', function () {
+    setPopupButtons(false);
+
+    getRequest('groups.php', {
+      'mode': 'set',
+      'group': idGroup,
+      'sub_group': idSubGroup,
+      'info': encodeURIComponent($('#' + id + ' input').val())
+    }, function (data) {
+      $('#' + id + ' input').replaceWith($('<b></b>').text($('#' + id + ' input').val()));
+      $('#' + id + ' button').first().replaceWith($('<button></button>').html('<i class="fa fa-edit"></i>').on('click', function () {
+        setSubGroup(idGroup, idSubGroup, id);
+      }));
+
+      setPopupButtons(true);
+    });
+  }));
+
+  submited();
+};
 
 var addToGroup = function (element, text) {
   getRequest('groups.php', {
     'mode': 'get',
    }, function (data) {
-    console.log(data)
+    console.log(data);
     var corps = $('<div></div>');
 
     var groups = $('<select></select>').attr('id', 'selectedGroup').on('change', function () {
@@ -347,7 +481,7 @@ var addToGroup = function (element, text) {
     }).appendTo(corps);
     popup(text, corps);
   });
-}
+};
 
 var delFromGroup = function (idGroup, idSubGroup, element) {
   getRequest('groups.php', {
@@ -361,53 +495,46 @@ var delFromGroup = function (idGroup, idSubGroup, element) {
     else
       console.log(data.error);
   });
-}
+};
 
-var editFromGroup = function (idGroup, idSubGroup, element, text, info) {
-  popup('Changement de l\'information concernant ' + text, $('<div></div>')
-    .append($('<input />').attr('id', 'info').val(info).addClass('focusedInput').addClass('submitedInput'))
-    .append($('<button></button>').text('Modifier').on('click', function () {
-      getRequest('groups.php', {
-        'mode': 'del',
-        'group': idGroup,
-        'sub_group': idSubGroup,
-        'element': element
-      }, function (data) {
-        if (data.status === 'ok') {
-          getRequest('groups.php', {
-            'mode': 'add',
-            'group': idGroup,
-            'sub_group': idSubGroup,
-            'element': element,
-            'info': $('#info').val()
-          }, function (data) {
-            if (data.status === 'ok') {
-              seeGroup(idGroup);
-            }
-            else {
-              console.log(data)
-            }
-          });
-        }
-        else {
-          console.log(data)
-        }
-      });
-    }).addClass('submitedButton')));
-}
+var setToGroup = function (idGroup, idSubGroup, element, text, id) {
+  setPopupButtons(false);
 
+  $('#' + id + ' .infosCard span').replaceWith($('<input />').addClass('focusedInput').addClass('submitedInput').val($('#' + id + ' .infosCard span').text()));
+  $('#' + id + ' .optionsCard button').first().replaceWith($('<button></button>').html('<i class="fa fa-send"></i>').addClass('submitedButton').on('click', function () {
+    setPopupButtons(false);
+
+    getRequest('groups.php', {
+      'mode': 'set',
+      'group': idGroup,
+      'sub_group': idSubGroup,
+      'element': element,
+      'info': encodeURIComponent($('#' + id + ' .infosCard input').val())
+    }, function (data) {
+      $('#group-' + idGroup + ' button').val($('#group-' + idGroup + ' button').val().replace(element, $('#' + id + ' .infosCard input').val()));
+      $('#' + id + ' .infosCard input').replaceWith($('<span></span>').text($('#' + id + ' .infosCard input').val()));
+      $('#' + id + ' .optionsCard button').first().replaceWith($('<button></button>').html('<i class="fa fa-edit"></i>').attr('disabled',  type == 'asso').on('click', function () {
+        setToGroup(idGroup, idSubGroup, element, text, id);
+      }));
+
+      setPopupButtons(true);
+    });
+  }));
+
+  submited();
+};
 
 var addActive = function (element) {
   window.get.addActive = [element];
   delete window.get.delActive;
   generate();
-}
+};
 
 var delActive = function (element) {
   window.get.delActive = [element];
   delete window.get.addActive;
   generate();
-}
+};
 
 var seeStudent = function (login, info) {
   if (window.get.mode == 'comparer' || window.get.mode == 'modifier')
@@ -422,7 +549,7 @@ var seeStudent = function (login, info) {
     window.get.info = info;
 
   generate();
-}
+};
 
 var seeUV = function (uv) {
   if (window.get.mode == 'comparer')
@@ -437,7 +564,7 @@ var seeUV = function (uv) {
   window.get.uv = uv;
 
   generate();
-}
+};
 
 var seeUVInformations = function (task) {
   loading();
@@ -457,7 +584,7 @@ var seeUVInformations = function (task) {
     div.appendTo(corps);
     popup(popupHead, corps, task.bgColor, task.fgColor);
   });
-}
+};
 
 var seeOthers = function (uv, type, idUV) {
   window.get = {
@@ -468,15 +595,15 @@ var seeOthers = function (uv, type, idUV) {
   };
 
   generate();
-}
+};
 
 var uvWeb = function (uv) {
   window.open('https://assos.utc.fr/uvweb/uv/' + uv);
-}
+};
 
 var uvMoodle = function (uv) {
   window.open('http://moodle.utc.fr/course/search.php?search=' + uv);
-}
+};
 
 var changeColor = function(idUV, color) {
   getRequest('colors.php', {
@@ -485,7 +612,7 @@ var changeColor = function(idUV, color) {
   }, function (data) {
     generate();
   });
-}
+};
 
 
 /* Trombi */
@@ -515,14 +642,14 @@ var search = function () {
   setTimeout(function () { // La fonction ne marche pas sans Timeout..
     $("#addTabText").focus();
   }, 100);
-}
+};
 
 var checkSearch = function (input) {
   var text = input.replace(/\s+/g, ' ').replace(/^\s+/g, '').replace(/(\s.+)\s$/g, '$1');
   $('#addTabText').val(text);
 
   $('#searchButton').prop('disabled', text.length < 2);
-}
+};
 
 var printSearch = function (begin) {
   loading();
@@ -533,7 +660,7 @@ var printSearch = function (begin) {
       'search': $('#addTabText').val().replace(/^\s+|\s+$/g, '').replace(/_/g, '').replace(/\s/, '%\\_%\\'),
       'begin': begin,
       'nbr': 50
-    })
+    });
   $('#searchButton').prop('disabled', true);
   getRequest('lists.php', {
     'search': $('#addTabText').val().replace(/^\s+|\s+$/g, '').replace(/_/g, '').replace(/\s/, '%\\_%\\'),
@@ -544,7 +671,7 @@ var printSearch = function (begin) {
     $('.studentCards').empty();
     $('.studentCardsText').text(data.students.length + ' étudiant' + (data.students.length > 1 ? 's' : '') + ' trouvé' + (data.students.length > 1 ? 's' : ''));
     data.students.forEach(function (student) {
-      $('.studentCards').append(generateStudentCard(student, 'Ajouté(e) depuis le trombi'));
+      $('.studentCards').append(generateStudentCard(student, 'Ajouté.e depuis le trombi'));
     });
 
     $('.uvCards').empty();
@@ -561,7 +688,7 @@ var printSearch = function (begin) {
 
     $('#popup').scrollTop(0);
   });
-}
+};
 
 
 /* Outils */
@@ -594,6 +721,9 @@ var exportDownload = function (type) {
         .append($('<input></input>').attr('type', 'checkbox').attr('id', 'imgCheck4').prop('checked', true)).append($('<label></label><br />').attr('for', 'imgCheck4').text('Afficher le vendredi'))
         .append($('<input></input>').attr('type', 'checkbox').attr('id', 'imgCheck5').prop('checked', true)).append($('<label></label><br />').attr('for', 'imgCheck5').text('Afficher le samedi'))
         .append($('<input></input>').attr('type', 'checkbox').attr('id', 'imgCheck6').prop('checked', true)).append($('<label></label><br />').attr('for', 'imgCheck6').text('Afficher le dimanche'))
+        .append($('<select></select>').attr('id', 'imgType')
+          .append($('<option></option>').val('png').text('PNG'))
+          .append($('<option></option>').val('jpeg').text('JPEG')))
         .append($('<button></button>').addClass('submitedButton').text('Générer mon emploi du temps').attr('onClick', 'getImg()'))
         .append($('<div></div>').attr('id', 'generatedImg'))
       );
@@ -618,7 +748,7 @@ var exportDownload = function (type) {
       <button onClick="window.location.href = \'https://\' + window.location.hostname + \'/emploidutemps\' + \'/ressources/pdf/alternances.pdf\';"></button>
       <button onClick="window.location.href = \'https://\' + window.location.hostname + \'/emploidutemps\' + \'/ressources/pdf/infosRentree.pdf\';"></button>
     </div>*/
-}
+};
 
 var getImg = function () {
   var headers = $('.calendar-headers div');
@@ -626,6 +756,7 @@ var getImg = function () {
   var length = window.headers.length;
   var displays = [];
   var hidden = 0;
+  var type = $('#imgType').val();
   doc = new jsPDF('l', 'mm', [297, 210]);
 
   for (var i = 0; i < length; i++) {
@@ -649,10 +780,24 @@ var getImg = function () {
   }
 
   var calendar = $('#calendar-container');
-  var width = calendar.css('width');
-  calendar.css('width', 1032 + 'px');
+  calendar.css('width', 1032 + 'px').addClass('calendar-exported');
 
   html2canvas(calendar[0], { onrendered: function(canvas) {
+    if (type == 'jpeg') {
+      var ctx = canvas.getContext('2d')
+      var imgData=ctx.getImageData(0,0,canvas.width,canvas.height);
+      var data=imgData.data;
+      for(var i=0;i<data.length;i+=4){
+          if(data[i+3]<255){
+              data[i]=255;
+              data[i+1]=255;
+              data[i+2]=255;
+              data[i+3]=255;
+          }
+      }
+      ctx.putImageData(imgData,0,0);
+    }
+
     for (var i = 0; i < length; i++) {
       $(headers[i]).css('display', displays[i]);
       $(days[i * window.sides]).css('display', displays[i]);
@@ -661,10 +806,11 @@ var getImg = function () {
         $(days[(i * window.sides) + 1]).css('display', displays[i]);
     }
 
+    calendar.removeClass('calendar-exported');
     setCalendar(window.focusedDay);
     $('#generatedImg').html('<img src="' + canvas.toDataURL('image/' + type || 'png', 1.0) + '">');
   }});
-}
+};
 
 var getPDF = function () {
   var headers = $('.calendar-headers div');
@@ -696,8 +842,7 @@ var getPDF = function () {
   }
 
   var calendar = $('#calendar-container');
-  var width = calendar.css('width');
-  calendar.css('width', 1036 + 'px');
+  calendar.css('width', 1036 + 'px').addClass('calendar-exported');
 
   html2canvas(calendar[0], { onrendered: function(canvas) {
     doc.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', 12 + (hidden * 18), 26);
@@ -710,10 +855,11 @@ var getPDF = function () {
         $(days[(i * window.sides) + 1]).css('display', displays[i]);
     }
 
+    calendar.removeClass('calendar-exported');
     setCalendar(window.focusedDay);
     doc.save($('#pdfName').val() + '.pdf');
   }});
-}
+};
 
 
 /* Echanges */
@@ -722,14 +868,14 @@ var exchange = function (get) {
   getRequest('exchange.php', get, function(data) {
     popup(data);
   });
-}
+};
 
 var askForExchange = function (idUV, idUV2) {
   exchange({
     'idUV': idUV,
     'idUV2': idUV2
   });
-}
+};
 /*
 function addExchange(idUV, forIdUV, note) {
   $.post('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?add=1&idUV=' + idUV + '&for=' + forIdUV, {note: note}, function (info) {
@@ -798,18 +944,44 @@ var getFgColor = function (bgColor) {
     return '#000000';
   else
     return '#FFFFFF';
-}
+};
 
 
 /* Génération */
+  /*
+  popup('Changement de l\'information concernant ' + text, $('<div></div>')
+    .append($('<input />').attr('id', 'info').val(info).addClass('focusedInput').addClass('submitedInput'))
+    .append($('<button></button>').text('Modifier').on('click', function () {
+      getRequest('groups.php', {
+        'mode': 'del',
+        'group': idGroup,
+        'sub_group': idSubGroup,
+        'element': element
+      }, function (data) {
+        getRequest('groups.php', {
+          'mode': 'add',
+          'group': idGroup,
+          'sub_group': idSubGroup,
+          'element': element,
+          'info': $('#info').val()
+        }, function (data) {
+            seeGroup(idGroup);
+        });
+      });
+    }).addClass('submitedButton')));*/
+
+
 
 var generateStudentCard = function (infos, info, idGroup, idSubGroup, type) {
   var text = infos.firstname + ' ' + infos.surname;
+  var id = 'card-' + infos.login + (idSubGroup ? '-' + idSubGroup : '');
   var option;
 
   if (idGroup && idSubGroup && type) {
     option = $('<div></div>').addClass('optionsCard')
-      .append($('<button></button>').html('<i class="fa fa-edit"></i>').attr('disabled',  type == 'asso').attr('onClick', 'editFromGroup("' + idGroup + '", "' + idSubGroup + '", "' + infos.login + '", "' + text + '", "' + infos.info + '")'))
+      .append($('<button></button>').html('<i class="fa fa-edit"></i>').attr('disabled',  type == 'asso').on('click', function () {
+        setToGroup(idGroup, idSubGroup, infos.login, text, id);
+      }))
       .append($('<button></button>').html('<i class="fa fa-remove"></i>').attr('disabled',  type == 'asso').attr('onClick', 'delFromGroup("' + idGroup + '", "' + idSubGroup + '", "' + infos.login + '", "' + infos.info + '")'));
   }
   else if (window.get.mode == 'organiser' && infos.info) {
@@ -823,7 +995,7 @@ var generateStudentCard = function (infos, info, idGroup, idSubGroup, type) {
       .append($('<button></button>').html('<i class="fa fa-plus"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).attr('onClick', 'addToGroup("' + infos.login + '", "' + text + '")'));
   }
 
-  var card = $('<div></div>').addClass('studentCard')
+  var card = $('<div></div>').addClass('studentCard').attr('id', id)
     .append($('<div></div>').addClass('imgCard')
       .append($('<i class="fa fa-4x fa-user-o"></i>').css('padding-top', '3px').css('padding-left', '1px'))
       .append($('<img />').attr('src', 'https://demeter.utc.fr/pls/portal30/portal30.get_photo_utilisateur?username=' + infos.login)))
@@ -833,18 +1005,21 @@ var generateStudentCard = function (infos, info, idGroup, idSubGroup, type) {
       .append($('<a></a>').attr('href', 'mailto:' + infos.email).text(infos.email)))
     .append(option);
 
-  if (infos.active && window.active[infos.login])
+  if ((infos.active || infos.login == window.sessionLogin) && window.active[infos.login])
     card.css('background-color', window.active[infos.login] + 'CC').css('color', getFgColor(window.active[infos.login]));
 
   return card;
-}
+};
 
 var generateUVCard = function (infos, uvs, info, idGroup, idSubGroup, type) {
+  var id = 'card-' + infos.uv + (idSubGroup ? '-' + idSubGroup : '');
   var option;
 
   if (idGroup && idSubGroup && type) {
     option = $('<div></div>').addClass('optionsCard')
-      .append($('<button></button>').html('<i class="fa fa-edit"></i>').attr('disabled',  type == 'asso').attr('onClick', 'editFromGroup("' + idGroup + '", "' + idSubGroup + '", "' + infos.uv + '", "' + infos.uv + '", "' + infos.info + '")'))
+      .append($('<button></button>').html('<i class="fa fa-edit"></i>').attr('disabled',  type == 'asso').on('click', function () {
+        setToGroup(idGroup, idSubGroup, infos.uv, infos.uv, id);
+      }))
       .append($('<button></button>').html('<i class="fa fa-remove"></i>').attr('disabled',  type == 'asso').attr('onClick', 'delFromGroup("' + idGroup + '", "' + idSubGroup + '", "' + infos.uv + '")'));
   }
   else if (window.get.mode == 'organiser' && infos.info) {
@@ -858,7 +1033,7 @@ var generateUVCard = function (infos, uvs, info, idGroup, idSubGroup, type) {
       .append($('<button></button>').html('<i class="fa fa-plus"></i>').attr('onClick', 'addToGroup("' + infos.uv + '", "' + infos.uv + '")'));
   }
 
-  var card = $('<div></div>').addClass('uvCard')
+  var card = $('<div></div>').addClass('uvCard').attr('id', id)
     .append($('<div></div>').addClass('imgCard')
       .append($('<i class="fa fa-4x fa-book"></i>').css('padding-top', '3px').css('padding-left', '1px')))
     .append($('<div></div>').addClass('infosCard').css('padding-left', '5px')
@@ -871,11 +1046,11 @@ var generateUVCard = function (infos, uvs, info, idGroup, idSubGroup, type) {
       card.css('background-color', window.active[infos.uv] + 'CC').css('color', getFgColor(window.active[infos.uv]));
 
     return card;
-}
+};
 
 var generateTitle = function (title) {
   $('#title').text(title);
-}
+};
 
 var generateWeeks = function (weeks, week) {
   console.log(weeks)
@@ -908,7 +1083,7 @@ var generateWeeks = function (weeks, week) {
     $('#after').prop('disabled', true);
   else
     $('#after').prop('disabled', false).attr('onClick', 'window.get.week="' + weeks.after + '"; generate()');
-}
+};
 
 var generateSubMenu = function (tabs, id) {
   var submenu = $('#' + id + 's');
@@ -1004,7 +1179,7 @@ var generateSubMenu = function (tabs, id) {
             button.attr('onClick', option.action);
         }
 
-        if (option.active)
+        if (option.active || (tab.active && value != 'more'))
           button.addClass('active');
         else if (option.partialyActive)
           button.addClass('partialyActive');
@@ -1028,33 +1203,39 @@ var generateSubMenu = function (tabs, id) {
 
 var generatePrinted = function (groups) {
   $('#printed').empty();
+  $('#printedTools').empty();
 
   if (window.get.mode == 'organiser') {
-    $('#printed').css('display', 'block');
-    $('#nbr_printed').css('display', 'block');
+    $('#affichage_printed').css('display', 'block');
 
     if (window.active && Object.keys(window.active).length > 1)
-      $('#nbr_printed').text(Object.keys(window.active).length + ' affichés:');
+      $('#printedText').text(Object.keys(window.active).length + ' affichés:');
     else
-      $('#nbr_printed').text('1 seul affiché:');
+      $('#printedText').text('1 seul affiché:');
 
     $('<div></div>').attr('id', 'printed-' + window.sessionLogin).append($('<button></button>').html('<span>Moi</span>').css('background-color', window.active[window.sessionLogin] || '#222222').css('color', getFgColor(window.active[window.sessionLogin] || '#222222'))).appendTo($('#printed'));
 
     $.each(window.active, function (element, color) {
       if (element != window.sessionLogin)
-      $('<div></div>').attr('id', 'printed-' + element).append($('<button></button>').html('<span>' + element + '</span><i class="fa fa-times" aria-hidden="true"></i>').css('background-color', window.active[element] || '#222222').css('color', getFgColor(window.active[element] || '#222222'))).appendTo($('#printed'));
+      $('<div></div>').attr('id', 'printed-' + element).append($('<button></button>').html('<span>' + element + '</span><i class="fa fa-times" aria-hidden="true"></i>').css('background-color', window.active[element] || '#222222').css('color', getFgColor(window.active[element] || '#222222')).on('click', function () {
+        window.get.delActive = [element];
+
+        generate();
+      })).appendTo($('#printed'));
     });
 
-    console.log(groups);
     var elem;
+    var emails = {};
     $.each(groups, function (name, group) {
       if (!group.partialyActive)
         return;
-
       $.each(group.subgroups, function (sub_name, sub_group) {
         $.each(sub_group.elements, function (element, infos) {
           if (!infos.active && element != window.sessionLogin)
             return;
+
+          if (infos.email)
+            emails[element] = infos.email;
 
           elem = $('#printed-' + element).children();
 
@@ -1064,20 +1245,36 @@ var generatePrinted = function (groups) {
         });
       });
     });
+
+    $('<button></button>').on('click', function () {
+      var mailto = '';
+
+      $.each(emails, function (element, email) {
+        mailto += ',' + email;
+      });
+
+      window.open('mailto:' + mailto.substr(1));
+    }).html('<i class="fa fa-send" aria-hidden="true"></i> Envoyer un mail aux étudiant.e.s affiché.e.s ').prop('disabled', Object.keys(emails).length == 0).appendTo($('#printedTools'));
   }
   else {
-    $('#printed').css('display', 'none');
-    $('#nbr_printed').css('display', 'none');
-
+    $('#affichage_printed').css('display', 'none');
     var text = window.get.login ? groups.others.subgroups.students.elements[window.get.login].firstname + ' ' + groups.others.subgroups.students.elements[window.get.login].surname : (window.get.uv ? groups.others.subgroups.uvs.elements[window.get.uv].uv : '');
 
     if (window.get.login || window.get.uv)
-      $('<div></div>').attr('id', 'addTool').append($('<button></button>').attr('onClick', 'addToGroup("' + (window.get.login || window.get.uv) + '")').html('<i class="fa fa-plus" aria-hidden="true"></i> Ajouter ' + text)).insertAfter($('#toolsText'));
+      $('<button></button>').attr('onClick', 'addToGroup("' + (window.get.login || window.get.uv) + '")').html('<i class="fa fa-plus" aria-hidden="true"></i> Ajouter ' + text).appendTo($('#printedTools'));
+
+    if (window.get.login)
+      $('<button></button>').on('click', function () {
+        window.open('mailto:' + groups.others.subgroups.students.elements[window.get.login].email);
+      }).html('<i class="fa fa-send" aria-hidden="true"></i> Envoyer un mail à ' + text).appendTo($('#printedTools'));
   }
 }
 
 var cardClick = function (task) {
   var end = (window.get.mode === 'semaine' || window.get.mode === 'organiser' ? 629 : 588);
+
+  $('#nav').removeClass('see');
+  $('#parameters').removeClass('see');
 
   if (window.task == null) {
     if (task.top + 150 > end) // Détecter si la tache ne dépasse pas le calendrier en s'ouvrant
@@ -1260,7 +1457,7 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
               infosExchange = div.clone().addClass('infosExchange');
               option = button.clone().addClass('option').css('background-color', task.bgColor).css('color', getFgColor(task.bgColor));
 
-              if (window.get.mode_type == null) {
+              if (window.get.mode_type === null) {
                 option.clone().html("<i class='fa fa-calendar-o' aria-hidden='true'></i> Voir l'edt de l'UV").on('click', function() { seeUV(task.subject); }).appendTo(interraction);
                 option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Informations").on('click', function() { seeUVInformations(task); }).appendTo(interraction);
                 option.clone().html('<i class="fa fa-handshake-o" aria-hidden="true"></i> Proposer un échange').on('click', function() {
@@ -1398,7 +1595,7 @@ var generateCalendar = function(tasks, sides, uvs) {
   }
 
   // Ajout de la case toute la journée
-  if (window.get.mode === 'semaine' || window.get.mode === 'organiser' || window.get.mode_type == 'rooms') {
+  if (window.get.mode === 'semaine' || window.get.mode === 'organiser' || window.get.mode_type === 'rooms') {
     if (window.get.mode === 'semaine' || window.get.mode === 'organiser') {
       if (classHour == 'currentHour')
       classHour = 'futureHour';
