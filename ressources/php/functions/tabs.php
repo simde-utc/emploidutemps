@@ -60,36 +60,42 @@ function printRoomTabs($type) {
     'options' => array(
       '1-2' => array(
         'text' => 'De 1 à 2h',
+        'active' => $gap == 1,
         'get' => array(
           'mode_option' => 1
         )
       ),
       '3-4' => array(
         'text' => 'De 3 à 4h',
+        'active' => $gap == 3,
         'get' => array(
           'mode_option' => 3
         )
       ),
       '5-6' => array(
         'text' => 'De 5 à 6h',
+        'active' => $gap == 5,
         'get' => array(
           'mode_option' => 5
         )
       ),
       '7-8' => array(
         'text' => 'De 7 à 8h',
+        'active' => $gap == 7,
         'get' => array(
           'mode_option' => 7
         )
       ),
       '9-10' => array(
         'text' => 'De 9 à 10h',
+        'active' => $gap == 9,
         'get' => array(
           'mode_option' => 9
         )
       ),
       '+10' => array(
         'text' => 'Plus de 10h',
+        'active' => $gap == -10,
         'get' => array(
           'mode_option' => -10
         )

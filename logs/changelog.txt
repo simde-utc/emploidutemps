@@ -295,3 +295,17 @@ Beta 2.1: 2017-08-15
   - Ajout de l'option mailing de ou des étudiant.e.s affiché.e.s
   - Amélioration de l'export img/pdf
   - Correction de multiples bugs
+
+Beta 2.2: 2017-08-17
+  - Amélioration de l'affichage du calendrier
+  - Préparation de la création d'évènements depuis le calendrier
+  - Ajout d'un mode de rechargement de l'affichage de manière discrète
+  - Ajout d'un rechargement automatique à chaque minute de l'affichage
+  - Amélioration de l'affichage global
+  - Amélioration de l'affichage et la gestion des groupes
+  - Amélioration de l'ouverture automatique d'une tâche
+  - Création d'un nouveau système de déconnexion (iframe +_+)
+  - Ajout des options de suppression/abonnement du compte
+  - Ajout de la future aide
+  - Correction de bugs
+  - Nettoyage du code

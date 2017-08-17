@@ -277,9 +277,6 @@
       foreach ($info as $sub_name => $sub_group) {
         $get = ($sub_group['active'] ? 'delActive' : 'addActive');
 
-        if ($sub_group['nbr'] == 0)
-          continue;
-
         $GLOBALS['groups'][$name]['options'][$sub_name] = array(
           'text' => $sub_group['name'],
           'active' => $sub_group['active'],
@@ -288,6 +285,9 @@
             $get => array()
           )
         );
+
+        if ($sub_group['nbr'] == 0)
+          $GLOBALS['groups'][$name]['options'][$sub_name]['disabled'] = TRUE;
 
         foreach ($sub_group['elements'] as $element => $active) {
           if (isset($active['extern']) && $active['extern'] || $element == $_SESSION['login'])

@@ -1,6 +1,8 @@
 var HOUR_MIN = 7;
 var HOUR_MAX = 21;
+var RELOAD_SEC = 60;
 var headers = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi",  "Samedi", 'Dimanche'];
+var date = new Date();
 var sessionLogin = '';
 var get = {};
 var colors = [];
@@ -46,14 +48,20 @@ var changeMode = function (mode) {
   generate();
 };
 
-var generate = function () {
+var generate = function (silentMode) {
   console.time('generate');
-  popupClose();
   loading();
 
-  $('#zoneGrey').removeClass('focused');
-  $('#zoneFocus').removeClass('focused');
-  $('#zonePopup').removeClass('focused');
+  if (silentMode) {
+    if (window.task) {
+      window.get.id = window.task.id;
+      window.task = null;
+    }
+  }
+  else {
+    closePopup();
+    unFocus();
+  }
 
   getRequest('calendar.php', window.get, function (data) {
     console.timeEnd('generate');
@@ -77,18 +85,14 @@ var generate = function () {
     generateSubMenu(data.tabs, 'tab');
     generateSubMenu(data.groups, 'group');
     generateCalendar(data.tasks, data.infos.sides, data.infos.uvs);
-
-    unFocus();
-    window.task = null;
+    generateMode();
     setCalendar();
 
-    //  Animer l'affichage d'une UV à échanger lors de la réception du mail
-    if (window.get.id != undefined) {
-      setTimeout(function () {
-        $('#' + window.get.id).click();
-        console.log(window.get.id);
-      }, 500);
-    }
+    // Recharge l'affichage chaque minute pour les mises à jour
+    window.clearInterval(window.reload);
+    window.reload = window.setInterval(function () {
+      generate(true);
+    }, window.RELOAD_SEC * 1000);
   });
 };
 
@@ -142,6 +146,14 @@ var popup = function (popupHead, content, bgColor, fgColor) {
   endLoading();
 };
 
+var closePopup = function () {
+  $('#popup').css('visibility', 'hidden');
+  $('#popup').css('opacity', '0');
+
+  $('#zonePopup').removeClass('focused');
+  $('#zonePopup').removeClass('focused');
+};
+
 var unFocus = function () {
   $('#zoneGrey').removeClass('focused');
   $('#zoneFocus').removeClass('focused');
@@ -149,6 +161,31 @@ var unFocus = function () {
   if (window.task != null)
     $('#' + window.task.id).click();
 };
+
+var disconnect = function () {
+  popup('Déconnexion', $('<div></div>')
+    .append($('<iframe></iframe>', {
+      'frameborder': 0,
+      'scrolling': 'no',
+      'height': '100%',
+      'width': '100%',
+      'src': 'https://dev.nastuzzi.fr/emploidutemps/disconnect.php'
+    }).css('position', 'absolute'))
+    .append($('<div></div>', {
+      'border': '100%',
+      'width': '100%',
+      'class': 'optionCards'
+    }).css('position', 'absolute').css('bottom', 0)
+      .append($('<button></button>').html('<i class="fa fa-external-link" aria-hidden="true"></i> Portail des assos').on('click', function() { window.location = 'https://assos.utc.fr/'; }))
+      .append($('<button></button>').html('<i class="fa fa-undo" aria-hidden="true"></i> Se reconnecter').on('click', function() { window.location.reload(); }))
+      .append($('<button></button>').html('<i class="fa fa-external-link" aria-hidden="true"></i> ENT').on('click', function() { window.location = 'https://ent.utc.fr/'; }))
+    )
+  );
+
+  $('#zoneFocus').css('visibility', 'hidden');
+  $('#popup').css('height', '100%').css('overflow', 'hidden');
+};
+
 
 
 /* Groupes */
@@ -185,7 +222,7 @@ var delGroup = function (idGroup) {
   }, function (data) {
     if (data.status == 'ok') {
       $('#group-' + idGroup).remove();
-      popupClose();
+      closePopup();
     }
     else
       console.log(data.error);
@@ -218,9 +255,9 @@ var seeGroup = function (group, edit) {
       if (sub_group.elements.length == 0) {
         $('<div></div>').addClass('subCard').attr('id', 'sub-' + name).css('color', (edit && sub_group.type == 'asso' ? '#FF0000' : '#000000'))
           .append($('<b></b>').text(sub_group.name))
-          .append($('<button></button>').html('<i class="fa fa-' + (edit ? 'edit' : 'eye') + '"></i>').prop('disabled', (!edit || (edit && sub_group.type != 'custom')).on('click', edit ? function () {
+          .append($('<button></button>').html('<i class="fa fa-' + (edit ? 'edit' : 'eye') + '"></i>').prop('disabled', (!edit || (edit && sub_group.type != 'custom'))).on('click', edit ? function () {
             setSubGroup(group, name, 'sub-' + name);
-          } : function () {}))).appendTo(corps);
+          } : function () {})).appendTo(corps);
 
         if (edit)
           return div.addClass('optionCards').append($('<button></button>').html('<i class="fa fa-remove" aria-hidden="true"></i> Supprimer ce sous-groupe vide').prop('disabled', sub_group.type != 'custom').attr('onClick', 'delSubGroup("' + group + '", "' + name + '")')).appendTo(corps);
@@ -265,7 +302,8 @@ var seeGroup = function (group, edit) {
           };
           window.get[active] = actives;
 
-          generate();
+          generate(true);
+          seeGroup(group);
         })).appendTo(corps);
       div.appendTo(corps);
     });
@@ -303,7 +341,8 @@ var seeGroup = function (group, edit) {
       };
       window.get[active] = actives;
 
-      generate();
+      generate(true);
+      seeGroup(group);
     }));
   });
 };
@@ -330,45 +369,22 @@ var setGroup = function (idGroup, id) {
 };
 
 var addSubGroup = function (idGroup, group) {
-/*  var corps = $('<div></div>');
+  setPopupButtons(false);
 
-  if ($('#subGroup').length) {
-    var name = $('#subGroup').val();
-    getRequest('groups.php', {
-      'mode': 'add',
-      'group': idGroup,
-      'sub_group': encodeURIComponent(name)
-    }, function (data) {
-      console.log(data);
-      if (data.error === undefined)
-        generate();
-      else {
-        corps.append($('<div></div>').text(data.error));
-        $('#subGroup').val(name);
-      }
-    });*/
+  $('<div></div>').addClass('subCard').attr('id', 'sub-create')
+    .append($('<input />').addClass('focusedInput').addClass('submitedInput'))
+    .append($('<button></button>').addClass('submitedButton').html('<i class="fa fa-send"></i>').on('click', function () {
+      getRequest('groups.php', {
+        'mode': 'add',
+        'group': idGroup,
+        'sub_group': encodeURIComponent($('#sub-create input').last().val())
+      }, function (data) {
+        seeGroup(idGroup, true);
+      });
+    }))
+    .insertBefore($('.optionCards').last().before());
 
-    setPopupButtons(false);
-
-    $('<div></div>').addClass('subCard').attr('id', 'sub-create')
-      .append($('<input />').addClass('focusedInput').addClass('submitedInput'))
-      .append($('<button></button>').addClass('submitedButton').html('<i class="fa fa-send"></i>').on('click', function () {
-        getRequest('groups.php', {
-          'mode': 'add',
-          'group': idGroup,
-          'sub_group': encodeURIComponent($('#sub-create input').last().val())
-        }, function (data) {
-          seeGroup(idGroup, true);
-        });
-      }))
-      .insertBefore($('.optionCards').last().before());
-
-    submited();
-    /*
-  }
-  popup('Création d\'un sous-groupe pour le groupe ' + group, corps
-    .append($('<input />').attr('id', 'subGroup').addClass('focusedInput').addClass('submitedInput'))
-    .append($('<button></button>').text('Créer').attr('onClick', 'addSubGroup("' + idGroup + '")').addClass('submitedButton')));*/
+  submited();
 };
 
 var delSubGroup = function (idGroup, idSubGroup) {
@@ -474,7 +490,7 @@ var addToGroup = function (element, text) {
         'info': encodeURIComponent(info)
       }, function (data) {
         if (data.status == 'ok')
-          popupClose();
+          closePopup();
         else
           console.log(data.error);
       });
@@ -527,13 +543,17 @@ var setToGroup = function (idGroup, idSubGroup, element, text, id) {
 var addActive = function (element) {
   window.get.addActive = [element];
   delete window.get.delActive;
-  generate();
+
+  loading();
+  generate(true);
 };
 
 var delActive = function (element) {
   window.get.delActive = [element];
   delete window.get.addActive;
-  generate();
+
+  loading();
+  generate(true);
 };
 
 var seeStudent = function (login, info) {
@@ -731,12 +751,12 @@ var exportDownload = function (type) {
   }
   else
     popup('Exporter/Télécharger', $('<div></div>').addClass('parameters')
-      .append($('<button></button>').attr('onClick', 'exportDownload("ical")').text('Obtenir son calendrier sous format iCal (.ics)').prop('disabled', true))
-      .append($('<button></button>').attr('onClick', 'exportDownload("pdf")').text('Obtenir son calendrier sous format PDF (.pdf)'))
-      .append($('<button></button>').attr('onClick', 'exportDownload("img")').text('Obtenir son calendrier sous format image (.png/.jpg)'))
-      .append($('<button></button>').attr('onClick', 'window.location.href = "http://wwwetu.utc.fr/sme/EDT/' + window.sessionLogin + '"').text('Obtenir son calendrier sous format SME (mail reçu)'))
-      .append($('<button></button>').attr('onClick', 'window.location.href = "https://' + window.location.hostname + '/emploidutemps' + '/ressources/pdf/alternances.pdf"').text('Télécharger le calendrier des alternances'))
-      .append($('<button></button>').attr('onClick', 'window.location.href = "https://' + window.location.hostname + '/emploidutemps' + '/ressources/pdf/infosRentree.pdf"').text('Télécharger l\'info rentrée'))
+      .append($('<button></button>').on('click', function () { exportDownload('ical'); }).text('Obtenir son calendrier sous format iCal (.ics)').prop('disabled', true))
+      .append($('<button></button>').on('click', function () { exportDownload('pdf'); }).text('Obtenir son calendrier sous format PDF (.pdf)'))
+      .append($('<button></button>').on('click', function () { exportDownload('img'); }).text('Obtenir son calendrier sous format image (.png/.jpg)'))
+      .append($('<button></button>').on('click', function () { window.location.href = 'http://wwwetu.utc.fr/sme/EDT/' + window.sessionLogin + '.edt'; }).text('Obtenir son calendrier sous format SME (mail reçu)'))
+      .append($('<button></button>').on('click', function () { window.location.href = 'https://' + window.location.hostname + '/emploidutemps' + '/ressources/pdf/alternances.pdf' }).text('Télécharger le calendrier des alternances'))
+      .append($('<button></button>').on('click', function () { window.location.href = 'https://' + window.location.hostname + '/emploidutemps' + '/ressources/pdf/infosRentree.pdf' }).text('Télécharger l\'info rentrée'))
     );
 
 /*  <div onClick="parameters()" style="cursor: pointer" id="popupHead">Exporter/Télécharger</div>
@@ -862,6 +882,29 @@ var getPDF = function () {
 };
 
 
+
+/* Evenements */
+
+var createEvenement = function (day, begin, end) {
+  if (!day)
+    day = (date.getDay() + 6) % 7;
+
+  if (!begin)
+    begin = date.getHours();
+
+  if (!end)
+    end = begin + 1;
+
+  popup('Création d\'un évènement', $('<div></div>')
+    .append($('<div></div>').text('Le jour: ' + day))
+    .append($('<div></div>').text('Début: ' + begin))
+    .append($('<div></div>').text('fin: ' + end)));
+  console.log('Début: ' + begin);
+  console.log('Fin: ' + end);
+};
+
+
+
 /* Echanges */
 
 var exchange = function (get) {
@@ -948,29 +991,13 @@ var getFgColor = function (bgColor) {
 
 
 /* Génération */
-  /*
-  popup('Changement de l\'information concernant ' + text, $('<div></div>')
-    .append($('<input />').attr('id', 'info').val(info).addClass('focusedInput').addClass('submitedInput'))
-    .append($('<button></button>').text('Modifier').on('click', function () {
-      getRequest('groups.php', {
-        'mode': 'del',
-        'group': idGroup,
-        'sub_group': idSubGroup,
-        'element': element
-      }, function (data) {
-        getRequest('groups.php', {
-          'mode': 'add',
-          'group': idGroup,
-          'sub_group': idSubGroup,
-          'element': element,
-          'info': $('#info').val()
-        }, function (data) {
-            seeGroup(idGroup);
-        });
-      });
-    }).addClass('submitedButton')));*/
 
-
+var generateMode = function () {
+  if (window.get.mode == 'semaine' || window.get.mode == 'organiser')
+    $('#weekTools').css('display', 'block');
+  else
+    $('#weekTools').css('display', 'none');
+};
 
 var generateStudentCard = function (infos, info, idGroup, idSubGroup, type) {
   var text = infos.firstname + ' ' + infos.surname;
@@ -1179,7 +1206,7 @@ var generateSubMenu = function (tabs, id) {
             button.attr('onClick', option.action);
         }
 
-        if (option.active || (tab.active && value != 'more'))
+        if (option.active || (tab.type != 'select' && tab.active && value != 'more'))
           button.addClass('active');
         else if (option.partialyActive)
           button.addClass('partialyActive');
@@ -1548,7 +1575,7 @@ var generateCalendar = function(tasks, sides, uvs) {
   // Préparation du header
   var classDay = '';
   window.headers.forEach(function(element, day) {
-    if (window.get.mode === 'semaine' || window.get.mode === 'organiser') {
+    if ((window.get.mode === 'semaine' || window.get.mode === 'organiser') && $('#withWeekTool').prop('checked')) {
       if (day < currentDay)
         classDay = 'passedDay';
       else if (day == currentDay)
@@ -1570,13 +1597,19 @@ var generateCalendar = function(tasks, sides, uvs) {
   for (var side = 0; side < sides; side++)
     gridColumnElement[side] = div.clone();
 
-  // Création des heures
+  // Création des demi-heures
   var classHour = '';
-  for (var i = window.HOUR_MIN; i < window.HOUR_MAX; i++) {
-    if (window.get.mode === 'semaine' || window.get.mode === 'organiser') {
-      if (currentDay == -1 || i > hour)
+  for (let i = 0; i < (window.HOUR_MAX - window.HOUR_MIN) * 2; i++) {
+    var time = (window.HOUR_MIN + i / 2);
+
+    if ((window.get.mode === 'semaine' || window.get.mode === 'organiser') && $('#withWeekTool').prop('checked')) {
+      if (currentDay == -1)
         classHour = 'futureHour';
-      else if (currentDay == 7 || i < hour)
+      else if (currentDay == 7)
+        classHour = 'passedHour';
+      else if (time > hour)
+        classHour = 'futureHour';
+      else if (time < hour)
         classHour = 'passedHour';
       else
         classHour = 'currentHour';
@@ -1584,58 +1617,67 @@ var generateCalendar = function(tasks, sides, uvs) {
     else
       classHour = '';
 
-    div.clone().addClass(classHour).text((i < 10 ? '0' : '') + Math.floor(i) + (Math.ceil(i) > Math.floor(i) ? ':30' : ':00')).appendTo(scheduleTimeline);
-    div.clone().addClass(classHour).appendTo(scheduleTimeline);
+    // Création des demi-horaires
+    div.clone().addClass(classHour).text((Number.isInteger(time) ? (time < 10 ? '0' : '') + Math.floor(time) + (Math.ceil(time) > Math.floor(time) ? ':30' : ':00') : '')).appendTo(scheduleTimeline)
 
-    // Pour chaque heure, on a deux cases
-    for (side = 0; side < sides; side++) {
+    // Création des demi-cases (* ${side} pour chaque heure)
+    for (side = 0; side < sides; side++)
       gridColumnElement[side].append(div.clone().addClass('calendar-cell' + sides + side));
-      gridColumnElement[side].append(div.clone().addClass('calendar-cell' + sides + side));
-    }
   }
 
   // Ajout de la case toute la journée
-  if (window.get.mode === 'semaine' || window.get.mode === 'organiser' || window.get.mode_type === 'rooms') {
-    if (window.get.mode === 'semaine' || window.get.mode === 'organiser') {
-      if (classHour == 'currentHour')
-      classHour = 'futureHour';
-    }
-    else
-    classHour = '';
-
-    div.clone().text('').addClass(classHour).addClass('allDay').appendTo(scheduleTimeline);
+  if (window.get.mode === 'semaine' || window.get.mode === 'organiser' || (window.get.mode === 'classique' && window.get.mode_type === 'rooms')) {
+    div.clone().addClass('allDay').addClass(window.HOUR_MAX > hour && $('#withWeekTool').prop('checked') && currentDay != 7 ? 'futureHour' : ($('#withWeekTool').prop('checked') && (window.get.mode === 'semaine' || window.get.mode === 'organiser') ? (currentDay != -1 ? 'passedHour' : 'currentHour') : '')).appendTo(scheduleTimeline);
     gridColumnElement[0].append(div.clone().addClass('allDay').addClass('calendar-cell' + '10'));
   }
 
   // On peuple l'affichage
-  for (var j = 0; j < window.headers.length * sides; j++) {
+  for (let j = 0; j < window.headers.length * sides; j++) {
     var schedulerTasks = div.clone().addClass('calendar-tasks');
     generateCards(schedulerTasks, tasks, j / sides, sides, uvs);
 
     var grid = gridColumnElement[j % sides].clone();
 
-    if (window.get.mode === 'semaine' || window.get.mode === 'organiser') {
+    if ((window.get.mode === 'semaine' || window.get.mode === 'organiser') && $('#withWeekTool').prop('checked')) {
       if (j == currentDay) {
-        grid = div.clone();
+        grid = div.clone().addClass('currentDay');
 
-        for (var i = window.HOUR_MIN; i < window.HOUR_MAX; i++) {
-          if (i < hour)
-            classHour = 'passedHour';
-          else if (i === hour)
-            classHour = 'currentHour';
+        for (let i = 0; i < (window.HOUR_MAX - window.HOUR_MIN) * 2; i++) {
+          cell = div.clone().addClass('calendar-cell10');
+          if ((window.HOUR_MIN + i / 2) < hour)
+            cell.addClass('passedHour');
+          else if ((window.HOUR_MIN + i / 2) === hour)
+            cell.addClass('currentHour');
           else
-            classHour = 'futureHour';
+            cell.addClass('futureHour').html('<i class="fa fa-plus" aria-hidden="true"></i>').on('click', function () {
+              createEvenement(j, (window.HOUR_MIN + i / 2), (window.HOUR_MIN + i / 2) + 1);
+            });
 
-          grid.append(div.clone().addClass(classHour).addClass('calendar-cell10'));
-          grid.append(div.clone().addClass(classHour).addClass('calendar-cell10'));
+          grid.append(cell);
         }
 
-        grid.append(div.clone().addClass('allDay').addClass(classHour).addClass('calendar-cell10'));
+        grid.append(div.clone().addClass('allDay').addClass(window.HOUR_MAX > hour ? 'futureHour' : 'currentHour').addClass('calendar-cell' + '10').html('<i class="fa fa-plus" aria-hidden="true"></i>').on('click', function () {
+          createEvenement(j, 0, 24);
+        }));
       }
-      else if (j > currentDay)
+      else if (j > currentDay) {
         grid.addClass('futureDay');
-      else
+
+        for (let i = 0; i < (window.HOUR_MAX - window.HOUR_MIN) * 2; i++)
+          $(grid.children()[i]).addClass('futureHour').html('<i class="fa fa-plus" aria-hidden="true"></i>').on('click', function () {
+            createEvenement(j, (window.HOUR_MIN + i / 2), (window.HOUR_MIN + i / 2) + 1);
+          });
+
+        $(grid.children()[(window.HOUR_MAX - window.HOUR_MIN) * 2]).addClass('futureHour').html('<i class="fa fa-plus" aria-hidden="true"></i>').on('click', function () {
+          createEvenement(j, 0, 24);
+        });
+      }
+      else {
         grid.addClass('passedDay');
+
+        for (let i = 0; i < (window.HOUR_MAX - window.HOUR_MIN) * 2 + 1; i++)
+          $(grid.children()[i]).addClass('passedHour');
+      }
     }
 
     grid.addClass('days');
@@ -1649,6 +1691,14 @@ var generateCalendar = function(tasks, sides, uvs) {
   schedule.append(scheduleMain);
 
   $('#calendar-container').html(schedule);
+
+  //  Animer l'affichage d'une UV à échanger lors de la réception d'un mail ou d'un reload
+  if (window.get.id) {
+    setTimeout(function () {
+      $('#' + window.get.id).click();
+      delete window.get.id;
+    }, 100);
+  }
   console.timeEnd('calendar');
 };
 

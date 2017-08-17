@@ -101,7 +101,6 @@
       $title = 'Affichage des changements effectués sur ton emploi du temps';
     }
     else {
-      unset($_GET['mode_type']);
       $type = NULL;
 
       printUVsFollowed($_SESSION['login'], 1);
@@ -158,6 +157,7 @@
     printManyTasks(array_merge(array($_SESSION['login']), $_SESSION['active']), $_SESSION['week']);
     $title = 'Affichage des différents emplois du temps sélectionnés';
 
+    printWeek(NULL, $_SESSION['week'], 'calendar');
     printGroupTabsInfos();
     printAddGroupTab();
   }
@@ -200,7 +200,6 @@
 
     printSemaineTabs($type);
     printWeek(NULL, $_SESSION['week'], 'calendar');
-    printGroupTabs();
   }
   else {
     $mode = 'classique';
