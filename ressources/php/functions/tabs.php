@@ -41,18 +41,16 @@ function printMyTab($selected = TRUE) {
   $GLOBALS['tabs']['me'] = array(
     'type' => 'button',
     'text' => ($_SESSION['surname'] == '' ? $_SESSION['login'] : $_SESSION['firstname'].' '.$_SESSION['surname']),
-    'action' => 'window.get={mode:"'.$GLOBALS['mode'].'"}; generate();'
+    'action' => 'window.get={mode:"'.$GLOBALS['mode'].'"}; generate();',
+    'active' => $selected
   );
-
-  if ($selected)
-    $GLOBALS['tabs']['me']['active'] = TRUE;
 }
 
 function printRoomTabs($type) {
   $gap = isset($_GET['mode_option']) && is_numeric($_GET['mode_option']) ? ' '.intval($_GET['mode_option']).'h' : '';
   $GLOBALS['tabs']['rooms'] = array(
     'type' => 'select',
-    'text' => 'Salles libres',
+    'text' => 'Salles de cours libres',
     'get' => array(
       'mode' => (isset($_GET['mode']) && $_GET['mode'] == 'semaine' ? 'semaine' : 'classique'),
       'mode_type' => 'rooms'
@@ -120,24 +118,28 @@ function printRoomTabs($type) {
   }
 }
 
-function printModiferTabs($type) {
-  printMyTab($type == NULL);
-
+function printModifierTabs($type) {
   $UVsFollowed = getUVsFollowed($_SESSION['login']);
+  $uv = (isset($_GET['uv']) && is_string($_GET['uv']) ? $_GET['uv'] : NULL);
+  $uvType = (isset($_GET['type']) && is_string($_GET['type']) ? $_GET['type'] : NULL);
+  printMyTab($type == NULL && $uv == NULL && $uvType == NULL);
 
   foreach ($UVsFollowed as $UVFollowed) {
     if (!isset($GLOBALS['tabs'][$UVFollowed['uv']]))
       $GLOBALS['tabs'][$UVFollowed['uv']] = array(
         'type' => 'select',
         'text' => 'Echanger '.$UVFollowed['uv'],
+        'active' => $uv == $UVFollowed['uv'] && (isset($_GET['mode_type']) && $_GET['mode_type'] == 'uvs_followed'),
         'get' => array(
           'mode' => 'modifier',
+          'mode_type' => 'uvs_followed',
           'uv' => $UVFollowed['uv']
         ),
         'options' => array(
           'C' => array(
             'text' => 'Cours',
             'disabled' => TRUE,
+            'active' => $uv == $UVFollowed['uv'] && $uvType == 'C' && (isset($_GET['mode_type']) && $_GET['mode_type'] == 'uvs_followed'),
             'get' => array(
               'type' => 'C'
             )
@@ -145,6 +147,7 @@ function printModiferTabs($type) {
           'D' => array(
             'text' => 'TD',
             'disabled' => TRUE,
+            'active' => $uv == $UVFollowed['uv'] && $uvType == 'D' && (isset($_GET['mode_type']) && $_GET['mode_type'] == 'uvs_followed'),
             'get' => array(
               'type' => 'D'
             )
@@ -152,6 +155,7 @@ function printModiferTabs($type) {
           'T' => array(
             'text' => 'TP',
             'disabled' => TRUE,
+            'active' => $uv == $UVFollowed['uv'] && $uvType == 'T' && (isset($_GET['mode_type']) && $_GET['mode_type'] == 'uvs_followed'),
             'get' => array(
               'type' => 'T'
             )
@@ -167,113 +171,51 @@ function printModiferTabs($type) {
     $GLOBALS['tabs'][$_GET['uv']]['options'][$_GET['type']]['color'] = '00FF00';
   }
 
-  $receivedAll = count(getExchangesReceived($_SESSION['login'], NULL, NULL));
-  $receivedAvailable = count(getExchangesReceived($_SESSION['login'], NULL, NULL, 1, 0));
-  $receivedAccepted = count(getExchangesReceived($_SESSION['login'], NULL, NULL, 0, 1));
-  $receivedRefused = count(getExchangesReceived($_SESSION['login'], NULL, NULL, 0, 0));
-  $sentAll = count(getExchangesSent($_SESSION['login'], NULL, NULL));
-  $sentAvailable = count(getExchangesSent($_SESSION['login'], NULL, NULL, 1, 0));
-  $sentAccepted = count(getExchangesSent($_SESSION['login'], NULL, NULL, 0, 1));
-  $sentRefused = count(getExchangesSent($_SESSION['login'], NULL, NULL, 0, 0));
-  $canceled = count(getExchangesCanceled($_SESSION['login']));
+  $sentAll = count(getSentExchanges($_SESSION['login'], NULL, NULL));
+  $sentAvailable = count(getSentExchanges($_SESSION['login'], NULL, NULL, 1, 0));
+  $sentAccepted = count(getSentExchanges($_SESSION['login'], NULL, NULL, NULL, 1));
+  $sentRefused = count(getSentExchanges($_SESSION['login'], NULL, NULL, 0, 0));
+  $receivedAll = count(getReceivedExchanges($_SESSION['login'], NULL, NULL));
+  $receivedAvailable = count(getReceivedExchanges($_SESSION['login'], NULL, NULL, 1, 0));
+  $receivedAccepted = count(getReceivedExchanges($_SESSION['login'], NULL, NULL, NULL, 1));
+  $receivedRefused = count(getReceivedExchanges($_SESSION['login'], NULL, NULL, 0, 0));
+  $sentCanceled = count(getCanceledExchanges($_SESSION['login']));
+  $receivedCanceled = count(getCanceledExchanges(NULL, NULL, NULL, 1, $_SESSION['login']));
   $changements = count(getUVsFollowed($_SESSION['login'], 0, 1));
-
-  $GLOBALS['tabs']['received'] = array(
-    'type' => 'select',
-    'text' => 'Demandes reçus',
-    'get' => array(
-      'mode' => 'comparer',
-      'mode_type' => 'received'
-    ),
-    'options' => array(
-      'all' => array(
-        'text' => $receivedAll.' au total',
-        'color' => '#FFFF00'
-      ),
-      'available' => array(
-        'text' => $receivedAvailable.' en attente',
-        'get' => array(
-          'option' => 'available'
-        ),
-        'color' => '#0000FF'
-      ),
-      'accepted' => array(
-        'text' => $receivedAccepted.' accepté'.($receivedAccepted > 1 ? 's' : ''),
-        'get' => array(
-          'option' => 'accepted'
-        ),
-        'color' => '#00FF00'
-      ),
-      'refused' => array(
-        'text' => $receivedRefused.' refusé'.($receivedRefused > 1 ? 's' : ''),
-        'get' => array(
-          'option' => 'refused'
-        ),
-        'color' => '#FF0000'
-      ),
-    )
-  );
-
-  if ($type == 'received') {
-    $get_option = (isset($_GET['mode_option']) && is_string($_GET['mode_option']) ? $_GET['mode_option'] : 'all');
-    $GLOBALS['tabs']['received']['active'] = TRUE;
-    $active = FALSE;
-
-    foreach ($GLOBALS['tabs']['received']['options'] as $key => $option) {
-      if (isset($option['get']['option']) && $option['get']['option'] == $get_option) {
-        $GLOBALS['tabs']['received']['options'][$key]['active'] = TRUE;
-        $GLOBALS['tabs']['received']['color'] = $GLOBALS['tabs']['received']['options'][$key]['color'];
-        $active = TRUE;
-      }
-    }
-
-    if (!$active) {
-      $GLOBALS['tabs']['received']['options']['all']['active'] = TRUE;
-      $GLOBALS['tabs']['received']['color'] = $GLOBALS['tabs']['received']['options'][$key]['color'];
-    }
-  }
-
-  if ($receivedAll == 0) {
-    $GLOBALS['tabs']['received']['disabled'] = TRUE;
-    $GLOBALS['tabs']['received']['options']['all']['disabled'] = TRUE;
-  }
-  if ($receivedAvailable == 0)
-    $GLOBALS['tabs']['received']['options']['available']['disabled'] = TRUE;
-  if ($receivedAccepted == 0)
-    $GLOBALS['tabs']['received']['options']['accepted']['disabled'] = TRUE;
-  if ($receivedRefused == 0)
-    $GLOBALS['tabs']['received']['options']['refused']['disabled'] = TRUE;
 
   $GLOBALS['tabs']['sent'] = array(
     'type' => 'select',
-    'text' => 'Demandes envoyés',
+    'text' => 'Propositions d\'échange envoyées',
     'get' => array(
-      'mode' => 'comparer',
+      'mode' => 'modifier',
       'mode_type' => 'sent'
     ),
     'options' => array(
       'all' => array(
         'text' => $sentAll.' au total',
+        'get' => array(
+          'mode_option' => 'all'
+        ),
         'color' => '#FFFF00'
       ),
       'available' => array(
         'text' => $sentAvailable.' en attente',
         'get' => array(
-          'option' => 'available'
+          'mode_option' => 'available'
         ),
         'color' => '#0000FF'
       ),
       'accepted' => array(
-        'text' => $sentAccepted.' accepté'.($sentAccepted > 1 ? 's' : ''),
+        'text' => $sentAccepted.' acceptée'.($sentAccepted > 1 ? 's' : ''),
         'get' => array(
-          'option' => 'accepted'
+          'mode_option' => 'accepted'
         ),
         'color' => '#00FF00'
       ),
       'refused' => array(
-        'text' => $sentRefused.' refusé'.($sentRefused > 1 ? 's' : ''),
+        'text' => $sentRefused.' refusée'.($sentRefused > 1 ? 's' : ''),
         'get' => array(
-          'option' => 'refused'
+          'mode_option' => 'refused'
         ),
         'color' => '#FF0000'
       ),
@@ -310,20 +252,109 @@ function printModiferTabs($type) {
   if ($sentRefused == 0)
     $GLOBALS['tabs']['sent']['options']['refused']['disabled'] = TRUE;
 
-  $GLOBALS['tabs']['canceled'] = array(
-    'type' => 'button',
-    'text' => 'Echanges en annulation',
+  $GLOBALS['tabs']['received'] = array(
+    'type' => 'select',
+    'text' => 'Propositions d\'échange reçues',
     'get' => array(
-      'mode' => 'comparer',
+      'mode' => 'modifier',
+      'mode_type' => 'received'
+    ),
+    'options' => array(
+      'all' => array(
+        'text' => $receivedAll.' au total',
+        'get' => array(
+          'mode_option' => 'all'
+        ),
+        'color' => '#FFFF00'
+      ),
+      'available' => array(
+        'text' => $receivedAvailable.' en attente',
+        'get' => array(
+          'mode_option' => 'available'
+        ),
+        'color' => '#0000FF'
+      ),
+      'accepted' => array(
+        'text' => $receivedAccepted.' acceptée'.($receivedAccepted > 1 ? 's' : ''),
+        'get' => array(
+          'mode_option' => 'accepted'
+        ),
+        'color' => '#00FF00'
+      ),
+      'refused' => array(
+        'text' => $receivedRefused.' refusée'.($receivedRefused > 1 ? 's' : ''),
+        'get' => array(
+          'mode_option' => 'refused'
+        ),
+        'color' => '#FF0000'
+      ),
+    )
+  );
+
+  if ($type == 'received') {
+    $get_option = (isset($_GET['mode_option']) && is_string($_GET['mode_option']) ? $_GET['mode_option'] : 'all');
+    $GLOBALS['tabs']['received']['active'] = TRUE;
+    $active = FALSE;
+
+    foreach ($GLOBALS['tabs']['received']['options'] as $key => $option) {
+      if (isset($option['get']['option']) && $option['get']['option'] == $get_option) {
+        $GLOBALS['tabs']['received']['options'][$key]['active'] = TRUE;
+        $GLOBALS['tabs']['received']['color'] = $GLOBALS['tabs']['received']['options'][$key]['color'];
+        $active = TRUE;
+      }
+    }
+
+    if (!$active) {
+      $GLOBALS['tabs']['received']['options']['all']['active'] = TRUE;
+      $GLOBALS['tabs']['received']['color'] = $GLOBALS['tabs']['received']['options'][$key]['color'];
+    }
+  }
+
+  if ($receivedAll == 0) {
+    $GLOBALS['tabs']['received']['disabled'] = TRUE;
+    $GLOBALS['tabs']['received']['options']['all']['disabled'] = TRUE;
+  }
+  if ($receivedAvailable == 0)
+    $GLOBALS['tabs']['received']['options']['available']['disabled'] = TRUE;
+  if ($receivedAccepted == 0)
+    $GLOBALS['tabs']['received']['options']['accepted']['disabled'] = TRUE;
+  if ($receivedRefused == 0)
+    $GLOBALS['tabs']['received']['options']['refused']['disabled'] = TRUE;
+
+  $GLOBALS['tabs']['canceled'] = array(
+    'type' => 'select',
+    'text' => 'Echanges en cours d\'annulation',
+    'get' => array(
+      'mode' => 'modifier',
       'mode_type' => 'canceled'
+    ),
+    'options' => array(
+      'sent' => array(
+        'text' => $sentCanceled.' demande'.($sentCanceled > 1 ? 's' : '').' d\'annulation en cours',
+        'get' => array(
+          'mode_option' => 'sent'
+        ),
+        'color' => '#0000FF'
+      ),
+      'received' => array(
+        'text' => $receivedCanceled.' demande'.($receivedCanceled > 1 ? 's' : '').' d\'annulation reçue'.($receivedCanceled > 1 ? 's' : '').' en attente',
+        'get' => array(
+          'mode_option' => 'received'
+        ),
+        'color' => '#FF0000'
+      ),
     )
   );
 
   if ($type == 'canceled')
     $GLOBALS['tabs']['canceled']['active'] = TRUE;
 
-  if ($canceled == 0)
+  if ($sentCanceled + $receivedCanceled == 0)
     $GLOBALS['tabs']['canceled']['disabled'] = TRUE;
+  if ($sentCanceled == 0)
+    $GLOBALS['tabs']['canceled']['options']['sent']['disabled'] = TRUE;
+  if ($receivedCanceled == 0)
+    $GLOBALS['tabs']['canceled']['options']['received']['disabled'] = TRUE;
 
   printSeparateTab();
 
@@ -331,7 +362,7 @@ function printModiferTabs($type) {
     'type' => 'button',
     'text' => 'Emploi du temps original',
     'get' => array(
-      'mode' => 'comparer',
+      'mode' => 'modifier',
       'mode_type' => 'original'
     )
   );
@@ -343,7 +374,7 @@ function printModiferTabs($type) {
     'type' => 'button',
     'text' => 'Changements',
     'get' => array(
-      'mode' => 'comparer',
+      'mode' => 'modifier',
       'mode_type' => 'changement'
     )
   );
@@ -362,13 +393,36 @@ function printSemaineTabs($type) {
   printSeparateTab();
 
   $GLOBALS['tabs']['uvs_followed'] = array(
-    'type' => 'button',
+    'type' => 'select',
     'text' => 'Cours',
     'get' => array(
       'mode' => 'semaine',
-      'mode_type' => 'uvs_followed'
+      'mode_type' => 'uvs_followed',
+      'type' => NULL
+    ),
+    'options' => array(
+      'all' => array(
+        'text' => 'Toutes mes UVs',
+        'active' => isset($_GET['mode_type']) && $_GET['mode_type'] == 'uvs_followed' && !isset($_GET['uv']),
+        'get' => array(
+          'uv' => NULL,
+        )
+      )
     )
   );
+
+  $uvs = explode(',', $_SESSION['uvs']);
+  foreach ($uvs as $key => $uv) {
+    if (isAnUV($uv)) {
+      $GLOBALS['tabs']['uvs_followed']['options'][$uv] = array (
+        'text' => $uv,
+        'active' => isset($_GET['mode_type']) && $_GET['mode_type'] == 'uvs_followed' && isset($_GET['uv']) && $_GET['uv'] == $uv,
+        'get' => array(
+          'uv' => $uv
+        )
+      );
+    }
+  }
 
   if ($type == 'uvs_followed')
     $GLOBALS['tabs']['uvs_followed']['active'] = TRUE;

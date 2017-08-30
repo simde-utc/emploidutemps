@@ -3,6 +3,9 @@ function addTask($taskType, $info, $infosArrays, $side = NULL) {
   if ($infosArrays == array())
     return;
 
+  if (isset($_GET['mode']) && $_GET['mode'] == 'organiser' && $taskType != 'calendar')
+    $taskType = 'organize';
+
   // Création de la tâche
   $tasks = array( // Foutre l'id en arguement dans infos et assembler les tasks en fonction du même type/login
     'type' => $taskType,
@@ -24,11 +27,10 @@ function addTask($taskType, $info, $infosArrays, $side = NULL) {
     $end = floatval(join('.', array($exploded[0], 100/60*$exploded[1])));
 
     // Définition de la tâche
-    $id = $GLOBALS['id']++;
     $task = array(
+      'id' => $taskType.'-'.$info.'-'.(isset($infosArray['idUV']) ? $infosArray['idUV'] : (isset($infosArray['id']) ? $infosArray['id'] : (isset($infosArray['subject']) ? $infosArray['subject'] : ''))).($taskType == 'calendar' ? '-'.$infosArray['day'] : ''),
       'subject' => NULL,
       'note' => (isset($infosArray['note']) ? $infosArray['note'] : NULL),
-      'description' => NULL,
       'location' => NULL,
       'day' => intval($infosArray['day']),
       'duration' => $end - $begin,
@@ -38,7 +40,7 @@ function addTask($taskType, $info, $infosArrays, $side = NULL) {
     );
 
     // Ajout des infos en fonction du type de tâche
-    if ($taskType == 'uv_followed' || $taskType == 'received' || $taskType == 'sent') {
+    if ($taskType == 'uv_followed' || $taskType == 'received' || $taskType == 'sent' || $taskType == 'canceled') {
       $task['subject'] = $infosArray['uv'];
       $task['location'] = $infosArray['room'];
       $task['idUV'] = intval($infosArray['idUV']);
@@ -51,14 +53,8 @@ function addTask($taskType, $info, $infosArrays, $side = NULL) {
         $task['week'] = $infosArray['week'];
       }
 
-      if ($taskType == 'received') {
-        $id = 'r'.$infosArray['id'];
-        $task['inExchange'] = $infosArray['inExchange'];
-      }
-      elseif ($taskType == 'sent') {
-        $id = 's'.$infosArray['id'];
-        $task['inExchange'] = $infosArray['inExchange'];
-      }
+      if ($taskType == 'received' || $taskType == 'sent' || $taskType == 'canceled')
+        $task['exchange'] = $infosArray['exchange'];
     }
     elseif ($taskType == 'uv') {
       $task['subject'] = $infosArray['uv'];
@@ -74,7 +70,7 @@ function addTask($taskType, $info, $infosArrays, $side = NULL) {
     }
     elseif ($taskType == 'organize') {
       $task['subject'] = (isset($infosArray['subject']) ? $infosArray['subject'] : $infosArray['uv']);
-      $task['location'] = $infosArray['room'];
+      $task['location'] = isset($infosArray['room']) ? $infosArray['room'] : NULL;
     }
     elseif ($taskType == 'event') {
       $task['subject'] = $infosArray['subject'];
@@ -94,7 +90,6 @@ function addTask($taskType, $info, $infosArrays, $side = NULL) {
       $task['bgColor'] = '#FFFFFF';
     }
 
-    $task['id'] = $id;
     array_push($tasks['data'], $task);
   }
 
@@ -105,13 +100,13 @@ function addTask($taskType, $info, $infosArrays, $side = NULL) {
 function printUVsFollowed($login, $side = NULL, $enabled = 1, $exchanged = NULL) {
   $tasks = getUVsFollowed($login, $enabled, $exchanged);
 
-  foreach ($tasks as $task) {
+  foreach ($tasks as $key => $task) {
     if ($enabled == 0 && $exchanged == 1)
-      $task['color'] = '#FF0000';
+      $tasks[$key]['color'] = '#FF0000';
     elseif ($enabled == 1 && $exchanged == 1)
-      $task['color'] = '#00FF00';
+      $tasks[$key]['color'] = '#00FF00';
     elseif ($task['color'] == NULL)
-      $task['color'] = $task['uvColor'];
+      $tasks[$key]['color'] = $task['uvColor'];
   }
 
   addTask('uv_followed', $login, $tasks, $side);
@@ -149,121 +144,121 @@ function printRoomTasks($gap) {
 
 // classique des demandes d'échanges reçues
 function printExchangesReceived($login, $option = NULL) {
+  $exchanges = array();
   $tasks = array();
 
   if ($option == 'available') {
-    $infos = getExchangesReceived($login, NULL, NULL, 1, 0); // Actives
+    $infos = getReceivedExchanges($login, NULL, NULL, 1, 0); // Actives
     if ($infos != array())
-      array_push($tasks, $infos);
+      $exchanges = array_merge($exchanges, $infos);
   }
-  elseif ($option == 'exchanged') {
-    $infos = getExchangesReceived($login, NULL, NULL, 0, 1); // Echangées
+  elseif ($option == 'accepted') {
+    $infos = getReceivedExchanges($login, NULL, NULL, NULL, 1); // Echangées et annulées
     if ($infos != array())
-      array_push($tasks, $infos);
-    $infos = getExchangesReceived($login, NULL, NULL, 1, 1); // Annulées
-    if ($infos != array())
-      array_push($tasks, $infos);
+      $exchanges = array_merge($exchanges, $infos);
   }
   elseif ($option == 'refused') {
-    $infos = getExchangesReceived($login, NULL, NULL, 0, 0); // Refusées
+    $infos = getReceivedExchanges($login, NULL, NULL, 0, 0); // Refusées
     if ($infos != array())
-      array_push($tasks, $infos);
+      $exchanges = array_merge($exchanges, $infos);
   }
   else {
-    $infos = getExchangesReceived($login, NULL, NULL, 0, 0); // Refusées
+    $infos = getReceivedExchanges($login); // Tout type
     if ($infos != array())
-      array_push($tasks, $infos);
-    $infos = getExchangesReceived($login, NULL, NULL, 1, 0); // Actives
-    if ($infos != array())
-      array_push($tasks, $infos);
-    $infos = getExchangesReceived($login, NULL, NULL, 0, 1); // Echangées
-    if ($infos != array())
-      array_push($tasks, $infos);
-    $infos = getExchangesReceived($login, NULL, NULL, 1, 1); // Annulées
-    if ($infos != array())
-      array_push($tasks, $infos);
+      $exchanges = array_merge($exchanges, $infos);
   }
 
-  foreach ($tasks as $task) {
-    print_r($task);
-    $infos = getUVInfosFromIdUV($task['idUV']);
-    $infos2 = getUVInfosFromIdUV($task['idUV2']);
+  foreach ($exchanges as $infos) {
+    $task = getUVInfosFromIdUV($infos['idUV']);
+    $task['idUV'] = $infos['idUV'];
+    $task['note'] = 'Reçue';
+    $task['exchange'] = array_merge($infos, getUVInfosFromIdUV($infos['idUV2']));
 
-    array_push($task, array(
-      'uv' => $infos['uv'],
-      'room' => $infos['room'],
-      'type' => $infos['type'],
-      'groupe' => $infos['groupe'],
-      'frequency' => $infos['frequency'],
-      'week' => $infos['week']
-    ));
+    if ($infos['available'] == '1' && $infos['exchanged'] == '1') {
+      if (count(getCanceledExchanges($login, NULL, $infos['idExchange'])) == 1)
+        $task['exchange'] = array_merge($task['exchange'], getCanceledExchanges($login, NULL, $infos['idExchange'])[0]);
+      if (count(getCanceledExchanges(NULL, NULL, $infos['idExchange'], 1, $login)) == 1)
+        $task['exchange'] = array_merge($task['exchange'], getCanceledExchanges(NULL, NULL, $infos['idExchange'], 1, $login)[0]);
+    }
 
-    array_push($task, array('inExchange' => $infos2));
+    array_push($tasks, $task);
   }
 
-  addTask('exchange_received', $login, $tasks, 2);
+  addTask('received', $login, $tasks, 2);
 }
 
 // classique des demandes d'échanges reçues
 function printExchangesSent($login, $option = NULL) {
+  $exchanges = array();
   $tasks = array();
 
   if ($option == 'available') {
-    $infos = getExchangesSent($login, NULL, NULL, 1, 0); // Actives
+    $infos = getSentExchanges($login, NULL, NULL, 1, 0); // Actives
     if ($infos != array())
-      array_push($tasks, $infos);
+      $exchanges = array_merge($exchanges, $infos);
   }
-  elseif ($option == 'exchanged') {
-    $infos = getExchangesSent($login, NULL, NULL, 0, 1); // Echangées
+  elseif ($option == 'accepted') {
+    $infos = getSentExchanges($login, NULL, NULL, NULL, 1); // Echangées et annulées
     if ($infos != array())
-      array_push($tasks, $infos);
-    $infos = getExchangesSent($login, NULL, NULL, 1, 1); // Annulées
-    if ($infos != array())
-      array_push($tasks, $infos);
+      $exchanges = array_merge($exchanges, $infos);
   }
   elseif ($option == 'refused') {
-    $infos = getExchangesSent($login, NULL, NULL, 0, 0); // Refusées
+    $infos = getSentExchanges($login, NULL, NULL, 0, 0); // Refusées
     if ($infos != array())
-      array_push($tasks, $infos);
+      $exchanges = array_merge($exchanges, $infos);
   }
   else {
-    $infos = getExchangesSent($login, NULL, NULL, 0, 0); // Refusées
+    $infos = getSentExchanges($login); // Tout type
     if ($infos != array())
-      array_push($tasks, $infos);
-    $infos = getExchangesSent($login, NULL, NULL, 1, 0); // Actives
-    if ($infos != array())
-      array_push($tasks, $infos);
-    $infos = getExchangesSent($login, NULL, NULL, 0, 1); // Echangées
-    if ($infos != array())
-      array_push($tasks, $infos);
-    $infos = getExchangesSent($login, NULL, NULL, 1, 1); // Annulées
-    if ($infos != array())
-      array_push($tasks, $infos);
+      $exchanges = array_merge($exchanges, $infos);
   }
 
-  foreach ($tasks as $task) {
-    print_r($task);
-    $infos = getUVInfosFromIdUV($task['idUV']);
-    $infos2 = getUVInfosFromIdUV($task['idUV2']);
+  foreach ($exchanges as $infos) {
+    $task = getUVInfosFromIdUV($infos['idUV2']);
+    $task['idUV'] = $infos['idUV2'];
+    $task['note'] = 'Envoyée';
+    $task['exchange'] = array_merge($infos, getUVInfosFromIdUV($infos['idUV2']));
 
-    array_push($task, array(
-      'uv' => $infos2['uv'],
-      'room' => $infos2['room'],
-      'type' => $infos2['type'],
-      'groupe' => $infos2['groupe'],
-      'frequency' => $infos2['frequency'],
-      'week' => $infos2['week']
-    ));
+    if ($infos['available'] == '1' && $infos['exchanged'] == '1') {
+      if (count(getCanceledExchanges($login, NULL, $infos['idExchange'])) == 1)
+        $task['exchange'] = array_merge($task['exchange'], getCanceledExchanges($login, NULL, $infos['idExchange'])[0]);
+      if (count(getCanceledExchanges(NULL, NULL, $infos['idExchange'], 1, $login)) == 1)
+        $task['exchange'] = array_merge($task['exchange'], getCanceledExchanges(NULL, NULL, $infos['idExchange'], 1, $login)[0]);
+    }
 
-    array_push($task, array('inExchange' => $infos));
+    array_push($tasks, $task);
   }
 
-  addTask('exchange_sent', $login, $tasks, 2);
+  addTask('sent', $login, $tasks, 2);
 }
 
 // classique des demandes d'échanges reçues
-function printExchangesCanceled($login) {
-  addTask('exchange_canceled', $login, getExchangesCanceled($login), 2);
+function printExchangesCanceled($login, $option = NULL) {
+  $tasks = array();
+
+  if ($option == 'sent' || $option == NULL)
+    $exchanges = getCanceledExchanges($login);
+  else
+    $exchanges = getCanceledExchanges(NULL, NULL, NULL, 1, $login);
+
+  foreach ($exchanges as $infos) {
+    if (count(getSentExchanges($login, NULL, $infos['idExchange'])) == 0) {
+      $task = getUVInfosFromIdUV($infos['idUV']);
+      $task['idUV'] = $infos['idUV'];
+      $task['exchange'] = array_merge($infos, getUVInfosFromIdUV($infos['idUV2']));
+    }
+    else {
+      $task = getUVInfosFromIdUV($infos['idUV2']);
+      $task['idUV'] = $infos['idUV2'];
+      $task['exchange'] = array_merge($infos, getUVInfosFromIdUV($infos['idUV']));
+    }
+    $task['exchange']['exchanged'] = TRUE;
+    $task['note'] = $option == 'sent' ? 'Envoyée' : 'Reçue';
+
+    array_push($tasks, $task);
+  }
+
+  addTask('canceled', $login, $tasks, 2);
 }
 
 function printManyTasks($elements, $week) {

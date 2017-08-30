@@ -8,9 +8,7 @@
   $etuPic = '<i class="searchImg fa fa-4x fa-user-o" style="padding-left: 1px; padding-top: 3px;" aria-hidden="true"></i>';
   $uvPic = '<i class="searchImg fa fa-4x fa-graduation-cap" style="margin-left:10%;" aria-hidden="true"></i>';
   $colors = array('#7DC779', '#82A1CA', '#F2D41F', '#457293', '#AB7AC6', '#DF6F53', '#B0CEE9', '#AAAAAA', '#1C704E');
-  $jours = array('lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche');
   include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/class/db.php');
-  include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/class/curl.php');
   include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/class/cas.php');
 
   if (isset($_GET['MODCASID']) && is_string($_GET['MODCASID']))
@@ -43,25 +41,23 @@
       return $etus;
   }
 
-  $curl = new CURL(strpos($_SERVER['HTTP_HOST'],'utc') !== false);
-  if (isset($_SESSION['MODCASID']))
-    $curl->setCookies('MODCASID='.$_SESSION['MODCASID']);
-
   if (!isset($_SESSION['login']) && !isset($api)) {
-    if (!isset($_SESSION['_GET']))
-      $_SESSION['_GET'] = $_GET;
-
-  	$info = CAS::authenticate();
+    $info = CAS::authenticate();
+    $_SESSION['url'] = 'https://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 
   	if ($info != -1) 	{
+      // Regarder si on a pas d'info et enregistrer les données
   		$_SESSION['login'] = $info['cas:user'];
+      $infos = getStudentInfos($_SESSION['login']);
+
       $_SESSION['email'] = $info['cas:attributes']['cas:mail'];
       $_SESSION['firstname'] = $info['cas:attributes']['cas:givenName'];
       $_SESSION['surname'] = strtoupper($info['cas:attributes']['cas:sn']);
       $_SESSION['admin'] = FALSE;
   		$_SESSION['ticket'] = $_GET['ticket'];
-      $infos = getStudentInfos($_SESSION['login']);
       $_SESSION['uvs'] = $infos['uvs'];
+      $_SESSION['status'] = $infos['status'];
+      $_SESSION['mode'] = $infos['mode'];
 
       if (isset($_GET['week']) && is_string($_GET['week']) && isAGoodDate($_GET['week']))
         $_SESSION['week'] = $_GET['week'];
@@ -87,15 +83,9 @@
       include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/functions/groups.php');
       setGroups();
 
-      $get = '?';
-      foreach ($_SESSION['_GET'] as $key => $value) {
-        if ($key != 'ticket')
-          $get .= $key.'='.$value.'&';
-      }
-
-      unset($_SESSION['_GET']);
-
-      header('Location: /emploidutemps/'.substr($get, 0, -1));
+      $url = $_SESSION['url'];
+      unset($_SESSION['url']);
+      header('Location: '.$url);
       exit;
   	}
   	else
@@ -108,9 +98,16 @@
       array($mail)
     );
     $data = $query->fetch();
+
+    file_put_contents('mails', $mail.'
+    '.$subject.'
+    '.$message.'
+
+    ', FILE_APPEND);
+
 /*
     if ($data['status'] != '-1')
-      return mail($mail, $subject, $message.PHP_EOL.PHP_EOL.'Pour arrêter de recevoir des mails du service, tu peux à tout moment te désinscrire en cliquant ici: https://assos.utc.fr/emploidutemps/?param=sedesinscrire'.PHP_EOL.PHP_EOL.'En cas d\'erreur ou de bug, contacte-nous à cette adresse: simde@assos.utc.fr'.PHP_EOL.PHP_EOL.'Il y a une vie après les cours,'.PHP_EOL.'Le SiMDE', 'FROM:'.$from);
+      return mail($mail, $subject, $message.PHP_EOL.PHP_EOL.'Pour arrêter de recevoir des mails du service, tu peux à tout moment te désinscrire en cliquant ici: https://assos.utc.fr/emploidutemps/?param=sedesinscrire'.PHP_EOL.PHP_EOL.'En cas d\'erreur ou de bug, contacte-nous à cette adresse: simde@assos.utc.fr'.PHP_EOL.PHP_EOL.'Il y a une vie après les cours,'.PHP_EOL.'Le SiMDE', 'From:'.$from.' Content-Type: text/plain; charset="utf-8" Content-Transfer-Encoding: 8bit');
 */
     return FALSE;
   }
@@ -222,6 +219,18 @@
     }
   }
 
+  function getFollowingStudents($idUV, $available = NULL, $exchanged = NULL) {
+    $query = $GLOBALS['db']->request(
+      'SELECT uvs_followed.id, uvs_followed.login, uvs_followed.enabled, uvs_followed.exchanged, uvs_followed.color, uvs_colors.color AS uvColor
+        FROM uvs, uvs_followed, uvs_colors
+        WHERE uvs_followed.idUV = ? AND (? IS NULL OR uvs_followed.enabled = ?) AND (? IS NULL OR uvs_followed.exchanged = ?) AND uvs.uv = uvs_colors.uv AND uvs.id = uvs_followed.idUV
+        ORDER BY uvs.day, uvs.begin, week, groupe',
+      array($idUV, $available, $available, $exchanged, $exchanged)
+    );
+
+    return $query->fetchAll();
+  }
+
   function getUVsFollowed($login, $enabled = 1, $exchanged = NULL, $day = NULL) {
     $query = $GLOBALS['db']->request(
       'SELECT uvs_followed.id, uvs_followed.idUV, uvs.uv, uvs.type, uvs.groupe, uvs.day, uvs.begin, uvs.end, uvs.room, uvs.frequency, uvs.week, uvs.nbrEtu, uvs_followed.color, uvs_colors.color AS uvColor
@@ -234,13 +243,13 @@
     return $query->fetchAll();
   }
 
-  function getUV($uv, $type = NULL, $day = NULL) {
+  function getUV($uv = NULL, $type = NULL, $day = NULL, $id = NULL) {
     $query = $GLOBALS['db']->request(
       'SELECT uvs.id, uvs.uv, type, groupe, day, begin, end, room, frequency, week, nbrEtu, color
         FROM uvs, uvs_colors
-        WHERE uvs.uv = uvs_colors.uv AND uvs.uv = ? AND (? IS NULL OR type = ?) AND (? IS NULL OR day = ?)
+        WHERE uvs.uv = uvs_colors.uv AND (? IS NULL OR uvs.uv = ?) AND (? IS NULL OR type = ?) AND (? IS NULL OR day = ?) AND (? IS NULL OR id = ?)
         ORDER BY uv, day, begin, week, groupe',
-      array($uv, $type, $type, $day, $day)
+      array($uv, $uv, $type, $type, $day, $day, $id, $id)
     );
 
     return $query->fetchAll();
@@ -248,7 +257,7 @@
 
   function getUVInfosFromIdUV($idUV) {
     $query = $GLOBALS['db']->request(
-      'SELECT uv, type, day, begin, end, room, groupe, frequency, week, nbrEtu
+      'SELECT id, uv, type, day, begin, end, room, groupe, frequency, week, nbrEtu
         FROM uvs
         WHERE uvs.id = ?',
       array($idUV)
@@ -281,6 +290,15 @@
     );
 
     return $query->rowCount() == 1;
+  }
+
+  function uvTypeToText($type, $caps = FALSE) {
+    return ($type == 'D' ? 'TD' : ($type == 'T' ? 'TP' : ($caps ? 'Cours' : 'cours')));
+  }
+
+  function dayToText($day, $caps = FALSE) {
+    $days = array('Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche');
+    return ($caps ? $days[$day] : strtolower($days[$day]));
   }
 
   function isAGoodDate($week) {

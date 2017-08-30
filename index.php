@@ -8,15 +8,23 @@
   <link rel="stylesheet" href="ressources/css/style.css" type="text/css">
   <link rel="stylesheet" href="ressources/css/font-awesome/css/font-awesome.min.css">
   <script type="text/javascript" src="ressources/js/jquery-3.1.1.min.js"></script>
-  <script type="text/javascript" src="ressources/js/interraction.js"></script>
   <script type="text/javascript" src="ressources/js/generation.js"></script>
   <script type="text/javascript" src="ressources/js/jquery.touchSwipe.min.js"></script>
   <script type="text/javascript" src="ressources/js/html2canvas.min.js"></script>
   <script type="text/javascript" src="ressources/js/jspdf.min.js"></script>
+  <script type="text/javascript" src="ressources/js/clipboard.min.js"></script>
+  <script type="text/javascript" src="ressources/js/notify.min.js"></script>
+  <!--
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+-->
   <script type="text/javascript">
     function main () {
       generateCalendar([], 1, {});
       setCalendar();
+
+      window.get = <?php echo json_encode(array('mode' => $_SESSION['mode'])); ?>;
 
       window.get = <?php
         $query = $GLOBALS['db']->request(
@@ -31,18 +39,12 @@
 
         echo ';
         ';
-
-        // Lance le paramètre demanér (désinscription par exemple)
+/*
+        // Lance le paramètre demandé (désinscription par exemple)
         if (isset($_GET['param']) && is_string($_GET['param']) && !empty($_GET['param']))
           echo 'setTimeout(function () { parameters("', $_GET['param'], '"); }, 1000);';
-
-        $query = $GLOBALS['db']->request(
-          'SELECT status FROM students WHERE login = ?',
-          array($_SESSION['login'])
-        );
-        $data = $query->fetch();
-
-    /*    if ($data['status'] == '0') {
+/*
+        if ($_SESSION['status'] == 0) {
           $query = $db->prepare('UPDATE students SET status = 0 WHERE login = ?');
           $db->execute($query, array($_SESSION['login']));
           echo 'setTimeout(function () { parameters("nouveau"); }, 1500);';
@@ -93,6 +95,7 @@
     <button id='navButton' onClick='toogleNav()'><i class="fa fa-2x fa-bars" aria-hidden="true"></i></button>
     <a id='name' href='/emploidutemps'>Emploi d'UTemps</a>
     <button id='search' onClick='search()'><i class="fa fa-2x fa-search" aria-hidden="true"></i></button>
+    <button id='help' onClick='help()'><i class="fa fa-2x fa-question-circle" aria-hidden="true"></i></button>
     <button id='parametersButton' onClick="toogleParam()"><i class="fa fa-2x fa-cog" aria-hidden="true"></i></button>
   </div>
 
@@ -110,15 +113,25 @@
       <div id='modeText'>
         Mode:
       </div>
-      <input name='mode' id='mode_classique' type='radio' onClick='changeMode("classique");'><label for='mode_classique'> Classique</label><br />
-      <input name='mode' id='mode_comparer' type='radio' onClick='changeMode("comparer");'><label for='mode_comparer'> Comparer</label><br />
-      <input name='mode' id='mode_modifier' type='radio' onClick='changeMode("modifier");'><label for='mode_modifier'> Modifier</label><br />
-      <input name='mode' id='mode_organiser' type='radio' onClick='changeMode("organiser");'><label for='mode_organiser'> Organiser</label><br />
-      <input name='mode' id='mode_semaine' type='radio' onClick='changeMode("semaine");'><label id="mode_week" for='mode_semaine'> Semaine du <?php echo explode('-', $_SESSION['week'])[2], '/', explode('-', $_SESSION['week'])[1]; ?></label><br />
-      <div id='week' class="sub-menu">
-        <button id='before'><i class="fa fa-arrow-left" aria-hidden="true"></i></button>
-        <button id='actual'>Cette semaine</button>
-        <button id='after'><i class="fa fa-arrow-right" aria-hidden="true"></i></button>
+      <div class='sub-menu'>
+        <div>
+          Semaine type:
+        </div>
+        <input name='mode' id='mode_classique' type='radio' onClick='changeMode("classique");'><label for='mode_classique'> Classique</label><br />
+        <input name='mode' id='mode_comparer' type='radio' onClick='changeMode("comparer");'><label for='mode_comparer'> Comparer</label><br />
+        <input name='mode' id='mode_modifier' type='radio' onClick='changeMode("modifier");'><label for='mode_modifier'> Modifier</label><br />
+      </div>
+      <div class='sub-menu'>
+        <div id="mode_week">
+          Semaine du <?php echo explode('-', $_SESSION['week'])[2], '/', explode('-', $_SESSION['week'])[1]; ?>:
+        </div>
+        <input name='mode' id='mode_semaine' type='radio' onClick='changeMode("semaine");'><label for='mode_semaine'> Classique</label><br />
+        <input name='mode' id='mode_organiser' type='radio' onClick='changeMode("organiser");'><label for='mode_organiser'> Organiser</label><br />
+        <div id='week'>
+          <button id='before'><i class="fa fa-arrow-left" aria-hidden="true"></i></button>
+          <button id='actual'>Cette semaine</button>
+          <button id='after'><i class="fa fa-arrow-right" aria-hidden="true"></i></button>
+        </div>
       </div>
     </div>
     <div class="menu">
@@ -137,21 +150,37 @@
   </div>
 
   <div id="parameters" class="menu sub-menu">
-    <div id='affichage_printed' class='menu sub-menu'>
+    <div id='affichage_printed' style='display: none;' class='menu sub-menu'>
       <div id='printedText'></div>
       <div id='printed'></div>
+      <div>
+        <button id='eventTool' onClick="delActive(Object.keys(window.active))"><i class="fa fa-calendar-minus-o" aria-hidden="true"></i> Désafficher tout le monde</button>
+      </div>
     </div>
     <div id='affichage_tools' class="menu sub-menu">
       Outils:
+      <div style='display: none' id='modifyTools'> <!-- Bug chelou, je dois mettre un timeout d'un minimum de 1ms pour que l'acutalisation fonctionne correctementt... Peutt-etre dû à mon serveur -->
+        <button id='eventTool' onClick="" DISABLED><i class="fa fa-calendar-times-o" aria-hidden="true"></i> Refuser toutes les propositions reçues avec des créneaux incompatibles</button>
+        <button id='eventTool' onClick="getRequest('exchanges.php', { 'mode': 'refuseAll' }, setTimeout(function () { generate(true) }, 10))"><i class="fa fa-calendar-times-o" aria-hidden="true"></i> Refuser toutes les propositions reçues</button>
+        <button id='eventTool' onClick="getRequest('exchanges.php', { 'mode': 'cancelSentAll' }, setTimeout(function () { generate(true) }, 10))"><i class="fa fa-calendar-times-o" aria-hidden="true"></i> Annuler toutes les propositions envoyées</button>
+        <button id='eventTool' onClick="" DISABLED><i class="fa fa-calendar-minus-o" aria-hidden="true"></i> Demander une annulation de tous mes échanges</button>
+        <button onClick="" DISABLED><i class="fa fa-handshake-o" aria-hidden="true"></i> Indiquer un échange déjà effectué</button>
+        <button onClick="" DISABLED><i class="fa fa-remove" aria-hidden="true"></i> Supprimer des créneaux de cours</button>
+      </div>
       <div style='display: none' id='weekTools'>
-        <input type='radio' id='withWeekTool' name='weekTool' onClick="generate()" CHECKED><label for='withWeekTool'>Semaine</label>
-        <input type='radio' id='withoutWeekTool' name='weekTool' onClick="generate()"><label for='withoutWeekTool'>Classique</label>
+        <div>
+          Calendrier:
+          <input type='radio' id='withWeekTool' name='weekTool' onClick="generate()" CHECKED><label for='withWeekTool'>Coloré</label>
+          <input type='radio' id='withoutWeekTool' name='weekTool' onClick="generate()"><label for='withoutWeekTool'>Normal</label>
+        </div>
         <button id='eventTool' onClick="createEvenement()"><i class="fa fa-calendar-o" aria-hidden="true"></i> Créer un évènement</button>
+      </div>
+      <div style='display: none' id='organizeTools'>
+        <button id='eventTool' onClick="generateFreeTimes()"><i class="fa fa-calendar-o" aria-hidden="true"></i> Trouver le meilleur créneau</button>
       </div>
       <div id='printedTools'></div>
       <div id='tools'>
         <button id='export' onClick="exportDownload()"><i class="fa fa-download" aria-hidden="true"></i> Exporter/Télécharger</button>
-        <button id='help' onClick="helpMePls()" DISABLED><i class="fa fa-question" aria-hidden="true"></i> Aide</button>
       </div>
     </div>
     <div id='affichage_useful' class="menu sub-menu">
@@ -167,9 +196,10 @@
     <div id='affichage_options' class="menu sub-menu">
       Options:
       <div>
-        <button onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> Se réhabonner</button>
-        <button onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> Se déshabonner</button>
-        <button onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-remove" aria-hidden="true"></i> Se désinscrire définitivement</button>
+        <button onClick="getRequest('parameters.php', { 'defaultMode': get.mode })"><i class="fa fa-cog" aria-hidden="true"></i> Affecter ce mode par défaut</button>
+        <button <?php if ($_SESSION['status'] != -1) { echo 'style="display:none;"'; } ?> onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> Se réhabonner</button>
+        <button <?php if ($_SESSION['status'] == -1) { echo 'style="display:none;"'; } ?> onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> Se déshabonner</button>
+        <button <?php if ($_SESSION['status'] != -1) { echo 'style="display:none;"'; } ?> onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-remove" aria-hidden="true"></i> Se désinscrire définitivement</button>
       </div>
     </div>
     <div id='affichage_disconnect' class="menu sub-menu">

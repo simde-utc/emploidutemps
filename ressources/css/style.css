@@ -1,3 +1,9 @@
+/* Temporarie */
+.alert {
+  background-color: #FFF;
+}
+
+
 body {
   font-family: Helvetica, ​Arial, ​sans-serif;
   overflow-x: hidden;
@@ -14,13 +20,18 @@ button {
   color: #FFFFFF;
 }
 
-button:disabled {
+button:disabled, input:disabled {
   background-color: #81848C;
   color: #EEEEEE;
 }
 
-button:hover:not(:disabled) {
+button:hover:not(:disabled), input:hover:not(:disabled) {
   background-color: #505666;
+}
+
+input {
+  background-color: #444A58;
+  color: #FFFFFF;
 }
 
 /* Header */
@@ -56,6 +67,17 @@ button:hover:not(:disabled) {
 
 #search {
   position: fixed;
+  right: 65px;
+  margin-left: 5px;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  color: #FFF;
+  cursor: pointer;
+}
+
+#help {
+  position: fixed;
   right: 25px;
   margin-left: 5px;
   padding: 0;
@@ -78,7 +100,7 @@ button:hover:not(:disabled) {
 
 /* Nav */
 #nav {
-  position: absolute;
+  position: fixed;
   width: 250px;
   top: 50px;
   left: 0;
@@ -94,7 +116,7 @@ button:hover:not(:disabled) {
 }
 
 #parameters {
-  position: absolute;
+  position: fixed;
   width: 250px;
   top: 50px;
   right: 0;
@@ -222,7 +244,11 @@ button.option:last-child:nth-child(2n+1) {
   }
 
   #search {
-    right: 75px;
+    right: 105px;
+  }
+
+  #help {
+    right: 65px;
   }
 
   #parametersButton {
@@ -265,7 +291,11 @@ button.option:last-child:nth-child(2n+1) {
   }
 
   #search {
-    right: 75px;
+    right: 105px;
+  }
+
+  #help {
+    right: 65px;
   }
 
   #navButton,
@@ -585,6 +615,13 @@ background-color: #FFFFFF;
   cursor: pointer;
 }
 
+.description {
+  padding: 4px;
+  font-size: 10.5px;
+  text-align: center;
+  cursor: pointer;
+}
+
 #zoneFocus, #zonePopup {
   position: fixed;
   visibility: hidden;
@@ -673,6 +710,12 @@ background-color: #FFFFFF;
   z-index: 2;
 }
 
+#popupInfo {
+  color: #0000FF;
+  margin-top: 10px;
+  padding: 2px;
+}
+
 #popupError {
   color: #FF0000;
   margin-top: 10px;
@@ -698,9 +741,13 @@ background-color: #FFFFFF;
 
 #popupHead button:not(#searchButton) {
   position: absolute;
-  top: 5px;
+  top: 10px;
   right: 2px;
   width: 50px;
+}
+
+#popupHead input {
+  width: 50%;
 }
 
 .subCard ,.optionCards {
@@ -814,7 +861,7 @@ background-color: #FFFFFF;
   border-bottom: 1px SOLID;
 }
 
-.subCard b {
+.subCard b, .subCard input {
   padding-top: 2px;
   padding-left: 5px;
   flex: 1;
@@ -824,6 +871,7 @@ background-color: #FFFFFF;
   width: 50px;
   padding: 2px;
 }
+
 
 /*
 @media screen and (max-width: 500px) {
@@ -916,7 +964,7 @@ background-color: #FFFFFF;
 
 .interraction .option {
   text-align: center;
-  font-size: 11px;
+  font-size: 10px;
   margin: 1px;
   padding: 0px;
   width: 120px;

@@ -309,3 +309,28 @@ Beta 2.2: 2017-08-17
   - Ajout de la future aide
   - Correction de bugs
   - Nettoyage du code
+
+Beta 2.3: 2017-08-21
+  - Ajout de la recherche des meilleurs créneaux
+  - Amélioration de l'affichage des groupes
+  - Amélioration des logins affichés
+  - Amélioration de l'affichage semaine
+  - Amélioration de l'affichange des alternatives pour les échanges
+  - Amélioration de l'affichage des échanges avec ajout des textes
+  - Amélioration du l'affichage dans les "cards"
+  - Amélioration de la redirection lié aux menus
+  - Changement des ids donnés aux "cards"
+  - Protocole en back-end mis en place dans sa quasi totalité (ajout d'énormément d'améliorations par rapport à la première version)
+  - Ajout de l'affichage en front-end des échanges avec les "cards" et les boutons d'intéractions (flemme juste de faire les interfaces d'échange)
+  - Ajout de l'auto-grandissement du créneau que l'on souhaite avoir
+  - Ajout de la possibilité de copier le login de l'étudiant affiché
+  - Modification de la gestion des modifications des couleurs
+  - Création d'un back "parameters" qui permettra de paramétrer plusieurs options (comme déjà le changement de couleurs, le mode par défaut)
+  - Modification légère du texte
+  - Ajout de la colonne "mode" à la table students pour le choix du mode par défaut
+  - Création de la table exchanges_canceled pour mieux gérer les échanges en cours d'annulation
+  - Mise en place des notifications infos et errors qui s'afficheront avec le Bootstrap installé à partir de la Beta 2.4~2.5
+  - Sécurisation des données transmises par la requête Get (toutes requêtes en fait)
+  - Correction de multiples bugs (groupes, affichage du calendrier, ajout)
+  - Amélioration de la redirection de requete après le CAS
+  - Optimisation du code (suppression de l'ancien fichier js)

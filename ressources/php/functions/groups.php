@@ -65,43 +65,45 @@
     );
 
     $roles = end(json_decode(file_get_contents('http://assos.utc.fr/profile/'.$_SESSION['login'].'/json'), TRUE)['semestres'])['roles'];
-    foreach ($roles as $role) {
-      $asso = $role['asso'];
+    if (count($roles) != 0) {
+      foreach ($roles as $role) {
+        $asso = $role['asso'];
 
-      // Si on fait parti du BDE ou du SIMDE, on a le full access
-      if ($asso['login'] == 'bde' || $asso['login'] == 'simde')
-        $_SESSION['admin'] = TRUE;
+        // Si on fait parti du BDE ou du SIMDE, on a le full access
+        if ($asso['login'] == 'bde' || $asso['login'] == 'simde')
+          $_SESSION['admin'] = TRUE;
 
-      $_SESSION['groups'][$asso['login']] = array(
-        'type' => 'asso',
-        'name' => $asso['name'],
-        'subgroups' => array(
-          'admins' => array(
-            'type' => 'asso',
-            'name' => 'Bureau',
-            'elements' => array()
-          ),
-          'resps' => array(
-            'type' => 'asso',
-            'name' => 'Responsables',
-            'elements' => array()
-          ),
-          'members' => array(
-            'type' => 'asso',
-            'name' => 'Membres',
-            'elements' => array()
+        $_SESSION['groups'][$asso['login']] = array(
+          'type' => 'asso',
+          'name' => $asso['name'],
+          'subgroups' => array(
+            'admins' => array(
+              'type' => 'asso',
+              'name' => 'Bureau',
+              'elements' => array()
+            ),
+            'resps' => array(
+              'type' => 'asso',
+              'name' => 'Responsables',
+              'elements' => array()
+            ),
+            'members' => array(
+              'type' => 'asso',
+              'name' => 'Membres',
+              'elements' => array()
+            )
           )
-        )
-      );
+        );
 
-      $members = json_decode(file_get_contents('http://assos.utc.fr/asso/'.$asso['login'].'/json'), TRUE)['members'];
-      foreach ($members as $member) {
-          if (!$member['bureau'])
-            $_SESSION['groups'][$asso['login']]['subgroups']['members']['elements'][$member['login']] = $member['role'];
-          elseif (preg_match('/Resp/', $member['role']))
-            $_SESSION['groups'][$asso['login']]['subgroups']['resps']['elements'][$member['login']] = $member['role'];
-          else
-            $_SESSION['groups'][$asso['login']]['subgroups']['admins']['elements'][$member['login']] = $member['role'];
+        $members = json_decode(file_get_contents('http://assos.utc.fr/asso/'.$asso['login'].'/json'), TRUE)['members'];
+        foreach ($members as $member) {
+            if (!$member['bureau'])
+              $_SESSION['groups'][$asso['login']]['subgroups']['members']['elements'][$member['login']] = $member['role'];
+            elseif (preg_match('/Resp/', $member['role']))
+              $_SESSION['groups'][$asso['login']]['subgroups']['resps']['elements'][$member['login']] = $member['role'];
+            else
+              $_SESSION['groups'][$asso['login']]['subgroups']['admins']['elements'][$member['login']] = $member['role'];
+        }
       }
     }
 

@@ -37,18 +37,18 @@
           $sub = $_GET['sub_group'];
 
         if (addToGroup($group, $sub, $_GET['element'], $_GET['info']))
-          returnJSON(array('status' => 'ok'));
+          returnJSON(array('info' => 'Ajouté au groupe avec cette info: '.$_GET['info']));
         else
           returnJSON(array('error' => 'Déjà présent.e dans le groupe'));
       }
       elseif (addSubGroup($group, $_GET['sub_group']))
-        returnJSON(array('status' => 'ok'));
+        returnJSON(array('info' => 'Sous-groupe créé avec succès avec comme nom: '.$_GET['sub_group']));
       else
         returnJSON(array('error' => 'Le sous-groupe existe déjà'));
     }
     else {
       if (addGroup($group))
-        returnJSON(array('status' => 'ok'));
+        returnJSON(array('info' => 'Groupe créé avec succès avec comme nom: '.$group));
       else
         returnJSON(array('error' => 'Le groupe existe déjà'));
     }
@@ -57,18 +57,18 @@
     if (isset($_GET['sub_group']) && is_string($_GET['sub_group'])) {
       if (isset($_GET['element']) && is_string($_GET['element'])) {
         if (delFromGroup($group, $_GET['sub_group'], $_GET['element']))
-          returnJSON(array('status' => 'ok'));
+          returnJSON(array('info' => 'Supprimé du groupe avec succès'));
         else
           returnJSON(array('error' => 'L\'élément n\'a pas été supprimé'));
       }
       elseif (delSubGroup($group, $_GET['sub_group']))
-        returnJSON(array('status' => 'ok'));
+        returnJSON(array('info' => 'Sous-groupe supprimé avec succès'));
       else
         returnJSON(array('error' => 'Le sous-groupe n\'a pas été supprimé'));
     }
     else {
       if (delGroup($group))
-        returnJSON(array('status' => 'ok'));
+        returnJSON(array('info' => 'Groupe supprimé avec succès'));
       else
         returnJSON(array('error' => 'Le groupe n\'a pas été supprimé'));
     }
@@ -82,18 +82,18 @@
 
       if (isset($_GET['element']) && is_string($_GET['element'])) {
         if (setToGroup($group, $_GET['sub_group'], $_GET['element'], $info))
-          returnJSON(array('status' => 'ok'));
+          returnJSON(array('info' => 'Info changé avec succès avec: '.$info));
         else
           returnJSON(array('error' => 'Non présent.e dans le groupe'));
       }
       elseif (setSubGroup($group, $_GET['sub_group'], $info))
-        returnJSON(array('status' => 'ok'));
+        returnJSON(array('info' => 'Nom du sous-groupe changé avec succès avec: '.$info));
       else
         returnJSON(array('error' => 'Le sous-groupe n\'existe pas'));
     }
     else {
       if (setGroup($group, $info))
-        returnJSON(array('status' => 'ok'));
+        returnJSON(array('info' => 'Nom du groupe changé avec succès avec: '.$info));
       else
         returnJSON(array('error' => 'Le groupe n\'existe pas'));
     }

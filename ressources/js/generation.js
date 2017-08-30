@@ -7,33 +7,60 @@ var sessionLogin = '';
 var get = {};
 var colors = [];
 var task = null;
+var focusedDay = (date.getDay() + 6) % 7;
 
-var getRequest = function (url, get, callback) {
+/*
+function parameters(param) {
+  var get = '?mode=' + window.get.mode + (window.get.login == undefined ? '' : '&login=' + window.get.login) + (window.get.uv == undefined ? '' : '&uv=' + window.get.uv);
+
+  if (param != undefined)
+    get += '&param=' + param;
+
+  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/parameters.php' + get, function (info) {
+    popup(info);
+
+    if (param === 'pdf')
+        $('#pdfTitle').val($('#title').text());
+  });
+}
+*/
+
+var getRequest = function (url, get, callback, silentMode) {
   var request = '';
+
+  if (!silentMode)
+    loading();
 
   for (var key in get) {
     if (typeof get[key] == 'string' || typeof get[key] == 'number')
-      request += '&' + key + '=' + get[key];
+      request += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(get[key]);
     else {
       for (var key2 in get[key])
-        request += '&' + key + '[]=' + get[key][key2];
+        request += '&' + encodeURIComponent(key) + '[]=' + encodeURIComponent(get[key][key2]);
     }
   }
 
   console.log('https://' + window.location.hostname + '/emploidutemps/ressources/php/' + url + ($.isEmptyObject(get) ? '' : '?') + request.substr(1));
   $.getJSON('https://' + window.location.hostname + '/emploidutemps/ressources/php/' + url + ($.isEmptyObject(get) ? '' : '?') + request.substr(1), function(data) {
     if (data.error) {
-      if ($('#zonePopup').hasClass('focused')) {
-        if ($('#popupError').length == 0)
-          $('#popupHead').append($('<div></div>').attr('id', 'popupError').html(data.error));
-        else
-          $('#popupError').html(data.error);
-      }
-      else
-        popup('Erreur', $('<div></div>').attr('id', 'popupError').html(data.error));
+      $.notify({
+      	title: "Erreur:",
+      	message: data.error
+      });
     }
-    else
+    else if (data.info) {
+      $.notify({
+      	title: "Info:",
+      	message: data.info
+      });
+
+      if (callback)
+        callback();
+    }
+    else if (callback)
       callback(data);
+
+    endLoading();
   });
 };
 
@@ -50,22 +77,22 @@ var changeMode = function (mode) {
 
 var generate = function (silentMode) {
   console.time('generate');
-  loading();
-
-  if (silentMode) {
-    if (window.task) {
-      window.get.id = window.task.id;
-      window.task = null;
-    }
-  }
-  else {
-    closePopup();
-    unFocus();
-  }
 
   getRequest('calendar.php', window.get, function (data) {
     console.timeEnd('generate');
     console.log(data);
+
+    if (silentMode) {
+      if (window.task) {
+        var tempId = window.task.id;
+        window.task = null;
+      }
+    }
+    else {
+      closePopup();
+      unFocus();
+    }
+
     window.sessionLogin = data.infos.login;
     window.active = data.infos.active;
     window.colors = data.infos.colors;
@@ -75,11 +102,14 @@ var generate = function (silentMode) {
     delete window.get.setActiveTabs;
     delete window.get.delActive;
 
+    if (tempId)
+      window.get.id = tempId;
+
     getRequest('groups.php', {
       'mode': 'get',
     }, function (groups) {
       generatePrinted(groups.groups);
-    });
+    }, silentMode);
     generateTitle(data.title);
     generateWeeks(data.infos.week, data.infos.get.week);
     generateSubMenu(data.tabs, 'tab');
@@ -93,7 +123,7 @@ var generate = function (silentMode) {
     window.reload = window.setInterval(function () {
       generate(true);
     }, window.RELOAD_SEC * 1000);
-  });
+  }, silentMode);
 };
 
 var loading = function () {
@@ -137,13 +167,12 @@ var popup = function (popupHead, content, bgColor, fgColor) {
   fgColor = fgColor || '#000000';
   $('#popup').css('border', '5px SOLID' + bgColor);
 
-  var div = $('<div></div>').attr('id', 'popupHead').css('border', '5px SOLID' + bgColor).css('background-color', bgColor).css('color', fgColor).append($('<b></<b>').html(popupHead));
+  var div = $('<div></div>').attr('id', 'popupHead').css('border', '5px SOLID' + bgColor).css('background-color', bgColor).css('color', fgColor).append($('<b></b>').html(popupHead));
   $('#popup').empty().append(div).append(content.attr('id', 'popupContent'));
   $('#popup').css('visibility', 'visible');
   $('#popup').css('opacity', '1');
 
   submited();
-  endLoading();
 };
 
 var closePopup = function () {
@@ -157,6 +186,9 @@ var closePopup = function () {
 var unFocus = function () {
   $('#zoneGrey').removeClass('focused');
   $('#zoneFocus').removeClass('focused');
+
+  $('#nav').removeClass('see');
+  $('#parameters').removeClass('see');
 
   if (window.task != null)
     $('#' + window.task.id).click();
@@ -187,7 +219,6 @@ var disconnect = function () {
 };
 
 
-
 /* Groupes */
 
 var addGroup = function () {
@@ -197,7 +228,7 @@ var addGroup = function () {
     var name = $('#group').val();
     getRequest('groups.php', {
       'mode': 'add',
-      'group': encodeURIComponent(name)
+      'group': name
     }, function (data) {
       console.log(data);
       if (data.error === undefined)
@@ -219,13 +250,9 @@ var delGroup = function (idGroup) {
   getRequest('groups.php', {
     'mode': 'del',
     'group': idGroup,
-  }, function (data) {
-    if (data.status == 'ok') {
-      $('#group-' + idGroup).remove();
-      closePopup();
-    }
-    else
-      console.log(data.error);
+  }, function () {
+    $('#group-' + idGroup).remove();
+    closePopup();
   });
 };
 
@@ -356,8 +383,9 @@ var setGroup = function (idGroup, id) {
     getRequest('groups.php', {
       'mode': 'set',
       'group': idGroup,
-      'info': encodeURIComponent($('#' + id + ' input').val())
-    }, function (data) {
+      'info': $('#' + id + ' input').val()
+    }, function () {
+      generate(true);
       $('#' + id + ' input').replaceWith($('<b></b>').text($('#' + id + ' input').val()));
       $('#' + id + ' button').first().replaceWith($('<button></button>').html('<i class="fa fa-edit"></i>').on('click', function () {
         setGroup(idGroup, id);
@@ -377,12 +405,12 @@ var addSubGroup = function (idGroup, group) {
       getRequest('groups.php', {
         'mode': 'add',
         'group': idGroup,
-        'sub_group': encodeURIComponent($('#sub-create input').last().val())
-      }, function (data) {
+        'sub_group': $('#sub-create input').last().val()
+      }, function () {
+        generate(true);
         seeGroup(idGroup, true);
       });
     }))
-    .insertBefore($('.optionCards').last().before());
 
   submited();
 };
@@ -392,11 +420,9 @@ var delSubGroup = function (idGroup, idSubGroup) {
     'mode': 'del',
     'group': idGroup,
     'sub_group': idSubGroup,
-  }, function (data) {
-    if (data.status == 'ok')
-      seeGroup(idGroup, true);
-    else
-      console.log(data.error);
+  }, function () {
+    generate(true);
+    seeGroup(idGroup, true);
   });
 };
 
@@ -411,10 +437,11 @@ var setSubGroup = function (idGroup, idSubGroup, id) {
       'mode': 'set',
       'group': idGroup,
       'sub_group': idSubGroup,
-      'info': encodeURIComponent($('#' + id + ' input').val())
-    }, function (data) {
+      'info': $('#' + id + ' input').val()
+    }, function () {
       $('#' + id + ' input').replaceWith($('<b></b>').text($('#' + id + ' input').val()));
       $('#' + id + ' button').first().replaceWith($('<button></button>').html('<i class="fa fa-edit"></i>').on('click', function () {
+        generate(true);
         setSubGroup(idGroup, idSubGroup, id);
       }));
 
@@ -484,15 +511,12 @@ var addToGroup = function (element, text) {
       getRequest('groups.php', {
         'mode': 'add',
         'group': group,
-        'sub_group': encodeURIComponent(subGroup),
+        'sub_group': subGroup,
         'createSubGroup': createSubGroup,
         'element': element,
-        'info': encodeURIComponent(info)
-      }, function (data) {
-        if (data.status == 'ok')
-          closePopup();
-        else
-          console.log(data.error);
+        'info': info
+      }, function () {
+        closePopup();
       });
     }).appendTo(corps);
     popup(text, corps);
@@ -504,12 +528,9 @@ var delFromGroup = function (idGroup, idSubGroup, element) {
     'mode': 'del',
     'group': idGroup,
     'sub_group': idSubGroup,
-    'element': encodeURIComponent(element),
-  }, function (data) {
-    if (data.status == 'ok')
-      seeGroup(idGroup, true);
-    else
-      console.log(data.error);
+    'element': element,
+  }, function () {
+    seeGroup(idGroup, true);
   });
 };
 
@@ -525,11 +546,11 @@ var setToGroup = function (idGroup, idSubGroup, element, text, id) {
       'group': idGroup,
       'sub_group': idSubGroup,
       'element': element,
-      'info': encodeURIComponent($('#' + id + ' .infosCard input').val())
-    }, function (data) {
+      'info': $('#' + id + ' .infosCard input').val()
+    }, function () {
       $('#group-' + idGroup + ' button').val($('#group-' + idGroup + ' button').val().replace(element, $('#' + id + ' .infosCard input').val()));
       $('#' + id + ' .infosCard input').replaceWith($('<span></span>').text($('#' + id + ' .infosCard input').val()));
-      $('#' + id + ' .optionsCard button').first().replaceWith($('<button></button>').html('<i class="fa fa-edit"></i>').attr('disabled',  type == 'asso').on('click', function () {
+      $('#' + id + ' .optionsCard button').first().replaceWith($('<button></button>').html('<i class="fa fa-edit"></i>').on('click', function () {
         setToGroup(idGroup, idSubGroup, element, text, id);
       }));
 
@@ -540,16 +561,22 @@ var setToGroup = function (idGroup, idSubGroup, element, text, id) {
   submited();
 };
 
-var addActive = function (element) {
-  window.get.addActive = [element];
+var addActive = function (list) {
+  if (typeof list === 'string')
+    list = [list];
+
+  window.get.addActive = list;
   delete window.get.delActive;
 
   loading();
   generate(true);
 };
 
-var delActive = function (element) {
-  window.get.delActive = [element];
+var delActive = function (list) {
+  if (typeof list === 'string')
+    list = [list];
+
+  window.get.delActive = list;
   delete window.get.addActive;
 
   loading();
@@ -587,7 +614,6 @@ var seeUV = function (uv) {
 };
 
 var seeUVInformations = function (task) {
-  loading();
   getRequest('lists.php', {
     'idUV': task.idUV
   }, function (data) {
@@ -606,12 +632,13 @@ var seeUVInformations = function (task) {
   });
 };
 
-var seeOthers = function (uv, type, idUV) {
+var seeOthers = function (uv, type, idUV, id) {
   window.get = {
     'mode': 'modifier',
     'uv': uv,
     'type': type,
-    'idUV': idUV
+    'idUV': idUV,
+    'id': id
   };
 
   generate();
@@ -629,7 +656,7 @@ var changeColor = function(idUV, color) {
   getRequest('colors.php', {
     'idUV': idUV,
     'color': color.substr(1)
-  }, function (data) {
+  }, function () {
     generate();
   });
 };
@@ -672,8 +699,6 @@ var checkSearch = function (input) {
 };
 
 var printSearch = function (begin) {
-  loading();
-
   if (begin == undefined || begin == '')
     begin = 0;
     console.log({
@@ -687,7 +712,6 @@ var printSearch = function (begin) {
     'begin': begin,
     'nbr': 50
   }, function(data) {
-    endLoading();
     $('.studentCards').empty();
     $('.studentCardsText').text(data.students.length + ' étudiant' + (data.students.length > 1 ? 's' : '') + ' trouvé' + (data.students.length > 1 ? 's' : ''));
     data.students.forEach(function (student) {
@@ -913,11 +937,9 @@ var exchange = function (get) {
   });
 };
 
-var askForExchange = function (idUV, idUV2) {
-  exchange({
-    'idUV': idUV,
-    'idUV2': idUV2
-  });
+var askExchange = function (task, toExchange) {
+  console.log(task)
+  console.log(toExchange)
 };
 /*
 function addExchange(idUV, forIdUV, note) {
@@ -992,7 +1014,215 @@ var getFgColor = function (bgColor) {
 
 /* Génération */
 
+var getFreeTimes = function (timeNeeded, nbrNotAvailable, dayToSee) {
+  var freeTimes = {};
+  var freeTimesDiv = $('<div></div>');
+  var nbrAvailables = {};
+  var max = window.HOUR_MAX;
+
+  if (!timeNeeded)
+    timeNeeded = 0.5;
+
+  if (max + +timeNeeded > 24)
+    max = 24 - +timeNeeded + 0.5;
+
+  getRequest('calendar.php', window.get, function (data) {
+    var days = {};
+    for (let i = 0; i < window.headers.length; i++) {
+      if ($('#ftCheck' + i))
+        days[i] = $('#ftCheck' + i).prop('checked');
+      else
+        days[i] = true;
+    }
+
+    $.each(days, function (i, bool) {
+      if (!bool)
+        return;
+
+      freeTimes[i] = {};
+
+      for (let j = window.HOUR_MIN; j < max; j += 0.5) { // On fait par tranche de demi-heure
+        freeTimes[i][j] = [];
+
+        $.each(data.infos.active, function (element, color) {
+          freeTimes[i][j].push(element);
+        });
+      }
+    });
+
+    $.each(data.tasks, function (id, infos) {
+      $.each(infos.data, function (idTasks, task) {
+        $.each(freeTimes[task.day], function (freeTime, list) {
+          if ((+freeTime < +task.startTime && +freeTime + +timeNeeded > +task.startTime) || (+freeTime < +task.startTime + +task.duration && +freeTime + +timeNeeded > +task.startTime)) {
+            var index = list.indexOf(infos.info);
+
+            if (index != -1)
+              freeTimes[task.day][freeTime].splice(index, 1);
+          }
+        });
+      });
+    });
+
+    for (let i = 0; i < window.headers.length; i++) {
+      $.each(freeTimes[i], function (freeTime, availableList) {
+        if (!nbrAvailables[availableList.length])
+          nbrAvailables[availableList.length] = {};
+
+        if (!nbrAvailables[availableList.length][i])
+          nbrAvailables[availableList.length][i] = [];
+
+        nbrAvailables[availableList.length][i].push(freeTime);
+      });
+    }
+
+    var most = 0;
+    var select = $('<select></select>');
+    for (let i = Object.keys(nbrAvailables).length - 1; i > 0; i--) {
+      let diff = Object.keys(window.active).length - Object.keys(nbrAvailables)[i];
+
+      select.append($('<option></option>',{
+        'text': diff,
+        'val': diff,
+      }).on('click', function () {
+        getFreeTimes(+timeNeeded, diff, dayToSee);
+      }))
+
+      if (Object.keys(nbrAvailables)[i] > most)
+        most = Object.keys(nbrAvailables)[i];
+    }
+    select.val(nbrNotAvailable | Object.keys(window.active).length - most);
+
+    $('<div></div>')
+    .append(select)
+    .append(' indisponible(s) aux créneaux suivants:')
+    .appendTo(freeTimesDiv);
+
+    if (nbrNotAvailable)
+      most = Object.keys(window.active).length - nbrNotAvailable;
+
+    if (!dayToSee)
+      dayToSee = Object.keys(nbrAvailables[most])[0];
+
+    console.log(freeTimes);
+    console.log(nbrAvailables);
+    console.log('Objet renvoyé avec [jour][heure de début]: ' + (most));
+
+    if (nbrAvailables[most]) {
+      var days = $('<div></div>');
+      $.each(nbrAvailables[most], function (day, begins) {
+        days.append($('<div></div>', {
+          'text': window.headers[day] + ': ' + Object.keys(begins).length + ' créneau' + (Object.keys(begins).length > 1 ? 'x' : '') + ' disponible' + (Object.keys(begins).length > 1 ? 's' : '')
+        })
+        .append($('<button></button>').html('<i class="fa fa-eye"></i>').prop('disabled', dayToSee == day).on('click', function () {
+          getFreeTimes(+timeNeeded, Object.keys(window.active).length - most, day);
+        })));
+      });
+
+      days.appendTo(freeTimesDiv)
+    }
+    else {
+      $('#freeTimes').append($('<div></div>', {
+        'text': 'Aucun créneau disponible cette semaine pour la durée demandée (personne n\'est jamais disponible en quelque sorte haha)'
+      }));
+    }
+
+    getRequest('groups.php', {
+      'mode': 'get',
+      'group': 'others'
+    }, function (data) {
+      var begins = $('<div></div>');
+      var elements = {};
+
+      $.each(window.active, function (element, color) {
+        elements[element] = element;
+      });
+
+      elements[window.sessionLogin] = 'Moi';
+      $.each(data.others.subgroups.students.elements, function (login, infos) {
+        $.each(window.active, function (element, color) {
+          if (element == login)
+            elements[login] = infos.firstname + ' ' + infos.surname;
+        });
+      });
+
+      $.each(nbrAvailables[most][dayToSee], function (id, begin) {
+        var notAvailable = $.extend({}, elements);
+
+        var slot = $('<div></div>', {
+          'text': 'Créneau de ' + begin + ' à ' + (+begin + +timeNeeded) + ': '
+        }).append($('<div></div>', {
+          'text': 'Disponible' + (freeTimes[dayToSee][begin].length > 1 ? 's: ' : ': ')
+        }));
+
+        for (var i = 0; i < freeTimes[dayToSee][begin].length - 1; i++) {
+          var element = freeTimes[dayToSee][begin][i];
+          delete notAvailable[element];
+          slot.append(elements[element] + ', ');
+        }
+
+        var element = freeTimes[dayToSee][begin][freeTimes[dayToSee][begin].length - 1];
+        delete notAvailable[element];
+        slot.append(elements[element]).append($('<div></div>', {
+          'text': 'Indisponible' + (Object.keys(notAvailable).length > 1 ? 's: ' : ': ')
+        }));
+
+        var i = 0;
+        $.each(notAvailable, function (element, text) {
+          slot.append(text + (i++ == Object.keys(notAvailable).length - 1 ? '' : ', '));
+        });
+
+        slot.appendTo(begins);
+      });
+
+      begins.appendTo(freeTimesDiv);
+      $('#freeTimes').html(freeTimesDiv);
+    });
+  });
+};
+
+var generateFreeTimes = function () {
+  popup('Trouver le meilleur créneau', $('<div></div>').text('Chercher un créneau pour:')
+    .append($('<input></input>').attr('type', 'checkbox').attr('id', 'ftCheck0').prop('checked', true)).append($('<label></label><br />').attr('for', 'ftCheck0').text('Lundi'))
+    .append($('<input></input>').attr('type', 'checkbox').attr('id', 'ftCheck1').prop('checked', true)).append($('<label></label><br />').attr('for', 'ftCheck1').text('Mardi'))
+    .append($('<input></input>').attr('type', 'checkbox').attr('id', 'ftCheck2').prop('checked', true)).append($('<label></label><br />').attr('for', 'ftCheck2').text('Mercredi'))
+    .append($('<input></input>').attr('type', 'checkbox').attr('id', 'ftCheck3').prop('checked', true)).append($('<label></label><br />').attr('for', 'ftCheck3').text('Jeudi'))
+    .append($('<input></input>').attr('type', 'checkbox').attr('id', 'ftCheck4').prop('checked', true)).append($('<label></label><br />').attr('for', 'ftCheck4').text('Vendredi'))
+    .append($('<input></input>').attr('type', 'checkbox').attr('id', 'ftCheck5').prop('checked', true)).append($('<label></label><br />').attr('for', 'ftCheck5').text('Samedi'))
+    .append($('<input></input>').attr('type', 'checkbox').attr('id', 'ftCheck6').prop('checked', true)).append($('<label></label><br />').attr('for', 'ftCheck6').text('Dimanche'))
+    .append('Durée du créneau (en heure): ')
+    .append($('<input />', {
+      'type': 'number',
+      'min': '0.5',
+      'max': window.HOUR_MAX - window.HOUR_MIN,
+      'step': '0.5',
+      'value': '2',
+      'id': 'duration',
+      'class': 'focusedInput submitedInput',
+    }))
+    .append($('<button></button>', {
+      'class': 'submitedButton',
+      'text': 'Trouver les meilleurs créneaux'
+      }).on('click', function () {
+        getFreeTimes($('#duration').val());
+      })
+    )
+    .append($('<div></div>', {
+      'id': 'freeTimes',
+    }))
+  );
+};
+
 var generateMode = function () {
+  if (window.get.mode == 'modifier')
+    $('#modifyTools').css('display', 'block');
+  else
+    $('#modifyTools').css('display', 'none');
+
+  if (window.get.mode == 'organiser')
+    $('#organizeTools').css('display', 'block');
+  else
+    $('#organizeTools').css('display', 'none');
+
   if (window.get.mode == 'semaine' || window.get.mode == 'organiser')
     $('#weekTools').css('display', 'block');
   else
@@ -1000,26 +1230,26 @@ var generateMode = function () {
 };
 
 var generateStudentCard = function (infos, info, idGroup, idSubGroup, type) {
-  var text = infos.firstname + ' ' + infos.surname;
+  var text = (infos.login == 'cerichar' ? 'César RICHARD - Licorne d\'amour <3' : infos.firstname + ' ' + infos.surname);
   var id = 'card-' + infos.login + (idSubGroup ? '-' + idSubGroup : '');
-  var option;
+  var option = $('<div></div>').addClass('optionsCard');
 
   if (idGroup && idSubGroup && type) {
-    option = $('<div></div>').addClass('optionsCard')
+    option
       .append($('<button></button>').html('<i class="fa fa-edit"></i>').attr('disabled',  type == 'asso').on('click', function () {
         setToGroup(idGroup, idSubGroup, infos.login, text, id);
       }))
       .append($('<button></button>').html('<i class="fa fa-remove"></i>').attr('disabled',  type == 'asso').attr('onClick', 'delFromGroup("' + idGroup + '", "' + idSubGroup + '", "' + infos.login + '", "' + infos.info + '")'));
   }
-  else if (window.get.mode == 'organiser' && infos.info) {
-    option = $('<div></div>').addClass('optionsCard')
-      .append($('<button></button>').html('<i class="fa fa-' + (infos.active ? 'eye-slash' : 'eye') + '"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).attr('onClick', (infos.active ? 'delActive' : 'addActive') + '("' + infos.login + '"); seeGroup("' + idGroup + '")'))
-      .append($('<button></button>').html('<i class="fa fa-plus"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).attr('onClick', 'addToGroup("' + infos.login + '", "' + text + '")'));
-  }
   else {
-    option = $('<div></div>').addClass('optionsCard')
-      .append($('<button></button>').html('<i class="fa fa-eye"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).attr('onClick', 'seeStudent("' + infos.login + (info == undefined ? '' : '", "' + info) + '")'))
-      .append($('<button></button>').html('<i class="fa fa-plus"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).attr('onClick', 'addToGroup("' + infos.login + '", "' + text + '")'));
+    if (window.get.mode == 'organiser')
+      option.append($('<button></button>').html('<i class="fa fa-' + (infos.active ? 'eye-slash' : 'eye') + '"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).attr('onClick', (infos.active ? 'delActive' : 'addActive') + '("' + infos.login + '"); seeGroup("' + idGroup + '")'))
+    else
+      option.append($('<button></button>').html('<i class="fa fa-eye"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).attr('onClick', 'seeStudent("' + infos.login + (info == undefined ? '' : '", "' + info) + '")'))
+
+    option.append($('<button></button>').html('<i class="fa fa-plus"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).on('click', function () {
+      addToGroup(infos.login, text);
+    }));
   }
 
   var card = $('<div></div>').addClass('studentCard').attr('id', id)
@@ -1083,7 +1313,7 @@ var generateWeeks = function (weeks, week) {
   console.log(weeks)
   if (window.get.mode == 'semaine') {
     $('#mode_semaine').prop('checked', true);
-    $('#mode_week').text(' Semaine du ' + week.split('-')[2] + '/' + week.split('-')[1]);
+    $('#mode_week').text(' Semaine du ' + week.split('-')[2] + '/' + week.split('-')[1] + ':');
   }
   else if (window.get.mode == 'comparer')
     $('#mode_comparer').prop('checked', true);
@@ -1091,7 +1321,7 @@ var generateWeeks = function (weeks, week) {
     $('#mode_modifier').prop('checked', true);
   else if (window.get.mode == 'organiser') {
     $('#mode_organiser').prop('checked', true);
-    $('#mode_week').text(' Semaine du ' + week.split('-')[2] + '/' + week.split('-')[1]);
+    $('#mode_week').text(' Semaine du ' + week.split('-')[2] + '/' + week.split('-')[1] + ':');
   }
   else
     $('#mode_classique').prop('checked', true);
@@ -1235,20 +1465,24 @@ var generatePrinted = function (groups) {
   if (window.get.mode == 'organiser') {
     $('#affichage_printed').css('display', 'block');
 
-    if (window.active && Object.keys(window.active).length > 1)
+    if (window.active && Object.keys(window.active).length > 1) {
       $('#printedText').text(Object.keys(window.active).length + ' affichés:');
-    else
+      $('#eventTool').prop('disabled', false);
+    }
+    else {
       $('#printedText').text('1 seul affiché:');
+      $('#eventTool').prop('disabled', true);
+    }
 
     $('<div></div>').attr('id', 'printed-' + window.sessionLogin).append($('<button></button>').html('<span>Moi</span>').css('background-color', window.active[window.sessionLogin] || '#222222').css('color', getFgColor(window.active[window.sessionLogin] || '#222222'))).appendTo($('#printed'));
 
     $.each(window.active, function (element, color) {
       if (element != window.sessionLogin)
-      $('<div></div>').attr('id', 'printed-' + element).append($('<button></button>').html('<span>' + element + '</span><i class="fa fa-times" aria-hidden="true"></i>').css('background-color', window.active[element] || '#222222').css('color', getFgColor(window.active[element] || '#222222')).on('click', function () {
-        window.get.delActive = [element];
+        $('<div></div>').attr('id', 'printed-' + element).append($('<button></button>').html('<span>' + element + '</span><i class="fa fa-times" aria-hidden="true"></i>').css('background-color', window.active[element] || '#222222').css('color', getFgColor(window.active[element] || '#222222')).on('click', function () {
+          window.get.delActive = [element];
 
-        generate();
-      })).appendTo($('#printed'));
+          generate();
+        })).appendTo($('#printed'));
     });
 
     var elem;
@@ -1264,11 +1498,13 @@ var generatePrinted = function (groups) {
           if (infos.email)
             emails[element] = infos.email;
 
-          elem = $('#printed-' + element).children();
+          if (infos.firstname && infos.surname)
+            $('#printed-' + element + ' span').text(infos.firstname + ' ' + infos.surname);
+          else
+            $('#printed-' + element + ' span').text(infos.uv + ' (uv)');
 
-          elem.children().first().text(infos.firstname + ' ' + infos.surname);
           if (name != 'others')
-            $('<div></div>').html('<i class="fa fa-angle-right" aria-hidden="true"></i> ' + group.name + ' - ' + sub_group.name + (infos.info != '' ? ' (' + infos.info + ')' : '')).appendTo(elem);
+            $('<div></div>').html('<i class="fa fa-angle-right" aria-hidden="true"></i> ' + group.name + ' - ' + sub_group.name + (infos.info != '' ? ' (' + infos.info + ')' : '')).appendTo($('#printed-' + element).children());
         });
       });
     });
@@ -1285,15 +1521,23 @@ var generatePrinted = function (groups) {
   }
   else {
     $('#affichage_printed').css('display', 'none');
-    var text = window.get.login ? groups.others.subgroups.students.elements[window.get.login].firstname + ' ' + groups.others.subgroups.students.elements[window.get.login].surname : (window.get.uv ? groups.others.subgroups.uvs.elements[window.get.uv].uv : '');
 
-    if (window.get.login || window.get.uv)
-      $('<button></button>').attr('onClick', 'addToGroup("' + (window.get.login || window.get.uv) + '")').html('<i class="fa fa-plus" aria-hidden="true"></i> Ajouter ' + text).appendTo($('#printedTools'));
+    if (window.get.mode != 'modifier') {
+      var text = (window.get.login ? groups.others.subgroups.students.elements[window.get.login].firstname + ' ' + groups.others.subgroups.students.elements[window.get.login].surname : (window.get.uv ? window.get.uv : ''));
 
-    if (window.get.login)
-      $('<button></button>').on('click', function () {
-        window.open('mailto:' + groups.others.subgroups.students.elements[window.get.login].email);
-      }).html('<i class="fa fa-send" aria-hidden="true"></i> Envoyer un mail à ' + text).appendTo($('#printedTools'));
+      if (window.get.login || window.get.uv)
+        $('<button></button>').html('<i class="fa fa-plus" aria-hidden="true"></i> Ajouter ' + text).on('click', function () {
+          addToGroup(window.get.login | window.get.uv, text);
+        } ).appendTo($('#printedTools'));
+
+      if (window.get.login) {
+        $('<button></button>').attr('id', 'clipboard').attr('data-clipboard-text', window.get.login).html('<i class="fa fa-clipboard" aria-hidden="true"></i> Copier son login: ' + window.get.login).appendTo($('#printedTools'));
+        $('<button></button>').on('click', function () {
+          window.open('mailto:' + groups.others.subgroups.students.elements[window.get.login].email);
+        }).html('<i class="fa fa-send" aria-hidden="true"></i> Lui envoyer un email').appendTo($('#printedTools'));
+        new Clipboard('#clipboard');
+      }
+    }
   }
 }
 
@@ -1363,8 +1607,16 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
   var toPass = [];
   var nbrPassed = 0;
   var nbrSameTime = 1;
+  var toExchange;
   var div = $('<div></div>');
   var button = $('<button/>');
+
+  if (window.get.mode == 'modifier' && window.get.mode_type == 'uvs_followed') {
+    tasks[0].data.forEach(function(task) {
+      if (task.subject == window.get.uv && task.type == window.get.type)
+        toExchange = task;
+    });
+  }
 
   var card, style;
   tasks.forEach(function(group) {
@@ -1402,8 +1654,9 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
           if ((group.side === groupToCompare.side && ((task.startTime >= toCompare.startTime && task.startTime < toCompare.startTime + toCompare.duration) || (toCompare.startTime >= task.startTime && toCompare.startTime < task.startTime + task.duration))) && ((task.duration < (window.HOUR_MAX - window.HOUR_MIN) && toCompare.duration < (window.HOUR_MAX - window.HOUR_MIN)) || task.duration == toCompare.duration))
             nbrSameTime++;
 
-          if ((window.get.mode == 'comparer' || window.get.mode == 'modifier') && task.idUV == toCompare.idUV)
+          if ((window.get.mode == 'comparer' || window.get.mode == 'modifier') && task.idUV == toCompare.idUV) {
             card.addClass('sameCard');
+          }
         });
       });
 
@@ -1451,7 +1704,7 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
         style.width = task.width;
         style.left = task.left;
 
-        isUV = group.type == 'uv_followed' || group.type == 'uv' || group.type == 'exchange_received' || group.type == 'exchange_sent' || group.type == 'exchange_canceled';
+        isUV = group.type == 'uv_followed' || group.type == 'uv' || group.type == 'received' || group.type == 'sent' || group.type == 'canceled';
         subject = div.clone().addClass('subject');
 
         $('<span></span>').text(task.subject + (group.type == 'room' ? ' dispo' + (task.subject > 1 ? 's' : '') : '')).appendTo(subject);
@@ -1468,30 +1721,116 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
         if (task.note != null)
           div.clone().addClass('note').text(task.note).appendTo(card);
 
-        if (window.get.mode == 'modifier') {
-          if (card.hasClass('sameCard')) {
+        if (window.get.mode == 'modifier' && sides == 2 && (window.get.mode_type != 'changement' || group.side == 1)) {
+          if (card.hasClass('sameCard') && window.get.mode_type == 'uvs_followed') {
             style.opacity = 0.5;
             style['box-shadow'] = 'none';
           }
           else {
             if (group.side == 1) {
               card.on('click', function () {
-                seeOthers(task.subject, task.type, task.idUV);
+                seeOthers(task.subject, task.type, task.idUV, 'uv-' + task.subject + '-' + task.idUV);
               });
             }
             else {
               interraction = div.clone().addClass('interraction');
-              infosExchange = div.clone().addClass('infosExchange');
               option = button.clone().addClass('option').css('background-color', task.bgColor).css('color', getFgColor(task.bgColor));
 
-              if (window.get.mode_type === null) {
-                option.clone().html("<i class='fa fa-calendar-o' aria-hidden='true'></i> Voir l'edt de l'UV").on('click', function() { seeUV(task.subject); }).appendTo(interraction);
+              if (window.get.mode_type == 'uvs_followed') {
                 option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Informations").on('click', function() { seeUVInformations(task); }).appendTo(interraction);
-                option.clone().html('<i class="fa fa-handshake-o" aria-hidden="true"></i> Proposer un échange').on('click', function() {
-                  askForExchange();
+                option.clone().html('<i class="fa fa-handshake-o" aria-hidden="true"></i> Proposer en échange').on('click', function() {
+                  askExchange(task, toExchange);
                 }).appendTo(interraction);
               }
+              else {
+                toExchange = task.exchange;
+                var type = '';
+                var bgColor;
 
+                if (toExchange.available == '1') {
+                  if (toExchange.exchanged == '1') {
+                    type = ' - Annulée';
+                    bgColor = '#FFFF00';
+
+                    if (toExchange.login2 && toExchange.login2 == window.sessionLogin)
+                      button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-check" aria-hidden="true"></i> Accepter l\'annulation').on('click', function () {
+                          acceptCancelExchange(toExchange.idExchange);
+                      }).appendTo(interraction);
+                    else
+                      button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-times" aria-hidden="true"></i> Annuler ma demande').on('click', function () {
+                          cancelAskCancelExchange(toExchange.idExchange);
+                      }).appendTo(interraction);
+                  }
+                  else if (toExchange.enabled == '1') {
+                    bgColor = '#0000FF';
+
+                    if (window.get.mode_type == 'sent')
+                      button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-undo" aria-hidden="true"></i> Annuler ma proposition').on('click', function () {
+                        cancelSentExchange(toExchange.idExchange);
+                      }).appendTo(interraction);
+                    else {
+                      button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-check" aria-hidden="true"></i> Accepter l\'échange').on('click', function () {
+                          acceptExchange(toExchange.idExchange);
+                      }).appendTo(interraction);
+                      button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-times" aria-hidden="true"></i> Refuser l\'échange').on('click', function () {
+                          refuseExchange(toExchange.idExchange);
+                      }).appendTo(interraction);
+                    }
+                  }
+                  else {
+                    type = ' - Indisponible';
+                    bgColor = '#333333';
+
+                    if (window.get.mode_type == 'sent') {
+                      type = '(erreur: contacte le SIMDE stp)';
+                      button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-exclamation-circle" aria-hidden="true"></i> Erreur d\'état de l\'échange').prop('disabled', true).appendTo(interraction);
+                    }
+                    else
+                      button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-handshake-o" aria-hidden="true"></i> Proposer l\'échange').on('click', function () {
+                        askExchange(toExchange.idUV2, toExchange.idUV);
+                      }).appendTo(interraction);
+                  }
+                }
+                else {
+                  if (toExchange.exchanged == '1') {
+                    type = ' - Acceptée';
+                    bgColor = '#00FF00';
+
+                    button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-chevron-left" aria-hidden="true"></i> Annuler l\'échange').on('click', function () {
+                      cancelExchange(toExchange.idExchange);
+                    }).appendTo(interraction);
+                  }
+                  else {
+                    type = ' - Refusée';
+                    bgColor = '#FF0000';
+
+                    if (window.get.mode_type == 'sent')
+                      button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-handshake-o" aria-hidden="true"></i> Proposer un autre créneau').on('click', function () {
+                        window.get = {
+                          'mode': 'modifier',
+                          'mode_type': 'uvs_followed',
+                          'uv': toExchange.uv,
+                          'type': toExchange.type
+                        };
+
+                        generate();
+                      }).appendTo(interraction);
+                    else
+                      button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-handshake-o" aria-hidden="true"></i> Proposer l\'échange').on('click', function () {
+                        askExchange(toExchange.idUV2, toExchange.idUV);
+                      }).appendTo(interraction);
+                  }
+                }
+                style['background-color'] = bgColor;
+                style.color = getFgColor(bgColor);
+                card.children('.note').first().append(type);
+                button.clone().addClass('option').css('background-color', bgColor).css('color', style.color).html("<i class='fa fa-info' aria-hidden='true'></i> Informations").on('click', function() { seeUVInformations(task); }).prependTo(interraction);
+              }
+
+              if (!task.description)
+                task.description = 'En ' + (toExchange.available == '1' && toExchange.exchanged == '1' ? 'récupération' : 'échange') + ' du mien du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + (toExchange.timeText ? toExchange.timeText.replace('-', ' à ') : toExchange.begin + ' à ' + toExchange.end);
+
+              interraction.prepend($('<div></div>').addClass('description').html(task.description));
               interraction.appendTo(card);
               card.on('click', function () {
                 cardClick(task);
@@ -1508,11 +1847,14 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
           interraction = div.clone().addClass('interraction');
           option = button.clone().addClass('option').css('background-color', task.bgColor).css('color', getFgColor(task.bgColor));
 
+          if (task.description)
+            interraction.prepend($('<div></div>').addClass('description').html(task.description));
+
           if (group.type == 'uv_followed') {
             option.clone().html("<i class='fa fa-calendar-o' aria-hidden='true'></i> Voir l'edt de l'UV").on('click', function() { seeUV(task.subject); }).appendTo(interraction);
 
-            if (uvs.search(task.subject) != -1)
-              option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Echanger cet UV").on('click', function() { seeOthers(task.subject, task.type, task.idUV); }).appendTo(interraction);
+            if (uvs && uvs.search(task.subject) != -1)
+              option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Echanger cet UV").on('click', function() { seeOthers(task.subject, task.type, task.idUV, 'uv-' + task.subject + '-' + task.idUV); }).appendTo(interraction);
 
             option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Informations").on('click', function() { seeUVInformations(task); }).appendTo(interraction);
 
@@ -1531,12 +1873,10 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
           }
           else if (group.type == 'uv') {
             if (uvs.search(task.subject) != -1)
-              option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Echanger cet UV").on('click', function() { seeOthers(task.subject, task.type, task.idUV); }).appendTo(interraction);
+              option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Echanger cet UV").on('click', function() { seeOthers(task.subject, task.type, task.idUV, task.id); }).appendTo(interraction);
 
             option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Informations").on('click', function() { seeUVInformations(task); }).appendTo(interraction);
           }
-          else if (group.type == 'calendar')
-            interraction.text(task.description);
 
           interraction.appendTo(card);
           card.on('click', function () {
@@ -1715,7 +2055,7 @@ var setCalendar = function (day) {
 
   var focusedDay = day;
 
-  if (focusedDay === undefined || focusedDay < 0 || focusedDay >= length)
+  if (focusedDay === undefined || focusedDay < 0 || focusedDay >= length) // undefined nécessaire car 0 est une bonne valeur ^^'
     focusedDay = window.focusedDay;
 
   var indexs = [focusedDay];
