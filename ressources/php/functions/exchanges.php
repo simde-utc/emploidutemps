@@ -194,8 +194,10 @@ Tu peux toujours annuler cet échange en cliquant ici: '.linkToExchange(array(
 
   function askExchange($login, $idUV, $idUV2, $note) { // Afficher dans le mail combien je dois attendre de validation. Si je suis premier, indiquer que tout le monde a été contacté par mail
     $exchange = getExchanges(NULL, $idUV, $idUV2);
-    $uv = getUV(NULL, NULL, NULL, $idUV)[0];
-    $uv2 = getUV(NULL, NULL, NULL, $idUV2)[0];
+    $data = getUV(NULL, NULL, NULL, $idUV);
+    $uv = $data[0];
+    $data = getUV(NULL, NULL, NULL, $idUV2);
+    $uv2 = $data[0];
 
     // On vérifie qu'on souhaite échanger la même UV et le même type et qu'on ne souhaite pas échanger le même créneau (ce qui était possible pendant quelques jours de dev xD)
     if ($uv['uv'] != $uv2['uv'])
@@ -234,7 +236,7 @@ Si tu regrettes ta proposition d\'échange, tu peux toujours l\'annuler (avant q
       foreach ($students as $student) { // On envoie une demande à ceux qui possèdent le créneau qui nous intéresse
         $studentInfos = getStudentInfos($student['login']);
         $GLOBALS['db']->request(
-          'INSERT INTO exchanges_received(idExchange, login) VALUES(?, ?)',
+          'INSERT INTO exchanges_received(idExchange, login, date) VALUES(?, ?, NOW())',
           array($exchange[0]['id'], $studentInfos['login'])
         );
 
@@ -309,7 +311,7 @@ Tu es la '.($nbr + 1).'ème personne à proposer cette échange. Tu seras tenu.e
 
     // On ajoute notre demande
     $GLOBALS['db']->request(
-      'INSERT INTO exchanges_sent(idExchange, login, note) VALUES(?, ?, ?)',
+      'INSERT INTO exchanges_sent(idExchange, login, note, date) VALUES(?, ?, ?, NOW())',
       array($exchange[0]['id'], $login, $note)
     );
 
@@ -337,12 +339,17 @@ Tu es la '.($nbr + 1).'ème personne à proposer cette échange. Tu seras tenu.e
       return 'Impossible d\'accepter une proposition non-reçu';
 
     // On récupère le premier élu
-    $sent = getSentExchanges(NULL, NULL, $idExchange, 1, 0)[0];
-    $received = getReceivedExchanges($_SESSION['login'], NULL, $idExchange, 1, 0)[0];
+    $data = getSentExchanges(NULL, NULL, $idExchange, 1, 0);
+    $sent = $data[0];
+    $data = getReceivedExchanges($_SESSION['login'], NULL, $idExchange, 1, 0);
+    $received = $data[0];
 
-    $exchange = getExchanges($idExchange, NULL, NULL, 1)[0];
-    $uv = getUV(NULL, NULL, NULL, $exchange['idUV'])[0];
-    $uv2 = getUV(NULL, NULL, NULL, $exchange['idUV2'])[0];
+    $data = getExchanges($idExchange, NULL, NULL, 1);
+    $exchange = $data[0];
+    $data = getUV(NULL, NULL, NULL, $exchange['idUV']);
+    $uv = $data[0];
+    $data = getUV(NULL, NULL, NULL, $exchange['idUV2']);
+    $uv2 = $data[0];
 
     // On vérifie que chacun peut échanger son uv (c'est à dire que chacun possède bien son créneau et qu'ils sont pas en train de vouloir la redonner au précédent s'il existe et l'échanger avec le suivant)
     checkIfUVIsExchangeable($sent['login'], $uv['id']);
@@ -368,12 +375,14 @@ Tu es la '.($nbr + 1).'ème personne à proposer cette échange. Tu seras tenu.e
       'SELECT color FROM uvs_followed WHERE idUV = ? AND login = ? AND enabled = 1',
       array($uv['id'], $sent['login'])
     );
-    $colorSent = $query->fetch()['color'];
+    $data = $query->fetch();
+    $colorSent = $data['color'];
     $query = $GLOBALS['db']->request(
       'SELECT color FROM uvs_followed WHERE idUV = ? AND login = ? AND enabled = 1',
       array($uv2['id'], $received['login'])
     );
-    $coloReceived = $query->fetch()['color'];
+    $data = $query->fetch();
+    $coloReceived = $data['color'];
 
     // On désactive les créneaux échangés
     $GLOBALS['db']->request(
@@ -470,9 +479,12 @@ En échangeant, tu as reçu de nouvelles propositions d\'échange avec ton nouve
     if (count(getExchanges($idExchange, NULL, NULL, 1)) == 0)
       return 'Aucune proposition existante';
 
-    $exchange = getExchanges($idExchange, NULL, NULL, 1)[0];
-    $uv = getUV(NULL, NULL, NULL, $exchange['idUV'])[0];
-    $uv2 = getUV(NULL, NULL, NULL, $exchange['idUV2'])[0];
+    $data = getExchanges($idExchange, NULL, NULL, 1);
+    $exchange = $data[0];
+    $data = getUV(NULL, NULL, NULL, $exchange['idUV']);
+    $uv = $data[0];
+    $data = getUV(NULL, NULL, NULL, $exchange['idUV2']);
+    $uv2 = $data[0];
 
     // On vérifie qu'il y a bien des gens qui propose
     if (count(getSentExchanges(NULL, NULL, $idExchange, 1, 0)) == 0)
@@ -519,22 +531,31 @@ Tu peux toujours proposer d\'échanger d\'autres créneaux de '.uvTypeToText($uv
     if (count(getCanceledExchanges(NULL, NULL, $idExchange, 1, $_SESSION['login'])) != 0)
       return cancelExchange($idExchange);
 
-    $exchange = getExchanges($idExchange)[0];
-    $uv = getUV(NULL, NULL, NULL, $exchange['idUV'])[0];
-    $uv2 = getUV(NULL, NULL, NULL, $exchange['idUV2'])[0];
+    $data = getExchanges($idExchange);
+    $exchange = $data[0];
+    $data = getUV(NULL, NULL, NULL, $exchange['idUV']);
+    $uv = $data[0];
+    $data = getUV(NULL, NULL, NULL, $exchange['idUV2']);
+    $uv2 = $data[0];
 
     // On identiie celui qui envoie et celui recoit et surtout s'il y a bien eu échange
     if (count(getSentExchanges($_SESSION['login'], NULL, $idExchange, 0, 1)) == 1) {
-      $sent = getSentExchanges($_SESSION['login'], NULL, $idExchange, 0, 1)[0];
-      if (count(getReceivedExchanges(NULL, $sent['idReceived'], $idExchange, 0, 1)) == 1)
-        $received = getReceivedExchanges(NULL, $sent['idReceived'], $idExchange, 0, 1)[0];
+      $data = getSentExchanges($_SESSION['login'], NULL, $idExchange, 0, 1);
+      $sent = $data[0];
+      if (count(getReceivedExchanges(NULL, $sent['idReceived'], $idExchange, 0, 1)) == 1) {
+        $data = getReceivedExchanges(NULL, $sent['idReceived'], $idExchange, 0, 1);
+        $received = $data[0];
+      }
       else
         return 'Impossible d\'identifier avec qui l\'échange a été effectué';
     }
     elseif (count(getReceivedExchanges($_SESSION['login'], NULL, $idExchange, 0, 1)) == 1) {
-      $received = getReceivedExchanges($_SESSION['login'], NULL, $idExchange, 0, 1)[0];
-      if (count(getSentExchanges(NULL, $received['idSent'], $idExchange, 0, 1)) == 1)
-        $sent = getSentExchanges(NULL, $received['idSent'], $idExchange, 0, 1)[0];
+      $data = getReceivedExchanges($_SESSION['login'], NULL, $idExchange, 0, 1);
+      $received = $data[0];
+      if (count(getSentExchanges(NULL, $received['idSent'], $idExchange, 0, 1)) == 1) {
+        $data = getSentExchanges(NULL, $received['idSent'], $idExchange, 0, 1);
+        $sent = $data[0];
+      }
       else
         return 'Impossible d\'identifier avec qui l\'échange a été effectué';
     }
@@ -560,7 +581,7 @@ Tu peux toujours proposer d\'échanger d\'autres créneaux de '.uvTypeToText($uv
 
     // On ajoute la demande d'annulation
     $GLOBALS['db']->request(
-      'INSERT INTO exchanges_canceled(idExchange, login, login2) VALUES(?, ?, ?)',
+      'INSERT INTO exchanges_canceled(idExchange, login, login2, date) VALUES(?, ?, ?, NOW())',
       array($idExchange, $_SESSION['login'], $studentInfos['login'])
     );
 
@@ -616,22 +637,31 @@ Tu peux accepter la demande d\'annulation en cliquant ici: '.linkToExchange(arra
     if (count(getCanceledExchanges($_SESSION['login'], NULL, $idExchange)) == 0)
       return 'Demande d\'annulation non réalisée';
 
-    $exchange = getExchanges($idExchange)[0];
-    $uv = getUV(NULL, NULL, NULL, $exchange['idUV'])[0];
-    $uv2 = getUV(NULL, NULL, NULL, $exchange['idUV2'])[0];
+    $data = getExchanges($idExchange);
+    $exchange = $data[0];
+    $data = getUV(NULL, NULL, NULL, $exchange['idUV']);
+    $uv = $data[0];
+    $data = getUV(NULL, NULL, NULL, $exchange['idUV2']);
+    $uv2 = $data[0];
 
     // On identiie celui qui envoie et celui recoit et surtout s'il y a bien eu échange
     if (count(getSentExchanges($_SESSION['login'], NULL, $idExchange, 1, 1)) == 1) {
-      $sent = getSentExchanges($_SESSION['login'], NULL, $idExchange, 1, 1)[0];
-      if (count(getReceivedExchanges(NULL, $sent['idReceived'], $idExchange, 1, 1)) == 1)
-        $received = getReceivedExchanges(NULL, $sent['idReceived'], $idExchange, 1, 1)[0];
+      $data = getSentExchanges($_SESSION['login'], NULL, $idExchange, 1, 1);
+      $sent = $data[0];
+      if (count(getReceivedExchanges(NULL, $sent['idReceived'], $idExchange, 1, 1)) == 1) {
+        $data = getReceivedExchanges(NULL, $sent['idReceived'], $idExchange, 1, 1);
+        $received = $data[0];
+      }
       else
         return 'Impossible d\'identifier avec qui l\'échange a été effectué';
     }
     elseif (count(getReceivedExchanges($_SESSION['login'], NULL, $idExchange, 1, 1)) == 1) {
-      $received = getReceivedExchanges($_SESSION['login'], NULL, $idExchange, 1, 1)[0];
-      if (count(getSentExchanges(NULL, $received['idSent'], $idExchange, 1, 1)) == 1)
-        $sent = getSentExchanges(NULL, $received['idSent'], $idExchange, 1, 1)[0];
+      $data = getReceivedExchanges($_SESSION['login'], NULL, $idExchange, 1, 1);
+      $received = $data[0];
+      if (count(getSentExchanges(NULL, $received['idSent'], $idExchange, 1, 1)) == 1) {
+        $data = getSentExchanges(NULL, $received['idSent'], $idExchange, 1, 1);
+        $sent = $data[0];
+      }
       else
         return 'Impossible d\'identifier avec qui l\'échange a été effectué';
     }
@@ -687,22 +717,31 @@ Tu peux toujours toi-même demander d\'annuler l\'échange si tu le souhaites en
     if (count(getExchanges($idExchange, NULL, NULL)) == 0)
       return 'Aucune proposition existante';
 
-    $exchange = getExchanges($idExchange, NULL, NULL)[0];
-    $uv = getUV(NULL, NULL, NULL, $exchange['idUV'])[0];
-    $uv2 = getUV(NULL, NULL, NULL, $exchange['idUV2'])[0];
+    $data = getExchanges($idExchange, NULL, NULL);
+    $exchange = $data[0];
+    $data = getUV(NULL, NULL, NULL, $exchange['idUV']);
+    $uv = $data[0];
+    $data = getUV(NULL, NULL, NULL, $exchange['idUV2']);
+    $uv2 = $data[0];
 
     // On identiie celui qui envoie et celui recoit et surtout s'il y a bien eu échange
     if (count(getSentExchanges($_SESSION['login'], NULL, $idExchange, 1, 1)) == 1) {
-      $sent = getSentExchanges($_SESSION['login'], NULL, $idExchange, 1, 1)[0];
-      if (count(getReceivedExchanges(NULL, $sent['idReceived'], $idExchange, 1, 1)) == 1)
-        $received = getReceivedExchanges(NULL, $sent['idReceived'], $idExchange, 1, 1)[0];
+      $data = getSentExchanges($_SESSION['login'], NULL, $idExchange, 1, 1);
+      $sent = $data[0];
+      if (count(getReceivedExchanges(NULL, $sent['idReceived'], $idExchange, 1, 1)) == 1) {
+        $data = getReceivedExchanges(NULL, $sent['idReceived'], $idExchange, 1, 1);
+        $received = $data[0];
+      }
       else
         return 'Impossible d\'identifier avec qui l\'échange a été effectué';
     }
     elseif (count(getReceivedExchanges($_SESSION['login'], NULL, $idExchange, 1, 1)) == 1) {
-      $received = getReceivedExchanges($_SESSION['login'], NULL, $idExchange, 1, 1)[0];
-      if (count(getSentExchanges(NULL, $received['idSent'], $idExchange, 1, 1)) == 1)
-        $sent = getSentExchanges(NULL, $received['idSent'], $idExchange, 1, 1)[0];
+      $data = getReceivedExchanges($_SESSION['login'], NULL, $idExchange, 1, 1);
+      $received = $data[0];
+      if (count(getSentExchanges(NULL, $received['idSent'], $idExchange, 1, 1)) == 1) {
+        $data = getSentExchanges(NULL, $received['idSent'], $idExchange, 1, 1);
+        $sent = $data[0];
+      }
       else
         return 'Impossible d\'identifier avec qui l\'échange a été effectué';
     }
@@ -820,9 +859,12 @@ Les emplois du temps ont été actualisés et chacun a récupéré son créneau 
     );
 
     $studentInfos = getStudentInfos($login == NULL ? $_SESSION['login'] : $login);
-    $exchange = getExchanges($idExchange)[0];
-    $uv = getUV(NULL, NULL, NULL, $exchange['idUV'])[0];
-    $uv2 = getUV(NULL, NULL, NULL, $exchange['idUV2'])[0];
+    $data = getExchanges($idExchange);
+    $exchange = $data[0];
+    $data = getUV(NULL, NULL, NULL, $exchange['idUV']);
+    $uv = $data[0];
+    $data = getUV(NULL, NULL, NULL, $exchange['idUV2']);
+    $uv2 = $data[0];
 
     // On fait les vérifications avec envoie de mails si nécessaire
     checkIfNoMoreSent($idExchange, $uv, $uv2);

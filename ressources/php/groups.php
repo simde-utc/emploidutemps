@@ -91,13 +91,13 @@
       elseif (setSubGroup($group, $_GET['sub_group'], $info))
         returnJSON(array('success' => 'Nom du sous-groupe changé avec succès avec: '.$info));
       else
-        returnJSON(array('error' => 'Le sous-groupe n\'existe pas'));
+        returnJSON(array('error' => 'Un sous-groupe existe déjà avec ce nom'));
     }
     else {
       if (setGroup($group, $info))
         returnJSON(array('success' => 'Nom du groupe changé avec succès avec: '.$info));
       else
-        returnJSON(array('error' => 'Le groupe n\'existe pas'));
+        returnJSON(array('error' => 'Un groupe existe déjà avec ce nom'));
     }
   }
   elseif ($mode == 'get' && !$group) {

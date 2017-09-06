@@ -71,7 +71,7 @@
       );
 
       $GLOBALS['db']->request(
-        'INSERT INTO debug(login) VALUES(?)',
+        'INSERT INTO debug(login, date) VALUES(?, NOW())',
         array($_SESSION['login'])
       );
 

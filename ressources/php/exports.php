@@ -63,7 +63,8 @@ $date = date('Ymd').'T'.date('His').'Z';
 $id = 0;
 
 if (isGetSet(array('mode', 'idEventFollowed')) && $_GET['mode'] == 'event') {
-  $event = getEvents($_GET['idEventFollowed'])[0];
+  $data = getEvents($_GET['idEventFollowed']);
+  $event = $data[0];
   startExport($event['subject']);
   printEvent(str_replace('-', '', $event['date']), str_replace(':', '', $event['begin']).'00', str_replace('-', '', $event['date']), str_replace(':', '', $event['end']).'00', $event['subject'], $event['description'], $event['location'], 0);
 }
@@ -160,6 +161,10 @@ elseif (isGetSet(array('mode')) && $_GET['mode'] == 'all') {
   $temp = new DateTime($infos['end']);
   $temp->modify('+1 day');
   printEvent($infos['begin'], NULL, $temp->format('Ymd'), NULL, $infos['subject'], $infos['description'], $infos['location'], 0);
+}
+else {
+  header('Content-Type: application/json');
+  returnJSON(array('error' => 'Pas de choix d\'export'));
 }
 
 echo '

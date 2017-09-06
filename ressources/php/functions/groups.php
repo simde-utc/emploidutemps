@@ -52,7 +52,7 @@
         'subgroups' => array(
           'students' => array(
             'type' => 'others',
-            'name' => 'Etudiants',
+            'name' => 'Etudiant.e.s',
             'elements' => array()
           ),
           'uvs' => array(
@@ -64,7 +64,15 @@
       )
     );
 
-    $roles = end(json_decode(file_get_contents('http://assos.utc.fr/profile/'.$_SESSION['login'].'/json'), TRUE)['semestres'])['roles'];
+    $data = json_decode(file_get_contents('http://assos.utc.fr/profile/'.$_SESSION['login'].'/json'), TRUE);
+
+    if (count($data) == 0)
+      $roles = array();
+    else {
+      $end = end($data['semestres']);
+      $roles = $end['roles'];
+    }
+
     if (count($roles) != 0) {
       foreach ($roles as $role) {
         $asso = $role['asso'];
@@ -95,7 +103,8 @@
           )
         );
 
-        $members = json_decode(file_get_contents('http://assos.utc.fr/asso/'.$asso['login'].'/json'), TRUE)['members'];
+        $dataAsso = json_decode(file_get_contents('http://assos.utc.fr/asso/'.$asso['login'].'/json'), TRUE);
+        $members = $dataAsso['members'];
         foreach ($members as $member) {
             if (!$member['bureau'])
               $_SESSION['groups'][$asso['login']]['subgroups']['members']['elements'][$member['login']] = $member['role'];
@@ -323,159 +332,6 @@
       'action' => 'seeGroup(\''.$name.'\')'
     );
   }
-/*
-
-  function printGroups() {
-    $groups = array();
-    foreach ($_SESSION['groups'] as $name => $group) {
-      $groups[$name] = array();
-
-      foreach ($group as $sub_name => $sub_group) {
-        if (is_array($sub_group))
-          array_push($groups[$name], $sub_name);
-      }
-    }
-
-    return $groups;
-  }
-
-
-
-  function printGroupTabInfos($name, $group) {
-    $groupActive = 1;
-    $GLOBALS['groups'][$name] = array(
-      'type' => NULL,
-      'active' => FALSE,
-      'partialyActive' => FALSE,
-      'nbr' => 0,
-      'nbrActive' => 0,
-      'get' => array(
-        'mode' => isset($GLOBALS['mode']) ? $GLOBALS['mode'] : 'classique',
-      ),
-      'options' => array(
-        'all' => array(
-          'text' => 'Tout le monde',
-          'active' => FALSE,
-          'partialyActive' => FALSE,
-          'get' => array()
-        )
-      ),
-      'infos' => array()
-    );
-
-    $all = array();
-    $nbr = 0;
-    foreach ($group as $sub_name => $sub_group) {
-      if (is_string($sub_group)) {
-        $GLOBALS['groups'][$name][$sub_name] = $sub_group;
-        continue;
-      }
-
-      if ($sub_group == array())
-        continue;
-
-      $GLOBALS['groups'][$name]['options'][$sub_name] = array(
-        'active' => ($sub_group == array() ? FALSE : TRUE),
-        'partialyActive' => FALSE,
-        'text' => $sub_name,
-        'get' => array()
-      );
-
-      $groups = array();
-      foreach ($sub_group as $login => $info) {
-        if ($login != $_SESSION['login'])
-          $GLOBALS['groups'][$name]['nbr']++;
-
-        array_push($groups, $login);
-        array_push($all, $login);
-
-        if (isAStudent($login)) {
-          $data = getStudentInfos($login);
-          $extern = FALSE;
-        }
-        elseif (isAnUV($login)) {
-          $data = array(
-            'surname' => '(uv)',
-            'firstname' => $login
-          );
-          $extern = FALSE;
-        }
-        else {
-          $data = array(
-            'surname' => '(en stage/extérieur)',
-            'firstname' => $login
-          );
-          $extern = TRUE;
-        }
-
-        if ($login == $_SESSION['login'])
-          $notActive = FALSE;
-        else
-          $notActive = array_keys($_SESSION['active'], $login) == array();
-
-        $groupActive += $notActive;
-
-        if ($notActive)
-          $GLOBALS['groups'][$name]['options'][$sub_name]['active'] = FALSE;
-        else if ($login != $_SESSION['login']) {
-          if (!$extern)
-            $GLOBALS['groups'][$name]['nbrActive']++;
-
-          $GLOBALS['groups'][$name]['options']['all']['partialyActive'] = TRUE;
-          $GLOBALS['groups'][$name]['options'][$sub_name]['partialyActive'] = TRUE;
-        }
-
-        $GLOBALS['groups'][$name]['infos'][$login] = array(
-          'surname' => $data['surname'],
-          'firstname' => $data['firstname'],
-          'active' => !$notActive,
-          'extern' => $extern,
-          'info' => $info
-        );
-      }
-      $nbr++;
-
-      if ($GLOBALS['groups'][$name]['options'][$sub_name]['active']) {
-        $GLOBALS['groups'][$name]['options'][$sub_name]['get']['delActive'] = $groups;
-      }
-      else
-        $GLOBALS['groups'][$name]['options'][$sub_name]['get']['addActive'] = $groups;
-    }
-
-    if ($GLOBALS['groups'][$name]['nbrActive'] != 0) {
-      $GLOBALS['groups'][$name]['partialyActive'] = TRUE;
-
-      if ($GLOBALS['groups'][$name]['nbrActive'] == $GLOBALS['groups'][$name]['nbr'])
-        $GLOBALS['groups'][$name]['active'] = TRUE;
-    }
-
-    if ($GLOBALS['groups'][$name]['nbr'] != 0 && $nbr > 1) {
-      if ($GLOBALS['groups'][$name]['active']) {
-        $GLOBALS['groups'][$name]['options']['all']['active'] = TRUE;
-        $GLOBALS['groups'][$name]['options']['all']['get']['delActive'] = $all;
-      }
-      else
-        $GLOBALS['groups'][$name]['options']['all']['get']['addActive'] = $all;
-    }
-    else
-      unset($GLOBALS['groups'][$name]['options']['all']);
-
-    // On déplace others à la fin (logique)
-    if (isset($GLOBALS['groups']['others'])) {
-      $others = $GLOBALS['groups']['others'];
-      unset($GLOBALS['groups']['others']);
-      $GLOBALS['groups']['others'] = $others;
-    }
-
-    $GLOBALS['groups'][$name]['options']['more'] = array(
-      'text' => 'Plus..',
-      'action' => 'seeGroup(\''.$name.'\')'
-    );
-  }
-
-
-
-*/
 
   function addGroup($group) {
     $query = $GLOBALS['db']->request(
@@ -534,7 +390,8 @@
       array($_SESSION['login'], $name)
     );
 
-    if ($query->rowCount() == 1 && $query->fetch()['id'] != $idGroup)
+    $data = $query->fetch();
+    if ($query->rowCount() == 1 && $data['id'] != $idGroup)
       return FALSE;
 
     if ($idGroup != 'others') {
@@ -619,7 +476,8 @@
       array($idGroup, $name)
     );
 
-    if ($query->rowCount() == 1 && $query->fetch()['id'] != $idSubGroup)
+    $data = $query->fetch();
+    if ($query->rowCount() == 1 && $data['id'] != $idSubGroup)
       return FALSE;
 
     if ($idGroup != 'others') {

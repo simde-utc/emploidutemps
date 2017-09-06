@@ -169,7 +169,7 @@
       </div>
       <div class='sub-menu'>
         <div id="mode_week">
-          Semaine du <?php echo explode('-', $_SESSION['week'])[2], '/', explode('-', $_SESSION['week'])[1]; ?>:
+          Semaine du <?php $data = explode('-', $_SESSION['week']); echo $data[2], '/', $data[1]; ?>:
         </div>
         <input name='mode' id='mode_semaine' type='radio' onClick='changeMode("semaine");'><label for='mode_semaine'> Classique</label><br />
         <input name='mode' id='mode_organiser' type='radio' onClick='changeMode("organiser");'><label for='mode_organiser'> Organiser</label><br />

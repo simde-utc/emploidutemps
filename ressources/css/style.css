@@ -9,7 +9,7 @@
   max-width: 300px;
   min-width: 150px;
   opacity: 0;
-  z-index: 101;
+  z-index: 1000;
   -webkit-transform: scale(1, 0);
   -moz-transform: scale(1, 0);
   -o-transform: scale(1, 0);

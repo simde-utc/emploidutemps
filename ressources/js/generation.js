@@ -9,22 +9,6 @@ var colors = [];
 var task = null;
 var focusedDay = (date.getDay() + 6) % 7;
 
-/*
-function parameters(param) {
-  var get = '?mode=' + window.get.mode + (window.get.login == undefined ? '' : '&login=' + window.get.login) + (window.get.uv == undefined ? '' : '&uv=' + window.get.uv);
-
-  if (param != undefined)
-    get += '&param=' + param;
-
-  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/parameters.php' + get, function (info) {
-    popup(info);
-
-    if (param === 'pdf')
-        $('#pdfTitle').val($('#title').text());
-  });
-}
-*/
-
 var getRequest = function (url, get, callback, silentMode) {
   var request = '';
 
@@ -228,7 +212,7 @@ var help = function () {
 /* Groupes */
 
 var addGroup = function () {
-  var corps = $('<div></div>');
+  var corps = $('<div></div>').addClass('centerCard');
 
   if ($('#group').length > 0) {
     var name = $('#group').val();
@@ -290,7 +274,7 @@ var seeGroup = function (group, edit) {
         if (edit)
           return div.addClass('optionCards').append($('<button></button>').html('<i class="fa fa-remove" aria-hidden="true"></i> Supprimer ce sous-groupe vide').prop('disabled', sub_group.type != 'custom').attr('onClick', 'delSubGroup("' + group + '", "' + name + '")')).appendTo(corps);
         else
-          return div.append(div.addClass('voidCard').css('margin-top', 0).text(name == 'resps' ? 'Aucun responsable' : (name == 'members' ? 'Aucun membre' : (name == 'admins' ? 'Aucun breau (il faudrait que quelqu\'un fasse la demande de passation)' : 'Sous-groupe vide')))).appendTo(corps);
+          return div.append(div.addClass('voidCard').css('margin-top', 0).text(name == 'resps' ? 'Aucun responsable' : (name == 'members' ? 'Aucun membre' : (name == 'admins' ? 'Aucun bureau (il faudrait que quelqu\'un fasse la demande de passation)' : 'Sous-groupe vide')))).appendTo(corps);
       }
 
       $.each(sub_group.elements, function (login, infos) {
@@ -344,7 +328,7 @@ var seeGroup = function (group, edit) {
     }
 
     var optionCards = $('<div></div>').addClass('optionCards');
-    if (group.type != 'others')
+    if (data[group].type != 'others')
       $('<button></button>').html('<i class="fa fa-plus" aria-hidden="true"></i> Créer un sous-groupe').attr('id', 'create-subgroup').attr('onClick', 'addSubGroup("' + group + '", "' + data[group].name + '", ' + edit + ')').appendTo(optionCards);
 
     if (edit)
@@ -360,7 +344,7 @@ var seeGroup = function (group, edit) {
     });
 
     var active = data[group].active && window.get.mode == 'organiser' ? 'delActive' : 'addActive';
-    popup(data[group].name, corps);
+    popup(data[group].type == 'asso' ? '<a href=https://assos.utc.fr/asso/' + group + '>' + data[group].name + '</a>' : data[group].name, corps);
     $('#popupHead').append($('<button></button>').html('<i class="fa fa-' + (edit ? 'edit' : (data[group].active && window.get.mode == 'organiser' ? 'eye-slash' : 'eye')) + '"></i>').prop('disabled', (!edit && Object.keys(actives).length == 0) || (edit && data[group].type != 'custom')).on('click', edit ? function () {
       setGroup(group, 'popupHead');
     } : function () {
@@ -436,8 +420,6 @@ var setSubGroup = function (idGroup, idSubGroup, id) {
 
   $('#' + id + ' b').replaceWith($('<input />').addClass('focusedInput').addClass('submitedInput').val($('#' + id + ' b').text()).attr('placeholder', $('#' + id + ' b').text()));
   $('#' + id + ' button').first().replaceWith($('<button></button>').html('<i class="fa fa-send"></i>').addClass('submitedButton').on('click', function () {
-    setPopupButtons(false);
-
     getRequest('groups.php', {
       'mode': 'set',
       'group': idGroup,
@@ -752,7 +734,7 @@ var printSearch = function (begin) {
 var exportDownload = function (type) {
   if (type) {
     if (type == 'ical') {
-      popup('Obtenir sous format iCal', $('<div></div>').addClass('parameters')
+      popup('Obtenir sous format iCal', $('<div></div>').addClass('centerCard')
         .append($('<input></input>').attr('type', 'radio').attr('name', 'alarm').attr('id', 'withAlarm').prop('checked', true).on('click', function () { $('#alarm').prop('disabled', false); }))
         .append($('<label></label><br />').attr('for', 'withAlarm').text('Activer un rappel ').append($('<input />').attr('type', 'number').attr('min', 0).attr('max', 1440).attr('step', 1).attr('placeholder', 0).attr('id', 'alarm').addClass('focusedInput').addClass('submitedInput').on('click', function () { $('#alarm').prop('disabled', false); })).append(' min avant l\'évnènement'))
         .append($('<input></input>').attr('type', 'radio').attr('name', 'alarm').attr('id', 'withoutAlarm').on('click', function () { $('#alarm').val(0).prop('disabled', true); }))
@@ -767,7 +749,7 @@ var exportDownload = function (type) {
       );
     }
     else if (type == 'pdf') {
-      popup('Obtenir sous format PDF', $('<div></div>').addClass('parameters')
+      popup('Obtenir sous format PDF', $('<div></div>').addClass('centerCard')
         .append($('<input></input>').attr('type', 'checkbox').attr('id', 'pdfCheck0').prop('checked', true)).append($('<label></label><br />').attr('for', 'pdfCheck0').text('Afficher le lundi'))
         .append($('<input></input>').attr('type', 'checkbox').attr('id', 'pdfCheck1').prop('checked', true)).append($('<label></label><br />').attr('for', 'pdfCheck1').text('Afficher le mardi'))
         .append($('<input></input>').attr('type', 'checkbox').attr('id', 'pdfCheck2').prop('checked', true)).append($('<label></label><br />').attr('for', 'pdfCheck2').text('Afficher le mercredi'))
@@ -775,13 +757,16 @@ var exportDownload = function (type) {
         .append($('<input></input>').attr('type', 'checkbox').attr('id', 'pdfCheck4').prop('checked', true)).append($('<label></label><br />').attr('for', 'pdfCheck4').text('Afficher le vendredi'))
         .append($('<input></input>').attr('type', 'checkbox').attr('id', 'pdfCheck5').prop('checked', true)).append($('<label></label><br />').attr('for', 'pdfCheck5').text('Afficher le samedi'))
         .append($('<input></input>').attr('type', 'checkbox').attr('id', 'pdfCheck6').prop('checked', true)).append($('<label></label><br />').attr('for', 'pdfCheck6').text('Afficher le dimanche'))
+        .append($('<br />'))
         .append($('<input></input>').addClass('focusedInput').addClass('submitedInput').attr('id', 'pdfTitle').val($('#title').text()))
+        .append($('<br />'))
         .append($('<input></input>').addClass('submitedInput').attr('id', 'pdfName').val('edt_' + window.get.mode + '_' + (window.get.login ? window.get.login : window.sessionLogin)))
+        .append($('<br /><br />'))
         .append($('<button></button>').addClass('submitedButton').text('Générer et télécharger mon emploi du temps').attr('onClick', 'getPDF()'))
       );
     }
     else if (type == 'img') {
-      popup('Obtenir sous format image', $('<div></div>').addClass('parameters')
+      popup('Obtenir sous format image', $('<div></div>').addClass('centerCard')
         .append($('<input></input>').attr('type', 'checkbox').attr('id', 'imgCheck0').prop('checked', true)).append($('<label></label><br />').attr('for', 'imgCheck0').text('Afficher le lundi'))
         .append($('<input></input>').attr('type', 'checkbox').attr('id', 'imgCheck1').prop('checked', true)).append($('<label></label><br />').attr('for', 'imgCheck1').text('Afficher le mardi'))
         .append($('<input></input>').attr('type', 'checkbox').attr('id', 'imgCheck2').prop('checked', true)).append($('<label></label><br />').attr('for', 'imgCheck2').text('Afficher le mercredi'))
@@ -1038,7 +1023,7 @@ var createEvenement = function (day, begin, end, subject, description, location,
     .append($('<button></button>', {
       'id': 'sendButton',
       'class': 'submitedButton',
-      'text': (subject ? 'Modifier' : 'Créer') + ' l\'évènement'
+      'html': (subject ? '<i class="fa fa-edit" aria-hidden="true"></i> Modifier' : '<i class="fa fa-plus" aria-hidden="true"></i> Créer') + ' l\'évènement'
     }).on('click', function () {
       var type = $('#type').val();
       var creator_asso = null;
@@ -1075,7 +1060,7 @@ var createEvenement = function (day, begin, end, subject, description, location,
 
     $('<button></button>', {
       'class': 'submitedButton',
-      'text': 'Supprimer l\'évènement'
+      'html': '<i class="fa fa-times" aria-hidden="true"></i> Supprimer l\'évènement'
     }).on('click', function () {
       deleteEvenement(idEvent);
     }).insertBefore($('#sendButton'));
@@ -1115,11 +1100,11 @@ var seeEventInformations = function (task) {
     .append($('<br />'))
     .append($('<div></div>').text(task.note ? (task.creator_asso ? 'Evènement créé pour ' : '') + task.note : 'Evènement créé par moi-même'))
     .append($('<br />'))
-    .append($('<button></button>').text('Télécharger sous format .ics').on('click', function () {
+    .append($('<button></button>').html('<i class="fa fa-download" aria-hidden="true"></i> Télécharger sous format .ics').on('click', function () {
       window.document.location = '/emploidutemps/ressources/php/exports.php?idEvent=' + task.idEvent;
     }))
     .append($('<br />'))
-    .append($('<button></button>').text('Modifier').prop('disabled', task.creator != window.sessionLogin).on('click', function () {
+    .append($('<button></button>').html('<i class="fa fa-edit" aria-hidden="true"></i> Modifier').prop('disabled', task.creator != window.sessionLogin).on('click', function () {
       createEvenement(task.day, task.timeText.split('-')[0], task.timeText.split('-')[1], task.subject, task.description, task.location, task.type, task.idEvent);
     }))
   );
@@ -1542,7 +1527,7 @@ var getFreeTimes = function (timeNeeded, nbrNotAvailable, dayToSee) {
 };
 
 var generateFreeTimes = function () {
-  popup('Trouver le meilleur créneau', $('<div></div>').text('Chercher un créneau pour:')
+  popup('Trouver le meilleur créneau', $('<div></div>').addClass('centerCard').text('Chercher un créneau pour:')
     .append($('<input></input>').attr('type', 'checkbox').attr('id', 'ftCheck0').prop('checked', true)).append($('<label></label><br />').attr('for', 'ftCheck0').text('Lundi'))
     .append($('<input></input>').attr('type', 'checkbox').attr('id', 'ftCheck1').prop('checked', true)).append($('<label></label><br />').attr('for', 'ftCheck1').text('Mardi'))
     .append($('<input></input>').attr('type', 'checkbox').attr('id', 'ftCheck2').prop('checked', true)).append($('<label></label><br />').attr('for', 'ftCheck2').text('Mercredi'))

@@ -357,3 +357,12 @@ Beta 2.4: 2017-09-06
   - Simplification/Optimisation de certaines parties du code
   - Adaptation des volets aux mobiles
   - Correction de bugs multiples
+
+Beta 2.5: 2017-09-06
+  - Ajout d'un lien vers le Portail des Assos pour les groupes assos
+  - Adaptation du code au serveur des assos (PHP 5.3....)
+  - Mise à jour des fichiers téléchargeables
+  - Mise à jour de la classe mise à jour
+  - Mie à jour de la bdd
+  - Correction de bugs
+  - Correction de langage

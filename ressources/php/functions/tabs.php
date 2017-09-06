@@ -33,10 +33,6 @@ function printActiveTabs() {
   $GLOBALS['activeTabs'] = $_SESSION['groups'];
 }
 
-function printSeparateTab() {
-  $GLOBALS['tabs'][array_keys($GLOBALS['tabs'], end($GLOBALS['tabs']))[0]]['separate'] = TRUE;
-}
-
 function printMyTab($selected = TRUE) {
   $GLOBALS['tabs']['me'] = array(
     'type' => 'button',
@@ -318,8 +314,6 @@ function printModifierTabs($type) {
   if ($receivedCanceled == 0)
     $GLOBALS['tabs']['canceled']['options']['received']['disabled'] = TRUE;
 
-  printSeparateTab();
-
   $GLOBALS['tabs']['original'] = array(
     'type' => 'button',
     'text' => 'Emploi du temps original',
@@ -348,7 +342,6 @@ function printModifierTabs($type) {
 
 function printSemaineTabs($type) {
   printMyTab($type == NULL);
-  printSeparateTab();
 
   $GLOBALS['tabs']['uvs_followed'] = array(
     'type' => 'select',
@@ -410,7 +403,5 @@ function printSemaineTabs($type) {
     $GLOBALS['tabs']['meetings']['active'] = TRUE;
 
   printRoomTabs($type);
-
-  printSeparateTab();
   $gap = isset($_GET['mode_option']) && is_numeric($_GET['mode_option']) ? ' '.intval($_GET['mode_option']).'h' : '';
 }

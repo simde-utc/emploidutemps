@@ -237,14 +237,14 @@ class UPDATE
     try { $infoFromGinger = $GLOBALS['ginger']->getUser($infoFromLine[0]); }
     catch (Exception $e) {
       if (preg_match('/Non trouvé/', $e))
-        $infoFromGinger = array('nom' => NULL, 'prenom' => NULL, 'mail' => NULL);
+        $infoFromGinger = array('nom' => NULL, 'prenom' => NULL, 'mail' => $infoFromLine[0].'@etu.utc.fr');
       else {
         echo 'Une erreur a été détectée au sein de Ginger: ', $e;
         exit;
       }
     }
 
-    $query = $GLOBALS['db']->prepare('INSERT INTO etudiants(login, semestre, nbrUV, uvs, nom, prenom, mail) VALUES(?, ?, ?, ?, ?, ?, ?)');
+    $query = $GLOBALS['db']->prepare('INSERT INTO students(login, semester, nbrUV, uvs, surname, firstname, email) VALUES(?, ?, ?, ?, ?, ?, ?)');
     $GLOBALS['db']->execute($query, array_merge($infoFromLine, array($infoFromGinger['nom'], $infoFromGinger['prenom'], $infoFromGinger['mail'])));
 
     return $infoFromLine[0];
@@ -252,12 +252,12 @@ class UPDATE
 
 
   private static function insertColor($uv) {
-    $queryIsColor = $GLOBALS['db']->prepare('SELECT color FROM couleurs WHERE uv = ?');
+    $queryIsColor = $GLOBALS['db']->prepare('SELECT color FROM uvs_colors WHERE uv = ?');
 
     $GLOBALS['db']->execute($queryIsColor, array($uv));
 
     if ($queryIsColor->rowCount() == 0) {
-      $queryAddColor = $GLOBALS['db']->prepare('INSERT INTO couleurs(uv, color) VALUES(?, ?)');
+      $queryAddColor = $GLOBALS['db']->prepare('INSERT INTO uvs_colors(uv, color) VALUES(?, ?)');
       $color = getARandomColor();
 
       return $GLOBALS['db']->execute($queryAddColor, array($uv, $color));
@@ -268,7 +268,7 @@ class UPDATE
 
 
   private static function insertUV ($elem) {
-    $queryIsUV = $GLOBALS['db']->prepare('SELECT id FROM uvs WHERE uv = ? AND type = ? AND groupe = ? AND jour = ? AND debut = ? AND fin = ? AND salle = ? AND frequence = ? AND semaine = ?');
+    $queryIsUV = $GLOBALS['db']->prepare('SELECT id FROM uvs WHERE uv = ? AND type = ? AND groupe = ? AND day = ? AND begin = ? AND end = ? AND room = ? AND frequency = ? AND week = ?');
     $jours = array('LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE');
 
     foreach ($jours as $i => $jour) {
@@ -281,8 +281,11 @@ class UPDATE
     $data = $queryIsUV->fetch();
     $id = $data['id'];
 
+    if ($elem[6] == '')
+      $elem[6] = NULL;
+
     if (empty($id)) {
-      $queryAddUV = $GLOBALS['db']->prepare('INSERT INTO uvs(uv, type, groupe, jour, debut, fin, salle, frequence, semaine) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      $queryAddUV = $GLOBALS['db']->prepare('INSERT INTO uvs(uv, type, groupe, day, begin, end, room, frequency, week) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)');
       $GLOBALS['db']->execute($queryAddUV, $elem);
       $GLOBALS['db']->execute($queryIsUV, $elem);
       $data = $queryIsUV->fetch();
@@ -297,7 +300,7 @@ class UPDATE
 
 
   private static function insertCours ($login, $id) {
-    $queryAddCours = $GLOBALS['db']->prepare('INSERT INTO cours(login, id) VALUES(?, ?)');
+    $queryAddCours = $GLOBALS['db']->prepare('INSERT INTO uvs_followed(login, id) VALUES(?, ?)');
     $GLOBALS['db']->execute($queryAddCours, array($login, $id));
   }
 
@@ -314,37 +317,37 @@ class UPDATE
 
     if ($ecart >= 1 && $debut < 20) {
       echo $debutDispo[$debut], ' - ', $finDispo[$fin], '<br />';
-      $insert = $GLOBALS['db']->prepare('INSERT INTO salles(salle, type, jour, debut, fin, ecart) VALUES(?, ?, ?, ?, ?, ?)');
+      $insert = $GLOBALS['db']->prepare('INSERT INTO uvs_rooms(room, type, day, begin, end, gap) VALUES(?, ?, ?, ?, ?, ?)');
       $GLOBALS['db']->execute($insert, array($salle, $type, $jour, $debutDispo[$debut], $finDispo[$fin], $ecart));
     }
   }
 
   private static function insertSalles() {
-    $query = $GLOBALS['db']->prepare('SELECT salle, type FROM uvs WHERE salle != "" AND type != "T" GROUP BY salle');
+    $query = $GLOBALS['db']->prepare('SELECT room, type FROM uvs WHERE room != "" AND type != "T" GROUP BY room');
     $GLOBALS['db']->execute($query, array());
     $salles = $query->fetchAll();
-    $query = $GLOBALS['db']->prepare('SELECT debut, fin FROM uvs WHERE salle = ? AND jour = ? ORDER BY debut, fin');
+    $query = $GLOBALS['db']->prepare('SELECT begin, end FROM uvs WHERE room = ? AND day = ? ORDER BY begin, end');
 
     foreach ($salles as $salle) {
       for ($jour = 0; $jour < 5; $jour++) { // On compte que la semaine, le week-end on considère tout fermé
         $debutDispo = '08:00';
         $finDispo = '21:00';
-        $GLOBALS['db']->execute($query, array($salle['salle'], $jour));
+        $GLOBALS['db']->execute($query, array($salle['room'], $jour));
 
         if ($query->rowCount() == 0) {
-          $insert = $GLOBALS['db']->prepare('INSERT INTO salles(salle, type, jour, debut, fin, ecart) VALUES(?, ?, ?, ?, ?, ?)');
-          $GLOBALS['db']->execute($insert, array($salle['salle'], $salle['type'], $jour, '00:00', '24:00', 24));
+          $insert = $GLOBALS['db']->prepare('INSERT INTO uvs_rooms(room, type, day, begin, end, gap) VALUES(?, ?, ?, ?, ?, ?)');
+          $GLOBALS['db']->execute($insert, array($salle['room'], $salle['type'], $jour, '00:00', '24:00', 24));
         }
         else {
           $infos = $query->fetchAll();
 
           foreach ($infos as $info) {
-            self::insertSalle($salle['salle'], $salle['type'], $jour, $debutDispo, $info['debut']);
-            $debutDispo = $info['fin'];
+            self::insertSalle($salle['room'], $salle['type'], $jour, $debutDispo, $info['begin']);
+            $debutDispo = $info['end'];
           }
 
-          $fin = $info['fin'][0] * 60 + $info['fin'][1];
-          self::insertSalle($salle['salle'], $salle['type'], $jour, $infos[count($infos) - 1]['fin'], $finDispo);
+          $fin = $info['end'][0] * 60 + $info['end'][1];
+          self::insertSalle($salle['room'], $salle['type'], $jour, $infos[count($infos) - 1]['end'], $finDispo);
         }
       }
     }
@@ -378,7 +381,23 @@ class UPDATE
   }
 
   public static function resetdb () {
-    $GLOBALS['db']->query('TRUNCATE TABLE cours; TRUNCATE TABLE uvs; TRUNCATE TABLE etudiants; TRUNCATE TABLE couleurs; TRUNCATE TABLE echanges; TRUNCATE TABLE envoies; TRUNCATE TABLE recues;  TRUNCATE TABLE uvs;');
+    $GLOBALS['db']->query('TRUNCATE TABLE events;
+      TRUNCATE TABLE events_followed;
+      TRUNCATE TABLE exchanged;
+      TRUNCATE TABLE exchanged_canceled;
+      TRUNCATE TABLE exchanges_received;
+      TRUNCATE TABLE exchanges_sent;
+      TRUNCATE TABLE exchanges_set;
+      TRUNCATE TABLE students;
+      TRUNCATE TABLE students_groups;
+      TRUNCATE TABLE students_groups_subs;
+      TRUNCATE TABLE students_groups_elements;
+      TRUNCATE TABLE uvs;
+      TRUNCATE TABLE uvs_followed;
+      TRUNCATE TABLE uvs_days;
+      TRUNCATE TABLE uvs_colors;
+      TRUNCATE TABLE uvs_rooms;
+    ;');
   }
 }
 ?>

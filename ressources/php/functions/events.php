@@ -12,7 +12,8 @@
       array($creator, $creator, $creator_asso, $creator_asso, $type, $type, $date, $date, $begin, $begin, $end, $end, $subject, $subject)
     );
 
-    return $query->fetch()['id'];
+    $data = $query->fetch();
+    return $data['id'];
   }
 
   function editEvent($idEvent, $date, $begin, $end, $subject, $description, $location) {
@@ -46,5 +47,6 @@
       array($idEvent, $login, $color)
     );
 
-    return getEvents(NULL, $idEvent, NULL, NULL, $login)[0]['id'];
+    $data = getEvents(NULL, $idEvent, NULL, NULL, $login);
+    return $data[0]['id'];
   }

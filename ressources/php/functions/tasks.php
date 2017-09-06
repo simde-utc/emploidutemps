@@ -179,10 +179,14 @@ function printExchangesReceived($login, $option = NULL) {
     $task['exchange'] = array_merge($infos, getUVInfosFromIdUV($infos['idUV2']));
 
     if ($infos['available'] == '1' && $infos['exchanged'] == '1') {
-      if (count(getCanceledExchanges($login, NULL, $infos['idExchange'])) == 1)
-        $task['exchange'] = array_merge($task['exchange'], getCanceledExchanges($login, NULL, $infos['idExchange'])[0]);
-      if (count(getCanceledExchanges(NULL, NULL, $infos['idExchange'], 1, $login)) == 1)
-        $task['exchange'] = array_merge($task['exchange'], getCanceledExchanges(NULL, NULL, $infos['idExchange'], 1, $login)[0]);
+      if (count(getCanceledExchanges($login, NULL, $infos['idExchange'])) == 1) {
+        $data = getCanceledExchanges($login, NULL, $infos['idExchange']);
+        $task['exchange'] = array_merge($task['exchange'], $data[0]);
+      }
+      if (count(getCanceledExchanges(NULL, NULL, $infos['idExchange'], 1, $login)) == 1) {
+        $data = getCanceledExchanges(NULL, NULL, $infos['idExchange'], 1, $login);
+        $task['exchange'] = array_merge($task['exchange'], $data[0]);
+      }
     }
 
     array_push($tasks, $task);
@@ -224,10 +228,14 @@ function printExchangesSent($login, $option = NULL) {
     $task['exchange'] = array_merge($infos, getUVInfosFromIdUV($infos['idUV2']));
 
     if ($infos['available'] == '1' && $infos['exchanged'] == '1') {
-      if (count(getCanceledExchanges($login, NULL, $infos['idExchange'])) == 1)
-        $task['exchange'] = array_merge($task['exchange'], getCanceledExchanges($login, NULL, $infos['idExchange'])[0]);
-      if (count(getCanceledExchanges(NULL, NULL, $infos['idExchange'], 1, $login)) == 1)
-        $task['exchange'] = array_merge($task['exchange'], getCanceledExchanges(NULL, NULL, $infos['idExchange'], 1, $login)[0]);
+      if (count(getCanceledExchanges($login, NULL, $infos['idExchange'])) == 1) {
+        $data = getCanceledExchanges($login, NULL, $infos['idExchange']);
+        $task['exchange'] = array_merge($task['exchange'], $data[0]);
+      }
+      if (count(getCanceledExchanges(NULL, NULL, $infos['idExchange'], 1, $login)) == 1) {
+        $data = getCanceledExchanges(NULL, NULL, $infos['idExchange'], 1, $login);
+        $task['exchange'] = array_merge($task['exchange'], $data[0]);
+      }
     }
 
     array_push($tasks, $task);
@@ -281,7 +289,8 @@ function printManyTasks($elements, $week) {
     $GLOBALS['tasks'][$i]['type'] = 'organize';
     for ($j = 0; $j < count($GLOBALS['tasks'][$i]['data']); $j++) {
       $info = $GLOBALS['tasks'][$i]['info'];
-      $color = $GLOBALS['colors'][array_keys($elements, $info)[0] % count($GLOBALS['colors'])];
+      $data = array_keys($elements, $info);
+      $color = $GLOBALS['colors'][$data[0] % count($GLOBALS['colors'])];
       $GLOBALS['tasks'][$i]['data'][$j]['bgColor'] = $color;
       $GLOBALS['active'][$info] = $color;
     }
@@ -326,7 +335,8 @@ function printWeek($info, $week, $taskTypes = 'uv_followed') {
         }
         elseif ($taskType == 'event' || $taskType == 'meeting') {
           if ($taskDay['creator_asso'] != NULL) {
-            $assoInfos = json_decode(file_get_contents('http://assos.utc.fr/asso/'.$taskDay['creator_asso'].'/json'), TRUE)['asso'][0];
+            $data = json_decode(file_get_contents('http://assos.utc.fr/asso/'.$taskDay['creator_asso'].'/json'), TRUE);
+            $assoInfos = $data['asso'][0];
             $taskDay['note'] = $assoInfos['name'];
             if ($taskDay['creator'] == $_SESSION['login'])
               $taskDay['note'] .= ' - Créer par moi-même';
