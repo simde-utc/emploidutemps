@@ -10,6 +10,7 @@
   $colors = array('#7DC779', '#82A1CA', '#F2D41F', '#457293', '#AB7AC6', '#DF6F53', '#B0CEE9', '#AAAAAA', '#1C704E');
   include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/class/db.php');
   include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/class/cas.php');
+  $daysArray = array('Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche');
 
   if (isset($_GET['MODCASID']) && is_string($_GET['MODCASID']))
     $_SESSION['MODCASID'] = $_GET['MODCASID'];
@@ -61,21 +62,15 @@
 
       if (isset($_GET['week']) && is_string($_GET['week']) && isAGoodDate($_GET['week']))
         $_SESSION['week'] = $_GET['week'];
-      elseif (isAGoodDate(date('Y-m-d', strtotime('monday this week'))))
-        $_SESSION['week'] = date('Y-m-d', strtotime('monday this week'));
-      else {
-        $query = $GLOBALS['db']->request(
-          'SELECT * FROM uvs_days
-            ORDER BY uvs_days.end DESC
-            LIMIT 1',
-          array()
-        );
+      else
+        setDate('monday this week');
 
-        $data = $query->fetch();
-        $_SESSION['week'] = $data['end'];
-      }
+      $GLOBALS['db']->request(
+        'UPDATE students SET email = ?, firstname = ?, surname = ? WHERE login = ?',
+        array($_SESSION['email'], $_SESSION['firstname'], $_SESSION['surname'], $_SESSION['login'])
+      );
 
-      $query = $GLOBALS['db']->request(
+      $GLOBALS['db']->request(
         'INSERT INTO debug(login) VALUES(?)',
         array($_SESSION['login'])
       );
@@ -172,6 +167,7 @@
     $days = array();
     $date = new DateTime($startingDay);
 
+    $GLOBALS['daysInfo'] = array();
     for ($i = 0; $i < $nbrOfDays; $i++) {
       if (!isAGoodDate($date->format('Y-m-d'))) {
         $date->modify('+1 day');
@@ -185,6 +181,12 @@
 
       $day = $query->fetch();
       $day['date'] = $date->format('Y-m-d');
+
+      if ($day['day'] == NULL)
+        array_push($GLOBALS['daysInfo'], NULL); // On ajoute les infos de la semaine et numéro de semaine aux jours
+      else
+        array_push($GLOBALS['daysInfo'], $GLOBALS['daysArray'][$day['day']].' '.$day['week'].$day['number']); // On ajoute les infos de la semaine et numéro de semaine aux jours
+
 
       array_push($days, $day);
       $date->modify('+1 day');
@@ -238,6 +240,18 @@
         WHERE uvs_followed.login = ? AND uvs_followed.enabled = ? AND (? IS NULL OR uvs_followed.exchanged = ?) AND (? IS NULL OR uvs.day = ?) AND uvs.uv = uvs_colors.uv AND uvs.id = uvs_followed.idUV
         ORDER BY uvs.day, uvs.begin, week, groupe',
       array($login, $enabled, $exchanged, $exchanged, $day, $day)
+    );
+
+    return $query->fetchAll();
+  }
+
+  function getEvents($id = NULL, $idEvent = NULL, $creator = NULL, $creator_asso = NULL, $login = NULL, $type = NULL, $date = NULL, $begin = NULL, $end = NULL, $subject = NULL) {
+    $query = $GLOBALS['db']->request(
+      'SELECT events_followed.*, events.creator, events.creator_asso, events.type, events.date, events.begin, events.end, events.subject, events.description, events.location
+        FROM events, events_followed
+        WHERE events.id = events_followed.idEvent AND (? IS NULL OR events_followed.id = ?) AND (? IS NULL OR events.id = ?) AND (? IS NULL OR events.creator = ?) AND (? IS NULL OR events.creator_asso = ?)
+        AND (? IS NULL OR events_followed.login = ?) AND (? IS NULL OR events.type = ?) AND (? IS NULL OR events.date = ?) AND (? IS NULL OR events.begin = ?) AND (? IS NULL OR events.end = ?) AND (? IS NULL OR events.subject = ?)',
+      array($id, $id, $idEvent, $idEvent, $creator, $creator, $creator_asso, $creator_asso, $login, $login, $type, $type, $date, $date, $begin, $begin, $end, $end, $subject, $subject)
     );
 
     return $query->fetchAll();
@@ -297,8 +311,7 @@
   }
 
   function dayToText($day, $caps = FALSE) {
-    $days = array('Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche');
-    return ($caps ? $days[$day] : strtolower($days[$day]));
+    return ($caps ? $GLOBALS['daysArray'][$day] : strtolower($GLOBALS['daysArray'][$day]));
   }
 
   function isAGoodDate($week) {
@@ -312,6 +325,48 @@
     return $query->rowCount() == 1;
   }
 
+  function setDate($week) {
+    if (isAGoodDate(date('Y-m-d', strtotime($week))))
+      $_SESSION['week'] = date('Y-m-d', strtotime('monday this week', strtotime($week)));
+    else {
+      $query = $GLOBALS['db']->request(
+        'SELECT * FROM uvs_days
+          ORDER BY uvs_days.end DESC
+          LIMIT 1',
+        array()
+      );
+
+      $data = $query->fetch();
+
+      if (strtotime($data['end']) > strtotime('now')) {
+        $query = $GLOBALS['db']->request(
+          'SELECT * FROM uvs_days
+            ORDER BY uvs_days.begin
+            LIMIT 1',
+          array()
+        );
+
+        $data = $query->fetch();
+      }
+
+      $_SESSION['week'] = $data['end'];
+    }
+  }
+
+  function returnJSON($array) {
+    echo json_encode($array);
+    exit;
+  }
+
+  function isGetSet($array, $type = 'is_string') {
+    foreach ($array as $toCheck) {
+      if (!isset($_GET[$toCheck]) || empty($_GET[$toCheck]) || !$type($_GET[$toCheck]))
+        return FALSE;
+    }
+
+    return TRUE;
+  }
+
   if (isUpdating()) {
     echo 'Emploi d\'UTemps est en cours de mise à jour, veuillez patienter. La page se relancera d\'elle-même lorsque la mise à jour sera terminée
     <script>
@@ -320,8 +375,9 @@
     exit;
   }
 
-  if (isset($_GET['week']) && isAGoodDate($_GET['week']))
-    $_SESSION['week'] = date('Y-m-d', strtotime('monday this week', strtotime($_GET['week'])));
+  if (isset($_GET['week'])) {
+    setDate($_GET['week']);
+  }
   /*elseif (isset($_GET['mode']) && $_GET['mode'] == 'organiser' && isset($_GET['week']))
     $_SESSION['week'] = date('Y-m-d', strtotime('monday this week'));*/
 ?>

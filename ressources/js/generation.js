@@ -32,27 +32,28 @@ var getRequest = function (url, get, callback, silentMode) {
     loading();
 
   for (var key in get) {
-    if (typeof get[key] == 'string' || typeof get[key] == 'number')
-      request += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(get[key]);
-    else {
+    if (typeof get[key] == 'object') {
       for (var key2 in get[key])
-        request += '&' + encodeURIComponent(key) + '[]=' + encodeURIComponent(get[key][key2]);
+      request += '&' + encodeURIComponent(key) + '[]=' + encodeURIComponent(get[key][key2]);
     }
+    else
+      request += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(get[key]);
   }
 
   console.log('https://' + window.location.hostname + '/emploidutemps/ressources/php/' + url + ($.isEmptyObject(get) ? '' : '?') + request.substr(1));
   $.getJSON('https://' + window.location.hostname + '/emploidutemps/ressources/php/' + url + ($.isEmptyObject(get) ? '' : '?') + request.substr(1), function(data) {
-    if (data.error) {
-      $.notify({
-      	title: "Erreur:",
-      	message: data.error
-      });
+    if (data.error)
+      $.miniNoty('<i class="fa fa-exclamation-circle" aria-hidden="true"></i> ' + data.error, 'error');
+    else if (data.fatal)
+      $.miniNoty('<i class="fa fa-exclamation-triangle" aria-hidden="true"></i> ' + data.fatal, 'error');
+    else if (data.success) {
+      $.miniNoty('<i class="fa fa-check-circle" aria-hidden="true"></i> ' + data.success, 'success');
+
+      if (callback)
+        callback();
     }
     else if (data.info) {
-      $.notify({
-      	title: "Info:",
-      	message: data.info
-      });
+      $.miniNoty('<i class="fa fa-info-circle" aria-hidden="true"></i> ' + data.info, 'normal');
 
       if (callback)
         callback();
@@ -114,7 +115,7 @@ var generate = function (silentMode) {
     generateWeeks(data.infos.week, data.infos.get.week);
     generateSubMenu(data.tabs, 'tab');
     generateSubMenu(data.groups, 'group');
-    generateCalendar(data.tasks, data.infos.sides, data.infos.uvs);
+    generateCalendar(data.tasks, data.infos.sides, data.infos.uvs, data.infos.daysInfo);
     generateMode();
     setCalendar();
 
@@ -219,6 +220,11 @@ var disconnect = function () {
 };
 
 
+var help = function () {
+  popup('Aide', $('<div></div>').addClass('centerCard').text('Rien de fait pour l\'instant'));
+};
+
+
 /* Groupes */
 
 var addGroup = function () {
@@ -226,23 +232,18 @@ var addGroup = function () {
 
   if ($('#group').length > 0) {
     var name = $('#group').val();
+
     getRequest('groups.php', {
       'mode': 'add',
       'group': name
-    }, function (data) {
-      console.log(data);
-      if (data.error === undefined)
-        generate();
-      else {
-        corps.append($('<div></div>').text(data.error));
-        $('#group').val(name);
-      }
+    }, function () {
+      generate();
     });
   }
 
   popup('Création d\'un nouveau groupe', corps.append(
     $('<div></div>').addClass('optionCards')
-      .append($('<input /><br />').attr('id', 'group').addClass('focusedInput').addClass('submitedInput'))
+      .append($('<input /><br />').attr('id', 'group').addClass('focusedInput').addClass('submitedInput').css('flex', '1'))
       .append($('<button></button>').text('Créer').attr('onClick', 'addGroup()').addClass('submitedButton'))));
 };
 
@@ -344,7 +345,7 @@ var seeGroup = function (group, edit) {
 
     var optionCards = $('<div></div>').addClass('optionCards');
     if (group.type != 'others')
-      $('<button></button>').html('<i class="fa fa-plus" aria-hidden="true"></i> Créer un sous-groupe').attr('onClick', 'addSubGroup("' + group + '", "' + data[group].name + '")').appendTo(optionCards);
+      $('<button></button>').html('<i class="fa fa-plus" aria-hidden="true"></i> Créer un sous-groupe').attr('id', 'create-subgroup').attr('onClick', 'addSubGroup("' + group + '", "' + data[group].name + '", ' + edit + ')').appendTo(optionCards);
 
     if (edit)
       $('<button></button>').html('<i class="fa fa-eye" aria-hidden="true"></i> Afficher le groupe').attr('onClick', 'seeGroup("' + group + '")').appendTo(optionCards);
@@ -377,7 +378,7 @@ var seeGroup = function (group, edit) {
 var setGroup = function (idGroup, id) {
   setPopupButtons(false);
 
-  $('#' + id + ' b').replaceWith($('<input />').addClass('focusedInput').addClass('submitedInput').val($('#' + id + ' b').text()));
+  $('#' + id + ' b').replaceWith($('<input />').addClass('focusedInput').addClass('submitedInput').val($('#' + id + ' b').text()).attr('placeholder', $('#' + id + ' b').text()));
   $('#' + id + ' button').first().replaceWith($('<button></button>').html('<i class="fa fa-send"></i>').addClass('submitedButton').on('click', function () {
     setPopupButtons(true);
     getRequest('groups.php', {
@@ -396,8 +397,12 @@ var setGroup = function (idGroup, id) {
   submited();
 };
 
-var addSubGroup = function (idGroup, group) {
+var addSubGroup = function (idGroup, group, edit) {
   setPopupButtons(false);
+
+  $('#create-subgroup').replaceWith($('<button></button>').html('<i class="fa fa-undo"></i> Annuler la création').on('click', function () {
+    seeGroup(idGroup, edit);
+  }));
 
   $('<div></div>').addClass('subCard').attr('id', 'sub-create')
     .append($('<input />').addClass('focusedInput').addClass('submitedInput'))
@@ -408,9 +413,9 @@ var addSubGroup = function (idGroup, group) {
         'sub_group': $('#sub-create input').last().val()
       }, function () {
         generate(true);
-        seeGroup(idGroup, true);
+        seeGroup(idGroup, edit);
       });
-    }))
+    })).insertBefore($('.optionCards'));
 
   submited();
 };
@@ -429,7 +434,7 @@ var delSubGroup = function (idGroup, idSubGroup) {
 var setSubGroup = function (idGroup, idSubGroup, id) {
   setPopupButtons(false);
 
-  $('#' + id + ' b').replaceWith($('<input />').addClass('focusedInput').addClass('submitedInput').val($('#' + id + ' b').text()));
+  $('#' + id + ' b').replaceWith($('<input />').addClass('focusedInput').addClass('submitedInput').val($('#' + id + ' b').text()).attr('placeholder', $('#' + id + ' b').text()));
   $('#' + id + ' button').first().replaceWith($('<button></button>').html('<i class="fa fa-send"></i>').addClass('submitedButton').on('click', function () {
     setPopupButtons(false);
 
@@ -453,15 +458,16 @@ var setSubGroup = function (idGroup, idSubGroup, id) {
 };
 
 var addToGroup = function (element, text) {
+  console.log(element)
   getRequest('groups.php', {
     'mode': 'get',
    }, function (data) {
     console.log(data);
-    var corps = $('<div></div>');
+    var corps = $('<div></div>').addClass('centerCard').text('Groupe: ');
 
     var groups = $('<select></select>').attr('id', 'selectedGroup').on('change', function () {
       $($( this ).data('selected')).css('display', 'none');
-      $('#sub_' + this.value).css('display', 'block');
+      $('#sub_' + this.value).css('display', 'inline');
       $( this ).data('selected', '#sub_' + this.value);
 
       if ($('#sub_' + this.value).prop('disabled'))
@@ -476,7 +482,7 @@ var addToGroup = function (element, text) {
 
       $('<option></option>').attr('value', name).text(group.name).appendTo(groups);
 
-      var hidden = $('<select></select>').css('display', 'none').prop('disabled', true).attr('id', 'sub_' + name);
+      var hidden = $('<select></select>').css('width', '25%').css('min-width', '350px').css('display', 'none').prop('disabled', true).attr('id', 'sub_' + name);
       var option;
       $.each(group.subgroups, function (subname, subgroup) {
         option = $('<option></option>').attr('value', subname).text(subgroup.name);
@@ -491,15 +497,18 @@ var addToGroup = function (element, text) {
       hidden.appendTo(subgroups);
     });
 
-    $(groups).data('selected', '#' + $(subgroups).children().first().css('display', 'block').attr('id'));
+    $(groups).data('selected', '#' + $(subgroups).children().first().css('display', 'inline').attr('id'));
 
     groups.appendTo(corps);
-    $('<input></input').attr('type', 'radio').attr('id', 'sub0').attr('name', 'sub').prop("checked", true).val(0).appendTo(corps);
+    $('<span></span><br />').text('Choisir un sous-groupe existant: ').prependTo(subgroups);
+    $('<br /><input></input>').attr('type', 'radio').attr('id', 'sub0').attr('name', 'sub').prop("checked", true).val(0).prependTo(subgroups);
     subgroups.attr('onClick', '$("#sub0").prop("checked", true)').appendTo(corps);
-    $('<input></input').attr('type', 'radio').attr('id', 'sub1').attr('name', 'sub').val(1).appendTo(corps);
-    $('<input></input').attr('id', 'newSubGroup').attr('onClick', '$("#sub1").prop("checked", true)').attr('placeholder', 'Nouveau sous-groupe').appendTo(corps);
-    $('<input></input').attr('id', 'info').attr('placeholder', 'Commentaire').appendTo(corps);
-    $('<button></button>').html('<i class="fa fa-send" aria-hidden="true"></i> Ajouter').on('click', function () {
+    $('<input></input>').attr('type', 'radio').attr('id', 'sub1').attr('name', 'sub').val(1).appendTo(corps);
+    $('<span></span><br />').text('Créer un sous-groupe: ').appendTo(corps);
+    $('<input></input><br /><br />').css('width', '25%').css('min-width', '350px').attr('id', 'newSubGroup').attr('onClick', '$("#sub1").prop("checked", true)').attr('placeholder', 'Nouveau sous-groupe').appendTo(corps);
+    $('<span></span><br />').text('Description: ').appendTo(corps);
+    $('<input></input><br /><br />').css('width', '25%').css('min-width', '350px').attr('id', 'info').attr('placeholder', 'Description').appendTo(corps);
+    $('<button></button>').html('<i class="fa fa-plus" aria-hidden="true"></i> Ajouter').on('click', function () {
       var group = $('#selectedGroup').val();
       var subGroup = $('#sub_' + group).val();
       var createSubGroup = $('input[name=sub]:checked').val();
@@ -519,7 +528,7 @@ var addToGroup = function (element, text) {
         closePopup();
       });
     }).appendTo(corps);
-    popup(text, corps);
+    popup('Ajouter ' + text, corps);
   });
 };
 
@@ -534,13 +543,12 @@ var delFromGroup = function (idGroup, idSubGroup, element) {
   });
 };
 
-var setToGroup = function (idGroup, idSubGroup, element, text, id) {
+var setToGroup = function (idGroup, idSubGroup, element, text, id, semester, noInfo) {
   setPopupButtons(false);
 
-  $('#' + id + ' .infosCard span').replaceWith($('<input />').addClass('focusedInput').addClass('submitedInput').val($('#' + id + ' .infosCard span').text()));
+  var text = $('#' + id + ' .infosCard span').text();
+  $('#' + id + ' .infosCard span').replaceWith($('<input />').addClass('focusedInput').addClass('submitedInput').val(!noInfo ? text : '').attr('placeholder', !noInfo ? text : 'Description'));
   $('#' + id + ' .optionsCard button').first().replaceWith($('<button></button>').html('<i class="fa fa-send"></i>').addClass('submitedButton').on('click', function () {
-    setPopupButtons(false);
-
     getRequest('groups.php', {
       'mode': 'set',
       'group': idGroup,
@@ -548,10 +556,13 @@ var setToGroup = function (idGroup, idSubGroup, element, text, id) {
       'element': element,
       'info': $('#' + id + ' .infosCard input').val()
     }, function () {
-      $('#group-' + idGroup + ' button').val($('#group-' + idGroup + ' button').val().replace(element, $('#' + id + ' .infosCard input').val()));
-      $('#' + id + ' .infosCard input').replaceWith($('<span></span>').text($('#' + id + ' .infosCard input').val()));
+      setPopupButtons(false);
+
+      var text = $('#' + id + ' .infosCard input').val();
+      $('#group-' + idGroup + ' button').val($('#group-' + idGroup + ' button').val().replace(element, text));
+      $('#' + id + ' .infosCard input').replaceWith($('<span></span>').text(text && text != '' ? text : (semester ? semester + ' - ' + element : '')));
       $('#' + id + ' .optionsCard button').first().replaceWith($('<button></button>').html('<i class="fa fa-edit"></i>').on('click', function () {
-        setToGroup(idGroup, idSubGroup, element, text, id);
+        setToGroup(idGroup, idSubGroup, element, text, id, semester, !(text && text != ''));
       }));
 
       setPopupButtons(true);
@@ -652,11 +663,12 @@ var uvMoodle = function (uv) {
   window.open('http://moodle.utc.fr/course/search.php?search=' + uv);
 };
 
-var changeColor = function(idUV, color) {
-  getRequest('colors.php', {
-    'idUV': idUV,
+var changeColor = function(id, color, name) {
+  var get = {
     'color': color.substr(1)
-  }, function () {
+  };
+  get[name ? name : 'idUV'] = id;
+  getRequest('parameters.php', get, function () {
     generate();
   });
 };
@@ -713,13 +725,13 @@ var printSearch = function (begin) {
     'nbr': 50
   }, function(data) {
     $('.studentCards').empty();
-    $('.studentCardsText').text(data.students.length + ' étudiant' + (data.students.length > 1 ? 's' : '') + ' trouvé' + (data.students.length > 1 ? 's' : ''));
+    $('.studentCardsText').text(data.students.length + ' étudiant' + (data.students.length > 1 ? 's' : '') + ' affiché' + (data.students.length > 1 ? 's' : ''));
     data.students.forEach(function (student) {
       $('.studentCards').append(generateStudentCard(student, 'Ajouté.e depuis le trombi'));
     });
 
     $('.uvCards').empty();
-    $('.uvCardsText').text(data.uvs.length + ' UV' + (data.uvs.length > 1 ? 's' : '') + ' trouvée' + (data.uvs.length > 1 ? 's' : ''));
+    $('.uvCardsText').text(data.uvs.length + ' UV' + (data.uvs.length > 1 ? 's' : '') + ' affichée' + (data.uvs.length > 1 ? 's' : ''));
     data.uvs.forEach(function (uv) {
       $('.uvCards').append(generateUVCard(uv, data.infos.uvs));
     });
@@ -740,7 +752,19 @@ var printSearch = function (begin) {
 var exportDownload = function (type) {
   if (type) {
     if (type == 'ical') {
-
+      popup('Obtenir sous format iCal', $('<div></div>').addClass('parameters')
+        .append($('<input></input>').attr('type', 'radio').attr('name', 'alarm').attr('id', 'withAlarm').prop('checked', true).on('click', function () { $('#alarm').prop('disabled', false); }))
+        .append($('<label></label><br />').attr('for', 'withAlarm').text('Activer un rappel ').append($('<input />').attr('type', 'number').attr('min', 0).attr('max', 1440).attr('step', 1).attr('placeholder', 0).attr('id', 'alarm').addClass('focusedInput').addClass('submitedInput').on('click', function () { $('#alarm').prop('disabled', false); })).append(' min avant l\'évnènement'))
+        .append($('<input></input>').attr('type', 'radio').attr('name', 'alarm').attr('id', 'withoutAlarm').on('click', function () { $('#alarm').val(0).prop('disabled', true); }))
+        .append($('<label></label><br /><br />').attr('for', 'withoutAlarm').text('N\'activer aucun rappel'))
+        .append('Du ')
+        .append($('<input />').attr('type', 'date').val(new Date().toJSON().slice(0,10)).attr('id', 'begin'))
+        .append(' Au ')
+        .append($('<input /><br /><br />').attr('type', 'date').attr('placeholder', 'dernier évènement').attr('id', 'end'))
+        .append($('<button></button>').text('Générer et télécharger mon emploi du temps').on('click', function () {
+          window.location.href = '/emploidutemps/ressources/php/exports.php?mode=all&begin=' + $('#begin').val() + ($('#end').val() == '' ? '' : '&end=' + $('#end').val()) + ($('#alarm').val() == '' ? '' : '&alarm=' + $('#alarm').val());
+        }))
+      );
     }
     else if (type == 'pdf') {
       popup('Obtenir sous format PDF', $('<div></div>').addClass('parameters')
@@ -768,14 +792,14 @@ var exportDownload = function (type) {
         .append($('<select></select>').attr('id', 'imgType')
           .append($('<option></option>').val('png').text('PNG'))
           .append($('<option></option>').val('jpeg').text('JPEG')))
-        .append($('<button></button>').addClass('submitedButton').text('Générer mon emploi du temps').attr('onClick', 'getImg()'))
         .append($('<div></div>').attr('id', 'generatedImg'))
+        .append($('<button></button>').addClass('submitedButton').text('Générer mon emploi du temps').attr('onClick', 'getImg()'))
       );
     }
   }
   else
     popup('Exporter/Télécharger', $('<div></div>').addClass('parameters')
-      .append($('<button></button>').on('click', function () { exportDownload('ical'); }).text('Obtenir son calendrier sous format iCal (.ics)').prop('disabled', true))
+      .append($('<button></button>').on('click', function () { exportDownload('ical'); }).text('Obtenir son calendrier pour agenda informatique sous format iCal (.ics)'))
       .append($('<button></button>').on('click', function () { exportDownload('pdf'); }).text('Obtenir son calendrier sous format PDF (.pdf)'))
       .append($('<button></button>').on('click', function () { exportDownload('img'); }).text('Obtenir son calendrier sous format image (.png/.jpg)'))
       .append($('<button></button>').on('click', function () { window.location.href = 'http://wwwetu.utc.fr/sme/EDT/' + window.sessionLogin + '.edt'; }).text('Obtenir son calendrier sous format SME (mail reçu)'))
@@ -909,98 +933,435 @@ var getPDF = function () {
 
 /* Evenements */
 
-var createEvenement = function (day, begin, end) {
-  if (!day)
-    day = (date.getDay() + 6) % 7;
+var createEvenement = function (day, begin, end, subject, description, location, type, idEvent) {
+  var date = new Date(window.get.week);
+  var now = new Date();
+
+  if (day === undefined) // day peut valoir 0
+    day = (now.getDay() + 6) % 7;
+
+  date.setDate(date.getDate() + day);
 
   if (!begin)
-    begin = date.getHours();
+    begin = (now.getHours() + 1) + ':00';
+  else if (!subject)
+    begin = Math.floor(begin) + (begin - Math.floor(begin) == 0.5 ? ':30' : ':00');
 
   if (!end)
-    end = begin + 1;
+    end = (now.getHours(begin) + 2) + ':00';
+  else if (!subject)
+    end = Math.floor(end) + (end - Math.floor(end) == 0.5 ? ':30' : ':00');
 
-  popup('Création d\'un évènement', $('<div></div>')
-    .append($('<div></div>').text('Le jour: ' + day))
-    .append($('<div></div>').text('Début: ' + begin))
-    .append($('<div></div>').text('fin: ' + end)));
-  console.log('Début: ' + begin);
-  console.log('Fin: ' + end);
+  popup((subject ? 'Modification' : 'Création') + ' d\'un évènement', $('<div></div>').addClass('centerCard').text('Date: ')
+    .append($('<input></input>', {
+      'id': 'date',
+      'type': 'date',
+      'val': date.toLocaleString().split(' ')[0]
+    }))
+    .append('<br />Début: ')
+    .append($('<input></input>', {
+      'id': 'begin',
+      'type': 'time',
+      'data-time-format': 'H:i',
+      'val': begin
+    }))
+    .append('<br />Fin: ')
+    .append($('<input></input>', {
+      'id': 'end',
+      'type': 'time',
+      'data-time-format': 'H:i',
+      'val': end
+    }))
+    .append('<br /><br />Sujet: ')
+    .append($('<input></input>', {
+      'id': 'subject',
+      'placeholder': 'Nom de l\'évènement',
+      'val': subject
+    }))
+    .append('<br />Description: ')
+    .append($('<textarea></textarea>', {
+      'id': 'description',
+      'placeholder': 'Description de l\'évènement',
+      'val': description
+    }))
+    .append('<br />Lieu: ')
+    .append($('<input></input>', {
+      'id': 'location',
+      'placeholder': 'Lieu de l\'évènement',
+      'val': location
+    }))
+    .append('<br /><br />Type d\'évènement: ')
+    .append($('<select></select>', {
+      'id': 'type',
+    })
+      .append($('<option></option>', {
+        'val': 'event',
+        'text': 'Evènement personnel'
+      }))
+      .append($('<option></option>', {
+        'val': 'meeting',
+        'text': 'Réunion personnelle'
+      }))
+      .append($('<option></option>', {
+        'val': 'event_group',
+        'text': 'Evènement groupé',
+        'disabled': true
+      }))
+      .append($('<option></option>', {
+        'val': 'meeting_group',
+        'text': 'Réunion groupée',
+        'disabled': true
+      }))
+      .append($('<option></option>', {
+        'val': 'event_asso',
+        'text': 'Evènement associatif',
+        'disabled': true
+      }))
+      .append($('<option></option>', {
+        'val': 'meeting_asso',
+        'text': 'Réunion associative',
+        'disabled': true
+      }))
+    )
+    .append($('<br /><br />'))
+    .append($('<input></input>', {
+      'id': 'sendMail',
+      'type': 'checkbox',
+      'val': 'Créer l\'évènement',
+      'checked': true
+    }))
+    .append($('<label></label>', {
+      'for': 'sendMail',
+      'text': 'Envoyer un mail'
+    }))
+    .append($('<br />'))
+    .append($('<button></button>', {
+      'id': 'sendButton',
+      'class': 'submitedButton',
+      'text': (subject ? 'Modifier' : 'Créer') + ' l\'évènement'
+    }).on('click', function () {
+      var type = $('#type').val();
+      var creator_asso = null;
+      var invited = null;
+
+      if (type == 'groupedEvent' || type == 'groupedMeeting')
+        invited = window.active;
+      else if (type == 'assoEvent' || type == 'assoMeeting') {
+        creator_asso == $('#asso').val();
+      }
+
+      getRequest('events.php', {
+        'mode': (subject ? 'edit' : 'add'),
+        'idEvent': idEvent,
+        'date': $('#date').datepicker('getDate').toISOString().slice(0, 10),
+        'begin': $('#begin').val(),
+        'end': $('#end').val(),
+        'sendMail': $('#sendMail').prop('checked'),
+        'subject': $('#subject').val(),
+        'description': $('#description').val(),
+        'location': $('#location').val(),
+        'type': type,
+        'creator_asso': creator_asso,
+        'invited': invited,
+      }, function () {
+        generate();
+      })
+    }))
+  );
+
+  if (type) {
+    $('#type').val(type).prop('disabled', true);
+    $('#sendMail').prop('disabled', true);
+
+    $('<button></button>', {
+      'class': 'submitedButton',
+      'text': 'Supprimer l\'évènement'
+    }).on('click', function () {
+      deleteEvenement(idEvent);
+    }).insertBefore($('#sendButton'));
+  }
+
+  $( "#date" ).datepicker( $.datepicker.regional[ "fr" ] );
+  $('#begin').timepicker();
+  $('#end').timepicker();
 };
 
+var deleteEvenement = function (idEvent) {
+  getRequest('events.php', {
+    'mode': 'del',
+    'idEvent': idEvent
+  }, function () {
+      generate();
+  });
+};
 
+var seeEventInformations = function (task) {
+  var type;
+
+  if (task.type == 'event')
+    type = 'Evènement';
+  else if (task.type == 'meeting')
+    type = 'Réunion';
+
+  popup(type + ' du ' + window.headers[task.day].toLowerCase() + ' de ' + task.timeText.replace('-', ' à '), $('<div></div>').addClass('centerCard')
+    .append($('<div></div>').text('Sujet:').css('text-decoration', 'underline'))
+    .append($('<div></div>').text(task.subject))
+    .append($('<br />'))
+    .append($('<div></div>').text('Description:').css('text-decoration', 'underline'))
+    .append($('<div></div>').text(task.description || 'Aucune description'))
+    .append($('<br />'))
+    .append($('<div></div>').text('Lieu:').css('text-decoration', 'underline'))
+    .append($('<div></div>').text(task.location || 'Aucun lieu défini'))
+    .append($('<br />'))
+    .append($('<div></div>').text(task.note ? (task.creator_asso ? 'Evènement créé pour ' : '') + task.note : 'Evènement créé par moi-même'))
+    .append($('<br />'))
+    .append($('<button></button>').text('Télécharger sous format .ics').on('click', function () {
+      window.document.location = '/emploidutemps/ressources/php/exports.php?idEvent=' + task.idEvent;
+    }))
+    .append($('<br />'))
+    .append($('<button></button>').text('Modifier').prop('disabled', task.creator != window.sessionLogin).on('click', function () {
+      createEvenement(task.day, task.timeText.split('-')[0], task.timeText.split('-')[1], task.subject, task.description, task.location, task.type, task.idEvent);
+    }))
+  );
+}
 
 /* Echanges */
 
-var exchange = function (get) {
-  getRequest('exchange.php', get, function(data) {
-    popup(data);
+var askExchange = function (idUV, idUV2) {
+  getRequest('exchanges.php', {
+    'mode': 'get',
+    'idUV': idUV,
+    'idUV2': idUV2
+  }, function (data) {
+    var task = data.uv;
+    var toExchange = data.uv2;
+    var corps =  $('<div></div>').addClass('centerCard');
+
+    if (data.sent.length == 0)
+      corps.append($('<div></div>').append('Tu es le/la premier/ère à faire cette demande. Un mail sera envoyé à ceux qui possèdent le créneau pour leur signaler que tu viens de réaliser cette proposition.<br />'));
+    else
+      corps.append($('<div></div>').append(data.sent.length + (data.sent.length == 1 ? ' personne a déjà fait ' : ' personnes ont déjà fait ') + ' cette proposition. Tu devras attendre ton tour.<br />'));
+
+    corps
+    .append($('<div></div>').html('Après avoir effectué cette proposition, tu peux bien sûr l\'annuler avant celle-ci soit acceptée. Tu peux toujours aussi proposer d\'autres créneaux bien sûr.<br /><br />Tu dois maintenant écrire rapidement pourquoi tu souhaites effectuer cet échange:'))
+    .append($('<textarea /><br /><br />').attr('id', 'note').addClass('focusedInput').addClass('submitedInput').css('width', '50%').attr('maxlength', 180).attr('placeholder', 'Je souhaite échanger mon créneau contre le tien').val('Je souhaite échanger mon créneau contre le tien'))
+    .append($('<button></button>').addClass('submitedButton').text('Proposer cet échange').on('click', function () {
+      var note = $('#note').val();
+
+      if (note == '')
+        note = $('#note').attr('placeholder');
+
+      getRequest('exchanges.php', {
+        'mode': 'ask',
+        'idUV': idUV,
+        'idUV2': idUV2,
+        'note': note
+      }, function () {
+        window.get = {
+          'mode': 'modifier',
+          'mode_type': 'sent',
+          'mode_option': 'available'
+        };
+
+        generate();
+      });
+    }));
+
+    popup('Echanger ton ' + (task.type == 'T' ? 'TP' : task.type == 'D' ? 'TD' : 'cours') + ' de ' + task.uv + ' du ' + window.headers[task.day].toLowerCase() + ' de ' + task.begin + ' à ' + task.end + ' contre celui du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + toExchange.begin + ' à ' + toExchange.end, corps);
   });
 };
 
-var askExchange = function (task, toExchange) {
-  console.log(task)
-  console.log(toExchange)
+var cancelAskExchange = function (idExchange, idUV, idUV2) {
+  getRequest('exchanges.php', {
+    'mode': 'get',
+    'idUV': idUV,
+    'idUV2': idUV2
+  }, function (data) {
+    var task = data.uv;
+    var toExchange = data.uv2;
+    var corps =  $('<div></div>').addClass('centerCard');
+
+    if (data.sent.length == 1)
+      corps.append($('<div></div>').append('Tu étais le/la seul.e à avoir fait cette proposition. Un mail sera envoyé à ceux qui possèdent le créneau pour leur signaler que la proposition n\'est plus disponible.<br />'));
+    else
+      corps.append($('<div></div>').append(data.sent.length - 1 + (data.sent.length == 2 ? ' autre personne souhaite effectuer cet échange. Il ne sera plus que le/la seul.e.' : ' autres personnes ont aussi fait cette proposition.<br />')));
+
+    corps
+    .append($('<div></div>').html('Après avoir annulé cette proposition, tu pourras de nouveau refaire cette demande. Si entre-temps, d\'autres personnes ont fait la demande, tu devras attendre ton tour. Tu peux toujours aussi proposer d\'autres créneaux bien sûr.<br /><br />'))
+    .append($('<button></button>').addClass('submitedButton').text('Annuler cette proposition').on('click', function () {
+      getRequest('exchanges.php', {
+        'mode': 'cancelAsk',
+        'idExchange': idExchange,
+      }, function () {
+        window.get = {
+          'mode': 'modifier',
+          'mode_type': 'uv_followed',
+          'uv': task.uv,
+          'type': task.type
+        };
+
+        generate();
+      });
+    }));
+
+    popup('Annuler la proposition d\'échange de ton ' + (task.type == 'T' ? 'TP' : task.type == 'D' ? 'TD' : 'cours') + ' de ' + task.uv + ' du ' + window.headers[task.day].toLowerCase() + ' de ' + task.begin + ' à ' + task.end + ' contre celui du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + toExchange.begin + ' à ' + toExchange.end, corps);
+  });
 };
-/*
-function addExchange(idUV, forIdUV, note) {
-  $.post('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?add=1&idUV=' + idUV + '&for=' + forIdUV, {note: note}, function (info) {
-    popupInfo(info);
+
+var refuseExchange = function (idExchange, idUV, idUV2) {
+  getRequest('exchanges.php', {
+    'mode': 'get',
+    'idUV': idUV,
+    'idUV2': idUV2
+  }, function (data) {
+    var task = data.uv;
+    var toExchange = data.uv2;
+    var corps =  $('<div></div>').addClass('centerCard');
+
+    corps
+    .append($('<div></div>').html('Après avoir refusé cette proposition, tu ne pourras plus accepter cet échange, même si quelqu\'un d\'autre se propose. Tu peux toujours aussi proposer d\'autres créneaux ou toi-même demander cet échange si tu souhaites enfin de compte échanger ton créneau.<br /><br />'))
+    .append($('<button></button>').addClass('submitedButton').text('Refuser cette proposition').on('click', function () {
+      getRequest('exchanges.php', {
+        'mode': 'refuse',
+        'idExchange': idExchange,
+      }, function () {
+        window.get = {
+          'mode': 'modifier',
+          'mode_type': 'received',
+          'mode_option': 'refused'
+        };
+
+        generate();
+      });
+    }));
+
+    popup('Refuser la proposition d\'échange de ton ' + (task.type == 'T' ? 'TP' : task.type == 'D' ? 'TD' : 'cours') + ' de ' + task.uv + ' du ' + window.headers[task.day].toLowerCase() + ' de ' + task.begin + ' à ' + task.end + ' contre celui du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + toExchange.begin + ' à ' + toExchange.end, corps);
   });
-}
+};
 
-function delExchange(idExchange) {
-  window.click = true;
-  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?del=1&idExchange=' + idExchange, function (info) {
-    popupInfo(info);
+var acceptExchange = function (idExchange, idUV, idUV2) {
+  getRequest('exchanges.php', {
+    'mode': 'get',
+    'idUV': idUV,
+    'idUV2': idUV2
+  }, function (data) {
+    var task = data.uv;
+    var toExchange = data.uv2;
+    var corps =  $('<div></div>').addClass('centerCard');
+
+    corps
+    .append($('<div></div>').html('Après avoir accepter cette proposition, les emplois du temps seront mis à jour et l\'échange aura été effectué. Si malheuresement, tu souhaites récupérer ton créneau, tu peux toujours réaliser une demande d\'annulation de l\'échange. Tu pourras ensuite échanger ton nouveau créneau avec un autre si tu le souhaites.<br /><br />'))
+    .append($('<button></button>').addClass('submitedButton').text('Accepter cette proposition').on('click', function () {
+      getRequest('exchanges.php', {
+        'mode': 'accept',
+        'idExchange': idExchange,
+      }, function () {
+        window.get = {
+          'mode': 'modifier',
+          'mode_type': 'received',
+          'mode_option': 'accepted'
+        };
+
+        generate();
+      });
+    }));
+
+    popup('Accepter la proposition d\'échange de ton ' + (task.type == 'T' ? 'TP' : task.type == 'D' ? 'TD' : 'cours') + ' de ' + task.uv + ' du ' + window.headers[task.day].toLowerCase() + ' de ' + task.begin + ' à ' + task.end + ' contre celui du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + toExchange.begin + ' à ' + toExchange.end, corps);
   });
-}
+};
 
-function cancelExchange(idExchange, note) {
-  window.click = true;
-  if (note === undefined) {
-    popup("<div id='popupHead'>Annuler un échange</div>\
-    <div class='parameters'>En annulant un échange effectué, un mail de demande d\'annulation sera envoyé à la personne ayant échangé ce créneau. Tant que celle-ci n'a pas accepté l'annulation, les emplois du temps reste inchangés<br /> \
-      Lorsque l'annulation sera effective, des demandes d'échange pour le créneau pourront être reçues et envoyées<br />\
-      <textarea maxlength=\"500\" cols=\"30\" rows=\"5\" id=\"noteExchange\" placeholder=\"Explique pourquoi tu souhaites annuler l'échange\" contenteditable></textarea><br />\
-      <button style='background-color: #FF0000' onClick=\"cancelExchange(" + idExchange + ", $('#noteExchange').val());\">Demander l'annulation</button>\
-    </div>");
-  }
-  else {
-    $.post('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?cancel=1&idExchange=' + idExchange, {note: note}, function (info) {
-      popupInfo(info);
-    });
-  }
-}
+var askCancelExchange = function (idExchange, idUV, idUV2) {
+  getRequest('exchanges.php', {
+    'mode': 'get',
+    'idUV': idUV,
+    'idUV2': idUV2
+  }, function (data) {
+    var task = data.uv;
+    var toExchange = data.uv2;
+    var corps =  $('<div></div>').addClass('centerCard');
 
-function infosExchange(idExchange) {
-  window.click = true;
-  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?infos=1&idExchange=' + idExchange, function (info) {
-    popup(info);
+    corps
+    .append($('<div></div>').html('Après avoir demandé l\'annulation de l\'échange, tu ne pourras plus proposer d\'échanger ton créneau avec celui-là. Tu peux toujours relancer la personne en espérant qu\'elle accepte l\'annulation de l\'échange.<br />Tu peux bien sûr annuler ta demande d\'annulation si l\'échange te convient en fin de compte.<br />Tu seras tenu.e informé.e si ta demande a été acceptée.<br /><br />Tu peux expliquer pourquoi tu souhaites annuler l\'échange:'))
+    .append($('<textarea /><br /><br />').attr('id', 'note').addClass('focusedInput').addClass('submitedInput').css('width', '50%').attr('maxlength', 180).attr('placeholder', 'Je souhaite annuler l\'échange que l\'on a effectué ensemble qui est celui de mon ' + (task.type == 'T' ? 'TP' : task.type == 'D' ? 'TD' : 'cours') + ' de ' + task.uv + ' du ' + window.headers[task.day].toLowerCase() + ' de ' + task.begin + ' à ' + task.end + ' contre le tien du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + toExchange.begin + ' à ' + toExchange.end).val('Je souhaite annuler l\'échange que l\'on a effectué ensemble qui est celui de mon ' + (task.type == 'T' ? 'TP' : task.type == 'D' ? 'TD' : 'cours') + ' de ' + task.uv + ' du ' + window.headers[task.day].toLowerCase() + ' de ' + task.begin + ' à ' + task.end + ' contre le tien du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + toExchange.begin + ' à ' + toExchange.end))
+    .append($('<button></button>').addClass('submitedButton').text('Demander d\'annuler cet échange').on('click', function () {
+      var note = $('#note').val();
+
+      if (note == '')
+        note = $('#note').attr('placeholder');
+
+      getRequest('exchanges.php', {
+        'mode': 'askCancel',
+        'idExchange': idExchange,
+        'note': note
+      }, function () {
+        window.get = {
+          'mode': 'modifier',
+          'mode_type': 'canceled',
+          'mode_option': 'sent'
+        };
+
+        generate();
+      });
+    }));
+
+    popup('Demander d\'annuler l\'échange de ton ' + (task.type == 'T' ? 'TP' : task.type == 'D' ? 'TD' : 'cours') + ' de ' + task.uv + ' du ' + window.headers[task.day].toLowerCase() + ' de ' + task.begin + ' à ' + task.end + ' contre celui du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + toExchange.begin + ' à ' + toExchange.end, corps);
   });
-}
+};
 
-function acceptExchange(idExchange, confirm) {
-  if (confirm === undefined) {
-    popup("<div id='popupHead'>Accepter un échange</div>\
-    <div class='parameters'>En acceptant l'échange, un mail de confirmation sera envoyé pour signaler que l'échange a bien été pris en compte. Le nom et le prénom ainsi que l'adresse mail de la personne avec qui tu as échangé te sera donné pour que vous puissiez par la suite contacter les responsables TDs/TPs pour échanger<br /><br />\
-      Si l'échange n'est pas effectué, il faudra demander l'annulation de l'échange en cliquant sur le créneau que tu viens d'échanger (dans le menu 'Modifier') pour que vos emplois du temps soient réinitialisés comme avant l'échange<br />\
-      <button style='background-color: #00FF00' onClick='acceptExchange(" + idExchange + ", 1);'>Accepter l'échange</button>\
-    </div>");
-  }
-  else {
-    $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?accept=1&idExchange=' + idExchange, function (info) {
-      popupInfo(info);
-    });
-  }
-}
+var cancelAskCancelExchange = function (idExchange, idUV, idUV2) {
+  getRequest('exchanges.php', {
+    'mode': 'get',
+    'idUV': idUV,
+    'idUV2': idUV2
+  }, function (data) {
+    var task = data.uv;
+    var toExchange = data.uv2;
+    var corps =  $('<div></div>').addClass('centerCard');
 
-function refuseExchange(idExchange) {
-  $.get('https://' + window.location.hostname + '/emploidutemps' + '/ressources/php/exchange.php?refuse=1&idExchange=' + idExchange, function (info) {
-    popupInfo(info);
+    corps
+    .append($('<div></div>').html('Après avoir annulé ta demande d\'annulation de l\'échange, tu ne pourras plus demander l\'annulation de cet échange. Bien sûr, si la personne avec qui tu souhaites échanger souhaite annuler l\'échange, tu peux accepter cette annulation.<br /><br />'))
+    .append($('<button></button>').addClass('submitedButton').text('Annuler ma demander d\'annulation').on('click', function () {
+      getRequest('exchanges.php', {
+        'mode': 'cancelAskCancel',
+        'idExchange': idExchange,
+      }, function () {
+        generate();
+      });
+    }));
+
+    popup('Annuler la demande d\'annuler l\'échange de ton ' + (task.type == 'T' ? 'TP' : task.type == 'D' ? 'TD' : 'cours') + ' de ' + task.uv + ' du ' + window.headers[task.day].toLowerCase() + ' de ' + task.begin + ' à ' + task.end + ' contre celui du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + toExchange.begin + ' à ' + toExchange.end, corps);
   });
-}
+};
 
-*/
+var acceptCancelExchange = function (idExchange, idUV, idUV2) {
+  getRequest('exchanges.php', {
+    'mode': 'get',
+    'idUV': idUV,
+    'idUV2': idUV2
+  }, function (data) {
+    var task = data.uv;
+    var toExchange = data.uv2;
+    var corps =  $('<div></div>').addClass('centerCard');
+
+    corps
+    .append($('<div></div>').html('Après avoir annulé l\'échange, les emplois du temps seront restaurés comme si l\'échange n\'a jamais été effectué. Bien sûr, tu pourras rééchanger ton créneau avec d\'autres.<br /><br />'))
+    .append($('<button></button>').addClass('submitedButton').text('Annuler l\'échange').on('click', function () {
+      getRequest('exchanges.php', {
+        'mode': 'cancel',
+        'idExchange': idExchange,
+      }, function () {
+        generate();
+      });
+    }));
+
+    popup('Annuler l\'échange de ton ' + (task.type == 'T' ? 'TP' : task.type == 'D' ? 'TD' : 'cours') + ' de ' + task.uv + ' du ' + window.headers[task.day].toLowerCase() + ' de ' + task.begin + ' à ' + task.end + ' contre celui du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + toExchange.begin + ' à ' + toExchange.end, corps);
+  });
+};
+
+
+/* Couleurs */
+
+
 var getFgColor = function (bgColor) {
   if (bgColor == null)
     return null;
@@ -1090,7 +1451,7 @@ var getFreeTimes = function (timeNeeded, nbrNotAvailable, dayToSee) {
       if (Object.keys(nbrAvailables)[i] > most)
         most = Object.keys(nbrAvailables)[i];
     }
-    select.val(nbrNotAvailable | Object.keys(window.active).length - most);
+    select.val(nbrNotAvailable || Object.keys(window.active).length - most);
 
     $('<div></div>')
     .append(select)
@@ -1237,7 +1598,7 @@ var generateStudentCard = function (infos, info, idGroup, idSubGroup, type) {
   if (idGroup && idSubGroup && type) {
     option
       .append($('<button></button>').html('<i class="fa fa-edit"></i>').attr('disabled',  type == 'asso').on('click', function () {
-        setToGroup(idGroup, idSubGroup, infos.login, text, id);
+        setToGroup(idGroup, idSubGroup, infos.login, text, id, infos.semester, (infos.info === undefined || infos.info == null));
       }))
       .append($('<button></button>').html('<i class="fa fa-remove"></i>').attr('disabled',  type == 'asso').attr('onClick', 'delFromGroup("' + idGroup + '", "' + idSubGroup + '", "' + infos.login + '", "' + infos.info + '")'));
   }
@@ -1258,7 +1619,7 @@ var generateStudentCard = function (infos, info, idGroup, idSubGroup, type) {
       .append($('<img />').attr('src', 'https://demeter.utc.fr/pls/portal30/portal30.get_photo_utilisateur?username=' + infos.login)))
     .append($('<div></div>').addClass('infosCard')
       .append($('<b></b>').text(text)).append($('<br />'))
-      .append($('<span></span>').text(infos.info === undefined ? infos.semester + ' - ' + infos.login : infos.info)).append($('<br />'))
+      .append($('<span></span>').text(infos.info === undefined || infos.info == null ? infos.semester + ' - ' + infos.login : infos.info)).append($('<br />'))
       .append($('<a></a>').attr('href', 'mailto:' + infos.email).text(infos.email)))
     .append(option);
 
@@ -1504,7 +1865,7 @@ var generatePrinted = function (groups) {
             $('#printed-' + element + ' span').text(infos.uv + ' (uv)');
 
           if (name != 'others')
-            $('<div></div>').html('<i class="fa fa-angle-right" aria-hidden="true"></i> ' + group.name + ' - ' + sub_group.name + (infos.info != '' ? ' (' + infos.info + ')' : '')).appendTo($('#printed-' + element).children());
+            $('<div></div>').html('<i class="fa fa-angle-right" aria-hidden="true"></i> ' + group.name + ' - ' + sub_group.name + (infos.info != null && infos.info != '' ? ' (' + infos.info + ')' : '')).appendTo($('#printed-' + element).children());
         });
       });
     });
@@ -1522,12 +1883,12 @@ var generatePrinted = function (groups) {
   else {
     $('#affichage_printed').css('display', 'none');
 
-    if (window.get.mode != 'modifier') {
+    if (window.get.mode != 'modifier' && window.get.mode != 'semaine') {
       var text = (window.get.login ? groups.others.subgroups.students.elements[window.get.login].firstname + ' ' + groups.others.subgroups.students.elements[window.get.login].surname : (window.get.uv ? window.get.uv : ''));
 
       if (window.get.login || window.get.uv)
         $('<button></button>').html('<i class="fa fa-plus" aria-hidden="true"></i> Ajouter ' + text).on('click', function () {
-          addToGroup(window.get.login | window.get.uv, text);
+          addToGroup(window.get.login || window.get.uv, text);
         } ).appendTo($('#printedTools'));
 
       if (window.get.login) {
@@ -1621,20 +1982,33 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
   var card, style;
   tasks.forEach(function(group) {
     group.data.forEach(function(task) {
+      cardClass = 'card';
       if (task.day != day)
         return;
-
-      task.top = Math.ceil(21 * ((task.startTime - window.HOUR_MIN) * 2));
-      task.height = Math.ceil(21 * (task.duration * 2) - 1);
 
       if (task.duration - task.startTime == 24) {
         task.top = Math.ceil(21 * ((window.HOUR_MAX - window.HOUR_MIN) * 2));
         task.height = Math.ceil(21 * (1 * 2) - 1);
       }
+      else {
+        task.top = Math.ceil(21 * ((task.startTime - window.HOUR_MIN) * 2));
+
+        if (task.startTime < window.HOUR_MIN) {
+          task.startTime = window.HOUR_MIN;
+          cardClass += ' before';
+        }
+
+        if (task.startTime + task.duration > window.HOUR_MAX) {
+          task.duration = window.HOUR_MAX - task.startTime;
+          cardClass += ' after';
+        }
+
+        task.height = Math.ceil(21 * (task.duration * 2) - 1);
+      }
 
       card = div.clone().attr({
         'id': task.id,
-        'class': 'card',
+        'class': cardClass,
       });
 
       style = {
@@ -1705,6 +2079,7 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
         style.left = task.left;
 
         isUV = group.type == 'uv_followed' || group.type == 'uv' || group.type == 'received' || group.type == 'sent' || group.type == 'canceled';
+        isEvent = group.type == 'event' || group.type == 'meeting';
         subject = div.clone().addClass('subject');
 
         $('<span></span>').text(task.subject + (group.type == 'room' ? ' dispo' + (task.subject > 1 ? 's' : '') : '')).appendTo(subject);
@@ -1739,7 +2114,7 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
               if (window.get.mode_type == 'uvs_followed') {
                 option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Informations").on('click', function() { seeUVInformations(task); }).appendTo(interraction);
                 option.clone().html('<i class="fa fa-handshake-o" aria-hidden="true"></i> Proposer en échange').on('click', function() {
-                  askExchange(task, toExchange);
+                  askExchange(toExchange.idUV, task.idUV);
                 }).appendTo(interraction);
               }
               else {
@@ -1754,11 +2129,11 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
 
                     if (toExchange.login2 && toExchange.login2 == window.sessionLogin)
                       button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-check" aria-hidden="true"></i> Accepter l\'annulation').on('click', function () {
-                          acceptCancelExchange(toExchange.idExchange);
+                          acceptCancelExchange(toExchange.idExchange, (toExchange.idUV == task.idUV ? toExchange.idUV2 : toExchange.idUV), task.idUV);
                       }).appendTo(interraction);
                     else
                       button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-times" aria-hidden="true"></i> Annuler ma demande').on('click', function () {
-                          cancelAskCancelExchange(toExchange.idExchange);
+                          cancelAskCancelExchange(toExchange.idExchange, (toExchange.idUV == task.idUV ? toExchange.idUV2 : toExchange.idUV), task.idUV);
                       }).appendTo(interraction);
                   }
                   else if (toExchange.enabled == '1') {
@@ -1766,14 +2141,14 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
 
                     if (window.get.mode_type == 'sent')
                       button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-undo" aria-hidden="true"></i> Annuler ma proposition').on('click', function () {
-                        cancelSentExchange(toExchange.idExchange);
+                        cancelAskExchange(toExchange.idExchange, toExchange.idUV, toExchange.idUV2);
                       }).appendTo(interraction);
                     else {
                       button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-check" aria-hidden="true"></i> Accepter l\'échange').on('click', function () {
-                          acceptExchange(toExchange.idExchange);
+                          acceptExchange(toExchange.idExchange, toExchange.idUV2, toExchange.idUV);
                       }).appendTo(interraction);
                       button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-times" aria-hidden="true"></i> Refuser l\'échange').on('click', function () {
-                          refuseExchange(toExchange.idExchange);
+                          refuseExchange(toExchange.idExchange, toExchange.idUV2, toExchange.idUV);
                       }).appendTo(interraction);
                     }
                   }
@@ -1797,28 +2172,23 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
                     bgColor = '#00FF00';
 
                     button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-chevron-left" aria-hidden="true"></i> Annuler l\'échange').on('click', function () {
-                      cancelExchange(toExchange.idExchange);
+                      askCancelExchange(toExchange.idExchange, (toExchange.idUV == task.idUV ? toExchange.idUV2 : toExchange.idUV), task.idUV);
                     }).appendTo(interraction);
                   }
                   else {
                     type = ' - Refusée';
                     bgColor = '#FF0000';
 
-                    if (window.get.mode_type == 'sent')
-                      button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-handshake-o" aria-hidden="true"></i> Proposer un autre créneau').on('click', function () {
-                        window.get = {
-                          'mode': 'modifier',
-                          'mode_type': 'uvs_followed',
-                          'uv': toExchange.uv,
-                          'type': toExchange.type
-                        };
+                    button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-handshake-o" aria-hidden="true"></i> Proposer un autre créneau').on('click', function () {
+                      window.get = {
+                        'mode': 'modifier',
+                        'mode_type': 'uvs_followed',
+                        'uv': toExchange.uv,
+                        'type': toExchange.type
+                      };
 
-                        generate();
-                      }).appendTo(interraction);
-                    else
-                      button.clone().addClass('option').css('background-color', bgColor).css('color', getFgColor(bgColor)).html('<i class="fa fa-handshake-o" aria-hidden="true"></i> Proposer l\'échange').on('click', function () {
-                        askExchange(toExchange.idUV2, toExchange.idUV);
-                      }).appendTo(interraction);
+                      generate();
+                    }).appendTo(interraction);
                   }
                 }
                 style['background-color'] = bgColor;
@@ -1852,11 +2222,11 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
 
           if (group.type == 'uv_followed') {
             option.clone().html("<i class='fa fa-calendar-o' aria-hidden='true'></i> Voir l'edt de l'UV").on('click', function() { seeUV(task.subject); }).appendTo(interraction);
+            option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Informations").on('click', function() { seeUVInformations(task); }).appendTo(interraction);
 
             if (uvs && uvs.search(task.subject) != -1)
               option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Echanger cet UV").on('click', function() { seeOthers(task.subject, task.type, task.idUV, 'uv-' + task.subject + '-' + task.idUV); }).appendTo(interraction);
 
-            option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Informations").on('click', function() { seeUVInformations(task); }).appendTo(interraction);
 
             if (window.sessionLogin == group.info) {
               colorButton = button.clone().addClass('colorButton');
@@ -1883,6 +2253,32 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
             cardClick(task);
           });
         }
+        else if (isEvent) {
+          interraction = div.clone().addClass('interraction');
+          option = button.clone().addClass('option').css('background-color', task.bgColor).css('color', getFgColor(task.bgColor));
+
+          option.clone().html("<i class='fa fa-info' aria-hidden='true'></i> Informations").on('click', function() { seeEventInformations(task); }).appendTo(interraction);
+          if (task.creator == window.sessionLogin)
+            option.clone().html("<i class='fa fa-edit' aria-hidden='true'></i> Modifier").on('click', function() { createEvenement(task.day, task.timeText.split('-')[0], task.timeText.split('-')[1], task.subject, task.description, task.location, task.type, task.idEvent); }).appendTo(interraction);
+          else
+            option.clone().html("<i class='fa fa-times' aria-hidden='true'></i> Ne plus suivre").on('click', function() { deleteEvenement(task.idEvent); }).appendTo(interraction);
+
+          colorButton = button.clone().addClass('colorButton');
+          window.colors.forEach(function (color) {
+            if (color == task.bgColor)
+              colorButton.clone().html('<i class="fa fa-times" aria-hidden="true"></i>').on('click', function() { changeColor(task.idEvent, '#NULL', 'idEvent'); }).css('background-color', color).css('color', getFgColor(color)).appendTo(interraction);
+            else
+              colorButton.clone().text('0').on('click', function() { changeColor(task.idEvent, color, 'idEvent'); }).css('background-color', color).css('color', color).appendTo(interraction);
+          });
+
+          $('<i></i>').addClass('colorButton fa fa-pencil-square-o').on('click', function() { $( this ).next().click(); }).css('color', '#000000').appendTo(interraction);
+          $('<input>').addClass('colorButton').on('change', function() { changeColor(task.idEvent, this.value, 'idEvent'); }).attr('type', 'color').css('display', 'none').appendTo(interraction);
+
+          interraction.appendTo(card);
+          card.on('click', function () {
+            cardClick(task);
+          });
+        }
       }
 
       for (var key in style) {
@@ -1894,7 +2290,7 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
   });
 }
 
-var generateCalendar = function(tasks, sides, uvs) {
+var generateCalendar = function(tasks, sides, uvs, daysInfo) {
   console.time('calendar');
   var div = $('<div></div>');
   var schedule = div.clone().addClass('calendar-container');
@@ -1924,7 +2320,7 @@ var generateCalendar = function(tasks, sides, uvs) {
         classDay = 'futureDay';
     }
 
-    div.clone().addClass(classDay).text(element).appendTo(scheduleHeader);
+    div.clone().addClass(classDay).text(((window.get.mode === 'semaine' || window.get.mode === 'organiser') && daysInfo[day] && $('#withAlternanceTool').prop('checked')) ? daysInfo[day] : element).appendTo(scheduleHeader);
   }, this);
   // Pour améliorer la propreté du tableau
   div.clone().css('flex', '0').appendTo(scheduleHeader);
@@ -1967,7 +2363,7 @@ var generateCalendar = function(tasks, sides, uvs) {
 
   // Ajout de la case toute la journée
   if (window.get.mode === 'semaine' || window.get.mode === 'organiser' || (window.get.mode === 'classique' && window.get.mode_type === 'rooms')) {
-    div.clone().addClass('allDay').addClass(window.HOUR_MAX > hour && $('#withWeekTool').prop('checked') && currentDay != 7 ? 'futureHour' : ($('#withWeekTool').prop('checked') && (window.get.mode === 'semaine' || window.get.mode === 'organiser') ? (currentDay != -1 ? 'passedHour' : 'currentHour') : '')).appendTo(scheduleTimeline);
+    div.clone().addClass('allDay').addClass(window.HOUR_MAX > hour || ($('#withWeekTool').prop('checked') && currentDay != 7) ? 'futureHour' : ($('#withWeekTool').prop('checked') && (window.get.mode === 'semaine' || window.get.mode === 'organiser') ? (currentDay != -1 ? 'passedHour' : 'currentHour') : '')).appendTo(scheduleTimeline);
     gridColumnElement[0].append(div.clone().addClass('allDay').addClass('calendar-cell' + '10'));
   }
 

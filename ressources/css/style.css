@@ -1,6 +1,55 @@
-/* Temporarie */
-.alert {
-  background-color: #FFF;
+.miniNoty {
+  position: fixed;
+  right: 10px;
+  bottom: -10px;
+  padding: 10px 15px;
+  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+  max-width: 300px;
+  min-width: 150px;
+  opacity: 0;
+  z-index: 101;
+  -webkit-transform: scale(1, 0);
+  -moz-transform: scale(1, 0);
+  -o-transform: scale(1, 0);
+  -ms-transform: scale(1, 0);
+  transform: scale(1, 0);
+  -webkit-transition: all 0.5s;
+  -moz-transition: all 0.5s;
+  -o-transition: all 0.5s;
+  transition: all 0.5s;
+}
+
+.miniNoty-show {
+  bottom: 10px;
+  opacity: 1;
+  -webkit-transform: scale(1, 1);
+  -moz-transform: scale(1, 1);
+  -o-transform: scale(1, 1);
+  -ms-transform: scale(1, 1);
+  transform: scale(1, 1);
+}
+
+.miniNoty-success {
+  background: mediumseagreen;
+  box-shadow: 0 2px 5px mediumseagreen;
+}
+
+.miniNoty-error {
+  background: indianred;
+  box-shadow: 0 2px 5px indianred;
+}
+
+.miniNoty-normal {
+  background: lightgrey;
+  box-shadow: 0 2px 5px lightgrey;
+  color: #000;
+}
+
+.miniNoty-warning {
+  background: goldenrod;
+  box-shadow: 0 2px 5px goldenrod;
 }
 
 
@@ -30,6 +79,7 @@ button:hover:not(:disabled), input:hover:not(:disabled) {
 }
 
 input {
+  border-radius: 2px;
   background-color: #444A58;
   color: #FFFFFF;
 }
@@ -568,6 +618,14 @@ background-color: #FFFFFF;
   opacity: 0.9;
 }
 
+.card.before {
+  border-top: 2px dotted #000000;
+}
+
+.card.after {
+  border-bottom: 2px dotted #000000;
+}
+
 .card.focus {
   z-index: 100;
   opacity: 1;
@@ -748,6 +806,21 @@ background-color: #FFFFFF;
 
 #popupHead input {
   width: 50%;
+}
+
+.centerCard {
+  margin: 0.5%;
+  margin-top: 2.5px;
+  margin-bottom: 2.5px;
+  border: 2px SOLID #CCCCCC;
+  border-radius: 5px;
+  background-color: #CCCCCC;
+  text-align: center;
+}
+
+.centerCard button {
+  width: 25%;
+  text-align: center;
 }
 
 .subCard ,.optionCards {

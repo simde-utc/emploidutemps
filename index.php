@@ -7,18 +7,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.75">
   <link rel="stylesheet" href="ressources/css/style.css" type="text/css">
   <link rel="stylesheet" href="ressources/css/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="ressources/css/jquery-ui.min.css">
+  <link rel="stylesheet" href="ressources/css/jquery-ui.structure.min.css">
+  <link rel="stylesheet" href="ressources/css/jquery.timepicker.css">
   <script type="text/javascript" src="ressources/js/jquery-3.1.1.min.js"></script>
   <script type="text/javascript" src="ressources/js/generation.js"></script>
   <script type="text/javascript" src="ressources/js/jquery.touchSwipe.min.js"></script>
   <script type="text/javascript" src="ressources/js/html2canvas.min.js"></script>
   <script type="text/javascript" src="ressources/js/jspdf.min.js"></script>
   <script type="text/javascript" src="ressources/js/clipboard.min.js"></script>
-  <script type="text/javascript" src="ressources/js/notify.min.js"></script>
-  <!--
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
--->
+  <script type="text/javascript" src="ressources/js/jquery.mininoty.min.js"></script>
+  <script type="text/javascript" src="ressources/js/jquery-ui.min.js"></script>
+  <script type="text/javascript" src="ressources/js/datapicker-fr.js"></script>
+  <script type="text/javascript" src="ressources/js/jquery.timepicker.min.js"></script>
   <script type="text/javascript">
     function main () {
       generateCalendar([], 1, {});
@@ -64,10 +65,12 @@
 
     var toogleNav = function () {
       $('#nav').toggleClass('see');
+      $('#parameters').removeClass('see');
     }
 
     var toogleParam = function () {
       $('#parameters').toggleClass('see');
+      $('#nav').removeClass('see');
     }
 
     $(window).resize(function() {
@@ -80,6 +83,49 @@
         swipeRight: function() { setCalendar(focusedDay - 1); }
       });
     });
+
+    $.miniNoty = function(message, type){
+  		var timeToHide = 5000;
+  		var	timeAnimEnd = 500;
+  		var padding = 10;
+
+  		var cls = 'miniNoty miniNoty-' + (type ? type : 'success');
+  		var node = $('<div/>', {
+				'class': cls,
+				html: message
+			});
+
+  		if ($('.miniNoty').length) {
+  			var elLast = $('.miniNoty:last-child');
+  		  var elLastBottom = parseInt(elLast.css('bottom'));
+  			var	elLastHeight = elLast.outerHeight();
+
+  			node.css('bottom', elLastBottom + elLastHeight + padding + 'px');
+  		}
+
+  		$('body').append(node);
+
+  		// delete on click
+  		node.click(function () {
+  			node.removeClass('miniNoty-show');
+  			setTimeout(function () {
+				  node.remove();
+  			}, timeAnimEnd);
+  		})
+
+  		// push stack
+  		setTimeout(function () {
+  			node.addClass('miniNoty-show');
+  		}, 10)
+
+  		// timeout to hide
+  		setTimeout(function () {
+  			node.removeClass('miniNoty-show');
+  			setTimeout(function () {
+  				node.remove();
+  			}, timeAnimEnd)
+  		}, timeToHide)
+  	}
 
     // En cas d'erreur, recharger la page
     $(document).ajaxError(function(err) {
@@ -173,6 +219,11 @@
           <input type='radio' id='withWeekTool' name='weekTool' onClick="generate()" CHECKED><label for='withWeekTool'>Coloré</label>
           <input type='radio' id='withoutWeekTool' name='weekTool' onClick="generate()"><label for='withoutWeekTool'>Normal</label>
         </div>
+        <div>
+          Infos:
+          <input type='radio' id='withAlternanceTool' name='alternanceTool' onClick="generate()" CHECKED><label for='withAlternanceTool'>Alternance</label>
+          <input type='radio' id='withoutAlternanceTool' name='alternanceTool' onClick="generate()"><label for='withoutAlternanceTool'>Normal</label>
+        </div>
         <button id='eventTool' onClick="createEvenement()"><i class="fa fa-calendar-o" aria-hidden="true"></i> Créer un évènement</button>
       </div>
       <div style='display: none' id='organizeTools'>
@@ -197,8 +248,8 @@
       Options:
       <div>
         <button onClick="getRequest('parameters.php', { 'defaultMode': get.mode })"><i class="fa fa-cog" aria-hidden="true"></i> Affecter ce mode par défaut</button>
-        <button <?php if ($_SESSION['status'] != -1) { echo 'style="display:none;"'; } ?> onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> Se réhabonner</button>
-        <button <?php if ($_SESSION['status'] == -1) { echo 'style="display:none;"'; } ?> onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> Se déshabonner</button>
+        <button <?php if ($_SESSION['status'] != -1) { echo 'style="display:none;"'; } ?> onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> Se réabonner</button>
+        <button <?php if ($_SESSION['status'] == -1) { echo 'style="display:none;"'; } ?> onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> Se désabonner</button>
         <button <?php if ($_SESSION['status'] != -1) { echo 'style="display:none;"'; } ?> onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-remove" aria-hidden="true"></i> Se désinscrire définitivement</button>
       </div>
     </div>

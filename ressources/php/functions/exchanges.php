@@ -98,7 +98,7 @@
 
         sendMail(
           $studentInfos['email'],
-          'Proposition reçue indisponible',
+           uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Proposition reçue indisponible',
           'La dernière personne qui souhaitait échanger avec toi son '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].' avec le tien du '.
 dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].' n\'est plus disponible à l\'échange.
 
@@ -131,7 +131,7 @@ Tu peux toujours toi-même proposer cet échange en cliquant ici: '.linkToExchan
 
         sendMail(
           $studentInfos['email'],
-          'Proposition envoyée refusée',
+          uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Proposition envoyée refusée',
           'Plus personne ne souhaite échanger ton '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].' avec le sien du '.dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].'.
 
 Tu peux toujours proposer d\'échanger d\'autres créneaux de '.uvTypeToText($uv['type']).' de '.$uv['uv'].' en cliquant ici: '.linkToExchange(array(
@@ -171,7 +171,7 @@ Tu peux toujours proposer d\'échanger d\'autres créneaux de '.uvTypeToText($uv
 
         sendMail(
           $studentInfos['email'],
-          'Proposition envoyée en attente',
+          uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Proposition envoyée en attente',
           'Tu es maintenant la '.($place == 0 ? 'première' : ($place + 1).'ème').' personne à demander l\'échange du '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].' avec le tien du '.
 dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].'
 
@@ -240,7 +240,7 @@ Si tu regrettes ta proposition d\'échange, tu peux toujours l\'annuler (avant q
 
         sendMail(
           $studentInfos['email'],
-          'Proposition reçue',
+          uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Proposition reçue',
           'Tu viens de recevoir une proposition qui est la suivante: obternir le '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].
           ' en échange avec le tien du '.dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].'
 
@@ -277,7 +277,7 @@ Tu es le premier/ère à faire cette demande d\'échange, un mail a été envoy�
         $studentInfos = getStudentInfos($student['login']);
         sendMail(
           $studentInfos['email'],
-          'Proposition reçue de nouveau disponible',
+          uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Proposition reçue de nouveau disponible',
           'La proposition suivante à laquelle tu n\'avais pas répondu vient d\'être de nouveau disponible: obternir le '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].
           ' en échange avec le tien du '.dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].'
 
@@ -316,7 +316,7 @@ Tu es la '.($nbr + 1).'ème personne à proposer cette échange. Tu seras tenu.e
     $studentInfos = getStudentInfos($login);
     sendMail(
       $studentInfos['email'],
-      'Proposition envoyée',
+      uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Proposition envoyée',
       $text
     );
 
@@ -363,6 +363,18 @@ Tu es la '.($nbr + 1).'ème personne à proposer cette échange. Tu seras tenu.e
     checkIfNoMoreReceived($idExchange, $uv, $uv2);
     sendMailToWaitings($idExchange, $uv, $uv2);
 
+    // On récupère les couleurs #Perfection
+    $query = $GLOBALS['db']->request(
+      'SELECT color FROM uvs_followed WHERE idUV = ? AND login = ? AND enabled = 1',
+      array($uv['id'], $sent['login'])
+    );
+    $colorSent = $query->fetch()['color'];
+    $query = $GLOBALS['db']->request(
+      'SELECT color FROM uvs_followed WHERE idUV = ? AND login = ? AND enabled = 1',
+      array($uv2['id'], $received['login'])
+    );
+    $coloReceived = $query->fetch()['color'];
+
     // On désactive les créneaux échangés
     $GLOBALS['db']->request(
       'UPDATE uvs_followed SET enabled = 0, exchanged = 1 WHERE idUV = ? AND login = ?',
@@ -375,21 +387,21 @@ Tu es la '.($nbr + 1).'ème personne à proposer cette échange. Tu seras tenu.e
 
     // On ajoute les créneaux échangés
     $GLOBALS['db']->request(
-      'INSERT INTO uvs_followed(idUV, login, exchanged) VALUES(?, ?, 1)',
-      array($uv2['id'], $sent['login'])
+      'INSERT INTO uvs_followed(idUV, login, exchanged, color) VALUES(?, ?, 1)',
+      array($uv2['id'], $sent['login'], $colorSent)
     );
     $GLOBALS['db']->request(
-      'INSERT INTO uvs_followed(idUV, login, exchanged) VALUES(?, ?, 1)',
-      array($uv['id'], $received['login'])
+      'INSERT INTO uvs_followed(idUV, login, exchanged, color) VALUES(?, ?, 1)',
+      array($uv['id'], $received['login'], $colorReceived)
     );
 
     // On annule toutes les propositions qu'on a faite
     $sentBySender = getSentExchanges($sent['login'], NULL, NULL, 1, 0, $sent['idUV']);
     foreach ($sentBySender as $toCancel)
-      cancelSentExchange($toCancel['idExchange'], $sent['login'], 'tu ne possèdes plus ce créneau, étant donné que tu viens de l\'échanger');
+      cancelAskExchange($toCancel['idExchange'], $sent['login'], 'tu ne possèdes plus ce créneau, étant donné que tu viens de l\'échanger');
     $sentByReceiver = getSentExchanges($received['login'], NULL, NULL, 1, 0, $received['idUV2']);
     foreach ($sentByReceiver as $toCancel)
-      cancelSentExchange($toCancel['idExchange'], $received['login'], 'tu ne possèdes plus ce créneau, étant donné que tu viens de l\'échanger');
+      cancelAskExchange($toCancel['idExchange'], $received['login'], 'tu ne possèdes plus ce créneau, étant donné que tu viens de l\'échanger');
 
 
     // On affilie toutes les propositions qu'on a reçu pour notre créneau à l'autre (si on m'a proposé d'autres échanges pour le même créneau, il faut que celui qui a le nouveau créneau puisse voir les propositions et plus l'autre)
@@ -411,7 +423,7 @@ Tu es la '.($nbr + 1).'ème personne à proposer cette échange. Tu seras tenu.e
     $receiverInfos = getStudentInfos($received['login']);
     sendMail(
       $senderInfos['email'],
-      'Proposition envoyée acceptée',
+      uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Proposition envoyée acceptée',
       'Ta proposition d\'échanger ton '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].
       ' avec le celui du '.dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].' a été accepté par '.($receiverInfos['surname'] == NULL ? $receiverInfos['login'] : $receiverInfos['firstname'].' '.$receiverInfos['surname']).'.
 
@@ -431,7 +443,7 @@ En échangeant, tu as reçu de nouvelles propositions d\'échange avec ton nouve
     );
     sendMail(
       $receiverInfos['email'],
-      'Proposition reçue acceptée',
+      uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Proposition reçue acceptée',
       'Tu as accepté une proposition d\'échanger qui le '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].
       ' avec le tien du '.dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].' proposé par '.($senderInfos['surname'] == NULL ? $senderInfos['login'] : $senderInfos['firstname'].' '.$senderInfos['surname']).'.
 
@@ -479,7 +491,7 @@ En échangeant, tu as reçu de nouvelles propositions d\'échange avec ton nouve
 
     sendMail(
       $_SESSION['email'],
-      'Proposition reçue refusée',
+      uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Proposition reçue refusée',
       'Tu as refusé la proposition d\'échange du '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].' avec le tien du '.dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].'.
 
 Tu peux toujours proposer d\'échanger d\'autres créneaux de '.uvTypeToText($uv['type']).' de '.$uv['uv'].' en cliquant ici: '.linkToExchange(array(
@@ -554,7 +566,7 @@ Tu peux toujours proposer d\'échanger d\'autres créneaux de '.uvTypeToText($uv
 
     sendMail(
       $_SESSION['email'],
-      'Demande d\'annulation d\'échange envoyée',
+      uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Demande d\'annulation d\'échange envoyée',
       'Tu viens de demander l\'annulation de ton échange qui était ton '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].' contre celui du '.
 dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].' que tu souhaites finalement récupérer.
 
@@ -576,7 +588,7 @@ Tu peux toujours annuler ta demande d\'annulation (que tu ne pourras plus redema
 
     sendMail(
       $studentInfos['email'],
-      'Demande d\'annulation d\'échange reçue',
+      uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Demande d\'annulation d\'échange reçue',
       'Tu viens de recevoir une demande d\'annulation de ton échange de la part de '.$_SESSION['firstname'].' '.$_SESSION['surname'].' qui était le '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].' contre le tien du '.
     dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].'.
 
@@ -647,7 +659,7 @@ Tu peux accepter la demande d\'annulation en cliquant ici: '.linkToExchange(arra
 
     sendMail(
       $_SESSION['email'],
-      'Demande d\'annulation d\'échange envoyée annulée',
+      uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Demande d\'annulation d\'échange envoyée annulée',
       'Tu viens d\'annuler ta demande d\'annulation de ton échange qui était ton '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].' contre celui du '.
 dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].' que tu souhaitais récupérer.
 
@@ -656,7 +668,7 @@ A présent, tu ne peux plus demander d\'annuler l\'échange.'
 
     sendMail(
       $studentInfos['email'],
-      'Demande d\'annulation d\'échange reçue annulée',
+      uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Demande d\'annulation d\'échange reçue annulée',
       $_SESSION['firstname'].' '.$_SESSION['surname'].' qui a demandé l\'annulation de ton échange qui était le '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].' contre le tien du '.
     dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].' a annulé sa demande.
 
@@ -695,7 +707,7 @@ Tu peux toujours toi-même demander d\'annuler l\'échange si tu le souhaites en
         return 'Impossible d\'identifier avec qui l\'échange a été effectué';
     }
     else
-      return 'L\'échange n\'a pas été effectué';
+      return 'L\'échange n\'a pas été effectué ou aucune demande d\'annulation est en cours';
 
     if (count(getCanceledExchanges(NULL, NULL, $idExchange, NULL, $_SESSION['login'])) == 0)
       return 'Aucune demande d\'annulation reçue';
@@ -714,6 +726,16 @@ Tu peux toujours toi-même demander d\'annuler l\'échange si tu le souhaites en
     $GLOBALS['db']->request(
       'UPDATE exchanges_received SET available = 0, exchanged = 0, date = NOW() WHERE id = ?',
       array($received['id'])
+    );
+
+    // On supprime les demandes d\'annulation
+    $GLOBALS['db']->request(
+      'DELETE FROM exchanges_canceled WHERE idExchange = ? AND login = ? AND login2 = ?',
+      array($idExchange, $sent['login'], $received['login'])
+    );
+    $GLOBALS['db']->request(
+      'DELETE FROM exchanges_canceled WHERE idExchange = ? AND login = ? AND login2 = ?',
+      array($idExchange, $received['login'], $sent['login'])
     );
 
     // On supprime les créneaux échangés
@@ -745,10 +767,10 @@ Tu peux toujours toi-même demander d\'annuler l\'échange si tu le souhaites en
     // On annule toutes les propositions qu'on a faite
     $sentBySender = getSentExchanges($sent['login'], NULL, NULL, 1, 0, $sent['idUV2']);
     foreach ($sentBySender as $toCancel)
-      cancelSentExchange($toCancel['idExchange'], $sent['login'], 'tu ne possèdes plus ce créneau, étant donné que tu viens d\'annuler son échange');
+      cancelAskExchange($toCancel['idExchange'], $sent['login'], 'tu ne possèdes plus ce créneau, étant donné que tu viens d\'annuler son échange');
     $sentByReceiver = getSentExchanges($received['login'], NULL, NULL, 1, 0, $received['idUV']);
     foreach ($sentByReceiver as $toCancel)
-      cancelSentExchange($toCancel['idExchange'], $received['login'], 'tu ne possèdes plus ce créneau, étant donné que tu viens d\'annuler son échange');
+      cancelAskExchange($toCancel['idExchange'], $received['login'], 'tu ne possèdes plus ce créneau, étant donné que tu viens d\'annuler son échange');
 
     // On affilie toutes les propositions qu'on a reçu pour notre créneau à l'autre (si on m'a proposé d'autres échanges pour le même créneau, il faut que celui qui a le nouveau créneau puisse voir les propositions et plus l'autre)
     $receivedBySender = getReceivedExchanges($sent['login'], NULL, NULL, 1, 0, NULL, $sent['idUV2']);
@@ -769,7 +791,7 @@ Tu peux toujours toi-même demander d\'annuler l\'échange si tu le souhaites en
 
     sendMail(
       $_SESSION['email'],
-      'Annulation d\'un échange',
+      uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Annulation d\'un échange',
       'Tu as accepté d\'annuler d\'échanger le '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].
       ' avec celui du '.dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].' a été annulé à la demande de '.($studentInfos['surname'] == NULL ? $studentInfos['login'] : $studentInfos['firstname'].' '.$studentInfos['surname']).'.
 
@@ -777,7 +799,7 @@ Les emplois du temps ont été actualisés et chacun a récupéré son créneau 
     );
     sendMail(
       $studentInfos['email'],
-      'Annulation d\'un échange',
+      uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Annulation d\'un échange',
       'Ta demande d\'annuler l\'échanger du '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].
       ' avec celui du '.dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].' a été accepté par '.($_SESSION['surname'] == NULL ? $_SESSION['login'] : $_SESSION['firstname'].' '.$_SESSION['surname']).'.
 
@@ -787,7 +809,7 @@ Les emplois du temps ont été actualisés et chacun a récupéré son créneau 
     return TRUE;
   }
 
-  function cancelSentExchange($idExchange, $login = NULL, $reason = NULL) {
+  function cancelAskExchange($idExchange, $login = NULL, $reason = NULL) {
     // On vérifie qu'on avait ben une proposition encore disponibles
     if (count(getSentExchanges($login, NULL, $idExchange, 1, 0)) == 0)
       return 'Impossible d\'annuler cet échange';
@@ -808,7 +830,7 @@ Les emplois du temps ont été actualisés et chacun a récupéré son créneau 
 
     sendMail(
       $studentInfos['email'],
-      'Proposition envoyée annulée',
+      uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Proposition envoyée annulée',
       'Tu as annulé ta demande d\'échange qui était ton '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].' contre celui du '.
 dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].($reason == NULL ? '' : ' (pour la raison que '.$reason.')').'.
 

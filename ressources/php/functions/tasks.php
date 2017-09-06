@@ -28,7 +28,7 @@ function addTask($taskType, $info, $infosArrays, $side = NULL) {
 
     // Définition de la tâche
     $task = array(
-      'id' => $taskType.'-'.$info.'-'.(isset($infosArray['idUV']) ? $infosArray['idUV'] : (isset($infosArray['id']) ? $infosArray['id'] : (isset($infosArray['subject']) ? $infosArray['subject'] : ''))).($taskType == 'calendar' ? '-'.$infosArray['day'] : ''),
+      'id' => $taskType.'-'.($taskType == 'calendar' ? $infosArray['day'] : $info).'-'.(isset($infosArray['idUV']) ? $infosArray['idUV'] : (isset($infosArray['id']) ? $infosArray['id'] : (isset($infosArray['subject']) ? $infosArray['subject'] : ''))).(isset($_GET['mode']) && $_GET['mode'] == 'semaine' && ($taskType == 'uv' || $taskType == 'uv_followed') ? '-'.$infosArray['day'] : ''),
       'subject' => NULL,
       'note' => (isset($infosArray['note']) ? $infosArray['note'] : NULL),
       'location' => NULL,
@@ -72,7 +72,11 @@ function addTask($taskType, $info, $infosArrays, $side = NULL) {
       $task['subject'] = (isset($infosArray['subject']) ? $infosArray['subject'] : $infosArray['uv']);
       $task['location'] = isset($infosArray['room']) ? $infosArray['room'] : NULL;
     }
-    elseif ($taskType == 'event') {
+    elseif ($taskType == 'event' || $taskType == 'meeting') {
+      $task['idEvent'] = $infosArray['idEvent'];
+      $task['creator'] = $infosArray['creator'];
+      $task['creator_asso'] = $infosArray['creator_asso'];
+      $task['type'] = $infosArray['type'];
       $task['subject'] = $infosArray['subject'];
       $task['description'] = $infosArray['description'];
       $task['location'] = $infosArray['location'];
@@ -296,9 +300,7 @@ function printWeek($info, $week, $taskTypes = 'uv_followed') {
 
     if ($taskType == 'calendar')
       $tasksDay = $days;
-    elseif ($taskType == 'event')
-      $tasksDay = array();
-    elseif ($taskType == 'meeting')
+    elseif ($taskType == 'event' || $taskType == 'meeting')
       $tasksDay = array();
     elseif ($taskType == 'room')
       $tasksDay = getRooms($info);
@@ -308,6 +310,11 @@ function printWeek($info, $week, $taskTypes = 'uv_followed') {
       $tasksDay = getUVsFollowed($info, 1);
 
     foreach ($days as $i => $day) {
+      if ($taskType == 'event')
+        $tasksDay = getEvents(NULL, NULL, NULL, NULL, $info, 'event', $day['date']);
+      elseif ($taskType == 'meeting')
+        $tasksDay = getEvents(NULL, NULL, NULL, NULL, $info, 'meeting', $day['date']);
+
       foreach ($tasksDay as $j => $taskDay) {
         if ($taskType == 'calendar') {
           if ($taskDay['subject'] == NULL || $taskDay['subject'] == '' || $i != $j)
@@ -316,6 +323,25 @@ function printWeek($info, $week, $taskTypes = 'uv_followed') {
           $taskDay['begin'] = '00:00';
           $taskDay['end'] = '24:00';
           $taskDay['bgColor'] = '#000000';
+        }
+        elseif ($taskType == 'event' || $taskType == 'meeting') {
+          if ($taskDay['creator_asso'] != NULL) {
+            $assoInfos = json_decode(file_get_contents('http://assos.utc.fr/asso/'.$taskDay['creator_asso'].'/json'), TRUE)['asso'][0];
+            $taskDay['note'] = $assoInfos['name'];
+            if ($taskDay['creator'] == $_SESSION['login'])
+              $taskDay['note'] .= ' - Créer par moi-même';
+            else {
+              $studentInfos = getStudentInfos($taskDay['creator']);
+              $taskDay['note'] .= ' - Invité par '.$studentInfos['firstname'].' '.$studentInfos['surname'];
+            }
+          }
+          elseif ($taskDay['creator'] != NULL && $taskDay['creator'] != $_SESSION['login']) {
+            $studentInfos = getStudentInfos($taskDay['creator']);
+            $taskDay['note'] = 'Invité par '.$studentInfos['firstname'].' '.$studentInfos['surname'];
+          }
+
+          if ($taskDay['color'] == NULL)
+            $taskDay['color'] = '#FFFFFF';
         }
         elseif ($taskDay['day'] != $day['day'])
           continue;

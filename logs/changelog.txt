@@ -334,3 +334,26 @@ Beta 2.3: 2017-08-21
   - Correction de multiples bugs (groupes, affichage du calendrier, ajout)
   - Amélioration de la redirection de requete après le CAS
   - Optimisation du code (suppression de l'ancien fichier js)
+
+Beta 2.4: 2017-09-06
+  - Ajout du calendrier universitaire de ce semestre (A17)
+  - Amélioration de la gestion des dates
+  - Amélioration des ids (qui avait encore quelques bugs)
+  - Amélioration de la gestion du calendrier universitaire
+  - Amélioration de la gestion des groupes (descriptions, création)
+  - Ajout de vérifications sur les noms de (sous)-groupes et éléments
+  - Ajout de l'ajout de la couleur à l'échange #Perfection
+  - Ajout de l'interface d'échange
+  - Ajout en en-tête du type et de l'uv dans les mails d'échange
+  - Ajout de l'information sur la semaine dans le titre en semaine du dd/mm
+  - Ajout de l'export ics en fonction du calendrier universitaire
+  - Ajout d'une option d'affichage des alternances en mode semaine et organiser
+  - Ajout de la gestion des évènements
+  - Ajout de la gestion des notifications
+  - Automatisation de la mise à jour de la BDD lors d'une connexion
+  - Ajout de l'affichage des évènements (classique, réunion, évènements associatif)
+  - Ajout de l'affichage des débordements du calendrier (évènements après l'horaire max ou avant l'horaire min affiché)
+  - Le listing se fait maintenant par ordre alphabétique du prénom
+  - Simplification/Optimisation de certaines parties du code
+  - Adaptation des volets aux mobiles
+  - Correction de bugs multiples

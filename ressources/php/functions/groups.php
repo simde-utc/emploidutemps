@@ -198,9 +198,10 @@
             'surname' => $data['surname'],
             'firstname' => $data['firstname'],
             'email' => $data['email'],
+            'semester' => $data['semester'],
             'extern' => FALSE,
             'active' => $active,
-            'info' => $info
+            'info' => ($info == '' ? NULL : $info)
           );
         }
         elseif (isAnUV($element)) {
@@ -477,7 +478,12 @@
 */
 
   function addGroup($group) {
-    if (isset($_SESSION['groups'][$group]))
+    $query = $GLOBALS['db']->request(
+      'SELECT id FROM students_groups WHERE login = ? AND name = ?',
+      array($_SESSION['login'], $group)
+    );
+
+    if ($query->rowCount() == 1)
       return FALSE;
 
     $GLOBALS['db']->request(
@@ -523,6 +529,14 @@
     if (!isset($_SESSION['groups'][$idGroup]) || $_SESSION['groups'][$idGroup]['type'] != 'custom')
       return FALSE;
 
+    $query = $GLOBALS['db']->request(
+      'SELECT id FROM students_groups WHERE login = ? AND name = ?',
+      array($_SESSION['login'], $name)
+    );
+
+    if ($query->rowCount() == 1 && $query->fetch()['id'] != $idGroup)
+      return FALSE;
+
     if ($idGroup != 'others') {
       $GLOBALS['db']->request(
         'UPDATE students_groups SET name = ? WHERE id = ? AND login = ?',
@@ -534,14 +548,19 @@
     return TRUE;
   }
 
-  function addSubGroup($idGroup, $sub_group) {
-    if (!isset($_SESSION['groups'][$idGroup]))
+  function addSubGroup($idGroup, $name) {
+    $query = $GLOBALS['db']->request(
+      'SELECT id FROM students_groups_subs WHERE idGroup = ? AND name = ?',
+      array($idGroup, $name)
+    );
+
+    if ($query->rowCount() == 1)
       return FALSE;
 
     if ($idGroup != 'others') {
       $query = $GLOBALS['db']->request(
         'SELECT * FROM students_groups_subs WHERE idGroup = ? AND name = ?',
-        array($idGroup, $sub_group)
+        array($idGroup, $name)
       );
 
       if ($query->rowCount() == 1)
@@ -549,7 +568,7 @@
 
       $query = $GLOBALS['db']->request(
         'INSERT INTO students_groups_subs(idGroup, name) VALUES(?, ?)',
-        array($idGroup, $sub_group)
+        array($idGroup, $name)
       );
     }
     else
@@ -557,14 +576,14 @@
 
     $query = $GLOBALS['db']->request(
       'SELECT id FROM students_groups_subs WHERE idGroup = ? AND name = ?',
-      array($idGroup, $sub_group)
+      array($idGroup, $name)
     );
 
     $data = $query->fetch();
 
     $_SESSION['groups'][$idGroup]['subgroups'][$data['id']] = array(
       'type' => 'custom',
-      'name' => $sub_group,
+      'name' => $name,
       'elements' => array()
     );
 
@@ -595,6 +614,14 @@
     if (!isset($_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]) || $_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]['type'] != 'custom')
       return FALSE;
 
+    $query = $GLOBALS['db']->request(
+      'SELECT id FROM students_groups_subs WHERE idGroup = ? AND name = ?',
+      array($idGroup, $name)
+    );
+
+    if ($query->rowCount() == 1 && $query->fetch()['id'] != $idSubGroup)
+      return FALSE;
+
     if ($idGroup != 'others') {
       $GLOBALS['db']->request(
         'UPDATE students_groups_subs SET name = ? WHERE idGroup = ? AND id = ?',
@@ -607,6 +634,14 @@
   }
 
   function addToGroup($idGroup, $idSubGroup, $element, $info) {
+    $query = $GLOBALS['db']->request(
+      'SELECT id FROM students_groups_elements WHERE idSubGroup = ? AND element = ?',
+      array($idSubGroup, $element)
+    );
+
+    if ($query->rowCount() == 1)
+      return FALSE;
+
     if ($element == $_SESSION['login'])
       return FALSE;
 
@@ -632,7 +667,7 @@
     if ($element == $_SESSION['login'])
       return FALSE;
 
-    if (!isset($_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]['elements'][$element]) || $_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]['type'] == 'asso')
+    if (!array_key_exists($element, $_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]['elements']) || $_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]['type'] == 'asso')
       return FALSE;
 
     if ($idGroup != 'others') {
@@ -648,7 +683,7 @@
   }
 
   function setToGroup($idGroup, $idSubGroup, $element, $info) {
-    if (!isset($_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]['elements'][$element]) || $_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]['type'] == 'asso')
+    if (!array_key_exists($element, $_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]['elements']) || $_SESSION['groups'][$idGroup]['subgroups'][$idSubGroup]['type'] == 'asso')
       return FALSE;
 
     if ($idGroup != 'others') {

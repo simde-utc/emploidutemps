@@ -37,6 +37,8 @@
     $data['infos']['get']['week'] = $_SESSION['week'];
 
     if ($GLOBALS['mode'] == 'organiser' || $GLOBALS['mode'] == 'semaine') {
+      $data['infos']['daysInfo'] = $GLOBALS['daysInfo'];
+
       $date = new DateTime($_SESSION['week']);
       $date->modify('-7 day');
       $day = $date->format('Y-m-d');
@@ -45,7 +47,7 @@
 
       $day = date('Y-m-d', strtotime('monday this week'));
 
-      $data['infos']['week']['actual'] = ($_SESSION['week'] == $day || !isAGoodDate($day) ? FALSE : $day);
+      $data['infos']['week']['actual'] = ($_SESSION['week'] == $day ? FALSE : $day);
 
       $date->modify('+14 day');
       $day = $date->format('Y-m-d');
@@ -159,7 +161,10 @@
     }
 
     printManyTasks(array_merge(array($_SESSION['login']), $_SESSION['active']), $_SESSION['week']);
-    $title = 'Affichage des différents emplois du temps sélectionnés';
+
+    $temp = new DateTime($_SESSION['week']);
+    $week = $temp->format('d/m');
+    $title = 'Affichage des différents emplois du temps sélectionnés de la semaine du '.$week;
 
     printWeek(NULL, $_SESSION['week'], 'calendar');
     printGroupTabsInfos();
@@ -172,29 +177,31 @@
       $type = NULL;
 
     $days = getDays($_SESSION['week']);
+    $temp = new DateTime($_SESSION['week']);
+    $week = $temp->format('d/m');
 
     if (isset($_GET['uv']) && isAnUV($_GET['uv'])) {
       $_GET['mode_type'] = 'uvs_followed';
       $type = 'uvs_followed';
       printWeek($_GET['uv'], $_SESSION['week'], 'uv');
-      $title = 'Affichage des cours/TD/TP de '.$_GET['uv'].' de la semaine';
+      $title = 'Affichage des cours/TD/TP de '.$_GET['uv'].' de la semaine du '.$week;
     }
     elseif ($type == 'uvs_followed') {
       printWeek($_SESSION['login'], $_SESSION['week'], 'uv_followed');
-      $title = 'Affichage de tes cours/TD/TP de la semaine';
+      $title = 'Affichage de tes cours/TD/TP de la semaine du '.$week;
     }
     elseif ($type == 'events') {
       printWeek($_SESSION['login'], $_SESSION['week'], 'event');
-      $title = 'Affichage de tes évènements de la semaine';
+      $title = 'Affichage de tes évènements de la semaine du '.$week;
     }
     elseif ($type == 'meetings') {
       printWeek($_SESSION['login'], $_SESSION['week'], 'meeting');
-      $title = 'Affichage de tes réunions de la semaine';
+      $title = 'Affichage de tes réunions de la semaine du '.$week;
     }
     elseif ($type == 'rooms') {
       $gap = isset($_GET['mode_option']) && is_numeric($_GET['mode_option']) ? intval($_GET['mode_option']) : 1;
       printWeek($gap, $_SESSION['week'], 'room');
-      $title = 'Affichage des salles disponibles de '.abs($gap).' à '.(abs($gap) + 1).'h cette semaine';
+      $title = 'Affichage des salles disponibles de '.abs($gap).' à '.(abs($gap) + 1).'h de la semaine du '.$week;
     }
     else {
       $type = NULL;
@@ -202,7 +209,7 @@
       printWeek($_SESSION['login'], $_SESSION['week'], 'uv_followed');
       printWeek($_SESSION['login'], $_SESSION['week'], 'event');
       printWeek($_SESSION['login'], $_SESSION['week'], 'meeting');
-      $title = 'Affichage de ton emploi du temps de la semaine';
+      $title = 'Affichage de ton emploi du temps de la semaine du '.$week;
     }
 
     printSemaineTabs($type);

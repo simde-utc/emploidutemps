@@ -31,7 +31,7 @@
       'SELECT students.login, students.semester, students.email, students.firstname, students.surname, students.status, uvs_followed.enabled, uvs_followed.exchanged
         FROM students, uvs_followed
         WHERE uvs_followed.idUV = ? AND uvs_followed.enabled = ? AND (? IS NULL OR students.status = ?) AND students.login = uvs_followed.login
-        ORDER BY surname, firstname, login',
+        ORDER BY firstname, surname, login',
       array($idUV, $enabled, $status, $status)
     );
 
