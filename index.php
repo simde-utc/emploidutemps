@@ -53,14 +53,14 @@
       if (isNew) {
         popup('Bienvenue sur le service Emploid\'UTemps', $('<div></div>').addClass('centerCard')
           .append($('<div></div>').text('Salut ! Bienvenue sur un service proposé par le BDE/SiMDE qui te permettra de réaliser tout un tas de choses avec ton emploi du temps étudiant.'))
-          .append($('<br /><br />'));
+          .append($('<br /><br />'))
           .append($('<div></div>').text('Emploid\'UTemps te permet de faire plusieurs choses:'))
           .append($('<div></div>').text('- Afficher un emploi du temps (comme le tien, celui d\'un.e de tes potes ou d\'une UV) sur une semaine type'))
           .append($('<div></div>').text('- Comparer ton emploi du temps avec un autre (comme celui d\'un.e de tes potes ou d\'une UV) sur une semaine type'))
           .append($('<div></div>').text('- Modifier ton emploi du temps en échangeant tes créneaux avec d\'autres valides et disponibles (de façon très simple)'))
           .append($('<div></div>').text('- Afficher ton emploi du temps d\'une semaine réelle (comme afficher ton emploi du temps sur la semaine du 05/03'))
           .append($('<div></div>').text('- Afficher simultanément plusieurs emplois du temps pour organiser facilement des réunions ou des évènements'))
-          .append($('<br /><br />'));
+          .append($('<br /><br />'))
           .append($('<div></div>').text('Mais c\'est aussi encore plus:'))
           .append($('<div></div>').text('- Rechercher via un Trombi un.e étudiant.e'))
           .append($('<div></div>').text('- Affichage automatique de tes associations avec l\'affichage des membres'))
@@ -70,7 +70,7 @@
           .append($('<div></div>').text('- Une paramétration et des outils'))
           .append($('<div></div>').text('- Un affichage des salles de cours et de TDs libres'))
           .append($('<div></div>').text('- Un site adapté aux mobiles'))
-          .append($('<br /><br />'));
+          .append($('<br /><br />'))
           .append($('<div></div>').text('En cliquant sur le bouton Accepter, j\'accepte d\'utiliser le service de la meilleure des manières et d\'être responsable des mes choix (lors de mes échanges):'))
           .append($('<button></button>').text('Accepter').on('click', function () {
             changeStatus(1):
