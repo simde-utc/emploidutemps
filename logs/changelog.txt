@@ -372,3 +372,5 @@ Beta 2.6: 2017-09-07
   - Amélioration du système de gestion des actifs
   - Amélioration générale de l'ergonomie
   - Correction de bugs
+
+Mise à jour des emplois du temps: 2017-09-07 23:59:05
