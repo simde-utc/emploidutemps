@@ -671,13 +671,13 @@ var changeColor = function(id, color, name) {
   });
 };
 
-var changeStatus(status) {
+var changeStatus = function (status) {
   getRequest('parameters.php', {
     'status': status
   }, function () {
     generate();
   });
-}
+};
 
 
 /* Trombi */
