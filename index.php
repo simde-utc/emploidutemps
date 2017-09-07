@@ -170,7 +170,7 @@
     <button id='navButton' onClick='toogleNav()'><i class="fa fa-2x fa-bars" aria-hidden="true"></i></button>
     <a id='name' href='/emploidutemps'>Emploi d'UTemps</a>
     <button id='search' onClick='search()'><i class="fa fa-2x fa-search" aria-hidden="true"></i></button>
-    <!--<button id='help' onClick='help()'><i class="fa fa-2x fa-question-circle" aria-hidden="true"></i></button>-->
+    <button id='help' onClick='help()' DISABLED><i class="fa fa-2x fa-question-circle" aria-hidden="true"></i></button>
     <button id='parametersButton' onClick="toogleParam()"><i class="fa fa-2x fa-cog" aria-hidden="true"></i></button>
   </div>
 
@@ -277,8 +277,8 @@
       Options:
       <div>
         <button onClick="getRequest('parameters.php', { 'defaultMode': get.mode })"><i class="fa fa-cog" aria-hidden="true"></i> Affecter ce mode par défaut</button>
-        <button <?php if ($_SESSION['status'] != -1) { echo 'style="display:none;"'; } ?> onClick="changeStatus(1)" DISABLED><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> Se réabonner</button>
-        <button <?php if ($_SESSION['status'] == -1) { echo 'style="display:none;"'; } ?> onClick="changeStatus(-1);" DISABLED><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> Se désabonner</button>
+        <button <?php if ($_SESSION['status'] != -1) { echo 'style="display:none;"'; } ?> onClick="changeStatus(1)"><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> Se réabonner</button>
+        <button <?php if ($_SESSION['status'] == -1) { echo 'style="display:none;"'; } ?> onClick="changeStatus(-1);"><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> Se désabonner</button>
         <button <?php if ($_SESSION['status'] != -1) { echo 'style="display:none;"'; } ?> onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-remove" aria-hidden="true"></i> Se désinscrire définitivement</button>
       </div>
     </div>
