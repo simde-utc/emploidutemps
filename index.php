@@ -75,9 +75,9 @@
           .append($('<button></button>').text('Accepter').on('click', function () {
             changeStatus(1):
           }))
+        );
 
         $('#zonePopup').css('display', 'none');
-       );
       }
 
       $("body").keyup(function (event) {
