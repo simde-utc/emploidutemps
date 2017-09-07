@@ -366,3 +366,9 @@ Beta 2.5: 2017-09-06
   - Mie à jour de la bdd
   - Correction de bugs
   - Correction de langage
+
+Beta 2.6: 2017-09-07
+  - Mise à jour du système de mise à jour
+  - Amélioration du système de gestion des actifs
+  - Amélioration générale de l'ergonomie
+  - Correction de bugs

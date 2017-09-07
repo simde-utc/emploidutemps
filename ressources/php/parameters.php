@@ -25,6 +25,14 @@
     );
     echo json_encode(array('success' => 'Couleur changée avec succès'));
   }
+  elseif (isGetSet(array('status'))) {
+    $query = $db->prepare('UPDATE students SET status = ? WHERE login = ?');
+    $db->execute($query, array($_GET['status'], $_SESSION['login']));
+
+    $_SESSION['status'] = $_GET['status'];
+
+    echo json_encode(array('success' => 'Statut changé avec succès'));
+  }
   elseif (isset($_GET['defaultMode']) && is_string($_GET['defaultMode'])) {
     if ($_GET['defaultMode'] == '' || $_GET['defaultMode'] == 'classique' || $_GET['defaultMode'] == 'comparer' || $_GET['defaultMode'] == 'modifier' || $_GET['defaultMode'] == 'semaine' || $_GET['defaultMode'] == 'organiser') {
       $db->request(

@@ -2,6 +2,9 @@
 function addActive($element) {
   $in = FALSE;
 
+  if (count($_SESSION['active']) + 2 > 100)
+    returnJSON(array('error' => 'Impossible d\'afficher plus de 100 personnes en même temps'));
+
   if ($element == $_SESSION['login'])
     return FALSE;
 

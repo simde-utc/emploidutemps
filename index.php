@@ -44,13 +44,41 @@
         // Lance le paramètre demandé (désinscription par exemple)
         if (isset($_GET['param']) && is_string($_GET['param']) && !empty($_GET['param']))
           echo 'setTimeout(function () { parameters("', $_GET['param'], '"); }, 1000);';
-/*
+*/
         if ($_SESSION['status'] == 0) {
-          $query = $db->prepare('UPDATE students SET status = 0 WHERE login = ?');
-          $db->execute($query, array($_SESSION['login']));
-          echo 'setTimeout(function () { parameters("nouveau"); }, 1500);';
-        }*/
+          echo "var isNew = true;";
+        }
       ?>
+
+      if (isNew) {
+        popup('Bienvenue sur le service Emploid\'UTemps', $('<div></div>').addClass('centerCard')
+          .append($('<div></div>').text('Salut ! Bienvenue sur un service proposé par le BDE/SiMDE qui te permettra de réaliser tout un tas de choses avec ton emploi du temps étudiant.'))
+          .append($('<br /><br />'));
+          .append($('<div></div>').text('Emploid\'UTemps te permet de faire plusieurs choses:'))
+          .append($('<div></div>').text('- Afficher un emploi du temps (comme le tien, celui d\'un.e de tes potes ou d\'une UV) sur une semaine type'))
+          .append($('<div></div>').text('- Comparer ton emploi du temps avec un autre (comme celui d\'un.e de tes potes ou d\'une UV) sur une semaine type'))
+          .append($('<div></div>').text('- Modifier ton emploi du temps en échangeant tes créneaux avec d\'autres valides et disponibles (de façon très simple)'))
+          .append($('<div></div>').text('- Afficher ton emploi du temps d\'une semaine réelle (comme afficher ton emploi du temps sur la semaine du 05/03'))
+          .append($('<div></div>').text('- Afficher simultanément plusieurs emplois du temps pour organiser facilement des réunions ou des évènements'))
+          .append($('<br /><br />'));
+          .append($('<div></div>').text('Mais c\'est aussi encore plus:'))
+          .append($('<div></div>').text('- Rechercher via un Trombi un.e étudiant.e'))
+          .append($('<div></div>').text('- Affichage automatique de tes associations avec l\'affichage des membres'))
+          .append($('<div></div>').text('- Une gestion totale d\'un système de groupe que tu peux toi-même créer'))
+          .append($('<div></div>').text('- Des possibilités infinies d\'export: en pdf, en image, en ics pour le mettre dans ton agenda informatique...'))
+          .append($('<div></div>').text('- Un système facile et intelligent d\'échange de créneaux'))
+          .append($('<div></div>').text('- Une paramétration et des outils'))
+          .append($('<div></div>').text('- Un affichage des salles de cours et de TDs libres'))
+          .append($('<div></div>').text('- Un site adapté aux mobiles'))
+          .append($('<br /><br />'));
+          .append($('<div></div>').text('En cliquant sur le bouton Accepter, j\'accepte d\'utiliser le service de la meilleure des manières et d\'être responsable des mes choix (lors de mes échanges):'))
+          .append($('<button></button>').text('Accepter').on('click', function () {
+            changeStatus(1):
+          }))
+
+        $('#zonePopup').css('display', 'none');
+       );
+      }
 
       $("body").keyup(function (event) {
         if(event.keyCode == 27) {
@@ -141,7 +169,7 @@
     <button id='navButton' onClick='toogleNav()'><i class="fa fa-2x fa-bars" aria-hidden="true"></i></button>
     <a id='name' href='/emploidutemps'>Emploi d'UTemps</a>
     <button id='search' onClick='search()'><i class="fa fa-2x fa-search" aria-hidden="true"></i></button>
-    <button id='help' onClick='help()'><i class="fa fa-2x fa-question-circle" aria-hidden="true"></i></button>
+    <!--<button id='help' onClick='help()'><i class="fa fa-2x fa-question-circle" aria-hidden="true"></i></button>-->
     <button id='parametersButton' onClick="toogleParam()"><i class="fa fa-2x fa-cog" aria-hidden="true"></i></button>
   </div>
 
@@ -248,8 +276,8 @@
       Options:
       <div>
         <button onClick="getRequest('parameters.php', { 'defaultMode': get.mode })"><i class="fa fa-cog" aria-hidden="true"></i> Affecter ce mode par défaut</button>
-        <button <?php if ($_SESSION['status'] != -1) { echo 'style="display:none;"'; } ?> onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> Se réabonner</button>
-        <button <?php if ($_SESSION['status'] == -1) { echo 'style="display:none;"'; } ?> onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> Se désabonner</button>
+        <button <?php if ($_SESSION['status'] != -1) { echo 'style="display:none;"'; } ?> onClick="changeStatus(1)" DISABLED><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> Se réabonner</button>
+        <button <?php if ($_SESSION['status'] == -1) { echo 'style="display:none;"'; } ?> onClick="changeStatus(-1);" DISABLED><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> Se désabonner</button>
         <button <?php if ($_SESSION['status'] != -1) { echo 'style="display:none;"'; } ?> onClick="window.open('https://assos.utc.fr/');" DISABLED><i class="fa fa-remove" aria-hidden="true"></i> Se désinscrire définitivement</button>
       </div>
     </div>

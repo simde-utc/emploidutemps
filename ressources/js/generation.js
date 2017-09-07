@@ -60,7 +60,7 @@ var changeMode = function (mode) {
   generate();
 };
 
-var generate = function (silentMode) {
+var generate = function (silentMode, callback) {
   console.time('generate');
 
   getRequest('calendar.php', window.get, function (data) {
@@ -102,6 +102,9 @@ var generate = function (silentMode) {
     generateCalendar(data.tasks, data.infos.sides, data.infos.uvs, data.infos.daysInfo);
     generateMode();
     setCalendar();
+
+    if (callback)
+      callback();
 
     // Recharge l'affichage chaque minute pour les mises à jour
     window.clearInterval(window.reload);
@@ -186,7 +189,7 @@ var disconnect = function () {
       'scrolling': 'no',
       'height': '100%',
       'width': '100%',
-      'src': 'https://dev.nastuzzi.fr/emploidutemps/disconnect.php'
+      'src': 'https://' + window.location.hostname + '/emploidutemps/disconnect.php'
     }).css('position', 'absolute'))
     .append($('<div></div>', {
       'border': '100%',
@@ -252,8 +255,12 @@ var seeGroup = function (group, edit) {
 
     if (data[group].type == 'asso') {
       var optionCards = $('<div></div>').addClass('optionCards');
-      $('<button></button>').html('<i class="fa fa-external-link" aria-hidden="true"></i> Voir sur le portail').attr('onClick', 'assoPortail("' + group + '")').appendTo(optionCards);
-      $('<button></button>').html('<i class="fa fa-send" aria-hidden="true"></i> Envoyer un email à l\'asso').attr('onClick', 'assoEmail("' + group + '")').appendTo(optionCards);
+      $('<button></button>').html('<i class="fa fa-external-link" aria-hidden="true"></i> Voir sur le portail').on('click', function () {
+        window.document.location = 'https://assos.utc.fr/asso/' + group;
+      }).appendTo(optionCards);
+      $('<button></button>').html('<i class="fa fa-send" aria-hidden="true"></i> Envoyer un email à l\'asso').on('click', function () {
+        window.document.location = 'mailto:' + group + '@assos.utc.fr';
+      }).appendTo(optionCards);
       optionCards.appendTo(corps);
     }
 
@@ -304,9 +311,10 @@ var seeGroup = function (group, edit) {
       });
 
       var active = sub_group.active && window.get.mode == 'organiser' ? 'delActive' : 'addActive';
+      console.log(actives)
       $('<div></div>').addClass('subCard').attr('id', 'sub-' + name).css('color', (edit && sub_group.type == 'asso' ? '#FF0000' : '#000000'))
         .append($('<b></b>').text(sub_group.name))
-        .append($('<button></button>').html('<i class="fa fa-' + (edit ? 'edit' : (sub_group.active && window.get.mode == 'organiser' ? 'eye-slash' : 'eye')) + '"></i>').prop('disabled', (!edit && Object.keys(actives).length == 0) || (edit && sub_group.type != 'custom')).on('click', edit ? function () {
+        .append($('<button></button>').html('<i class="fa fa-' + (edit ? 'edit' : (sub_group.active && window.get.mode == 'organiser' ? 'eye-slash' : 'eye')) + '"></i>').prop('disabled', (!edit && (Object.keys(actives).length == 0 || (Object.keys(actives).length == 1 && actives[0] == window.sessionLogin))) || (edit && sub_group.type != 'custom')).on('click', edit ? function () {
           setSubGroup(group, name, 'sub-' + name);
         } : function () {
           window.get = {
@@ -314,8 +322,10 @@ var seeGroup = function (group, edit) {
           };
           window.get[active] = actives;
 
-          generate(true);
-          seeGroup(group);
+          loading();
+          generate(true, function () {
+            seeGroup(group);
+          });
         })).appendTo(corps);
       div.appendTo(corps);
     });
@@ -344,7 +354,7 @@ var seeGroup = function (group, edit) {
     });
 
     var active = data[group].active && window.get.mode == 'organiser' ? 'delActive' : 'addActive';
-    popup(data[group].type == 'asso' ? '<a href=https://assos.utc.fr/asso/' + group + '>' + data[group].name + '</a>' : data[group].name, corps);
+    popup(data[group].name, corps);
     $('#popupHead').append($('<button></button>').html('<i class="fa fa-' + (edit ? 'edit' : (data[group].active && window.get.mode == 'organiser' ? 'eye-slash' : 'eye')) + '"></i>').prop('disabled', (!edit && Object.keys(actives).length == 0) || (edit && data[group].type != 'custom')).on('click', edit ? function () {
       setGroup(group, 'popupHead');
     } : function () {
@@ -353,8 +363,10 @@ var seeGroup = function (group, edit) {
       };
       window.get[active] = actives;
 
-      generate(true);
-      seeGroup(group);
+      loading();
+      generate(true, function () {
+        seeGroup(group);
+      });
     }));
   });
 };
@@ -370,11 +382,12 @@ var setGroup = function (idGroup, id) {
       'group': idGroup,
       'info': $('#' + id + ' input').val()
     }, function () {
-      generate(true);
-      $('#' + id + ' input').replaceWith($('<b></b>').text($('#' + id + ' input').val()));
-      $('#' + id + ' button').first().replaceWith($('<button></button>').html('<i class="fa fa-edit"></i>').on('click', function () {
-        setGroup(idGroup, id);
-      }));
+      generate(true, function () {
+        $('#' + id + ' input').replaceWith($('<b></b>').text($('#' + id + ' input').val()));
+        $('#' + id + ' button').first().replaceWith($('<button></button>').html('<i class="fa fa-edit"></i>').on('click', function () {
+          setGroup(idGroup, id);
+        }));
+      });
     });
   }));
 
@@ -396,8 +409,9 @@ var addSubGroup = function (idGroup, group, edit) {
         'group': idGroup,
         'sub_group': $('#sub-create input').last().val()
       }, function () {
-        generate(true);
-        seeGroup(idGroup, edit);
+        generate(true, function () {
+          seeGroup(idGroup, edit);
+        });
       });
     })).insertBefore($('.optionCards'));
 
@@ -410,8 +424,9 @@ var delSubGroup = function (idGroup, idSubGroup) {
     'group': idGroup,
     'sub_group': idSubGroup,
   }, function () {
-    generate(true);
-    seeGroup(idGroup, true);
+    generate(true, function () {
+      seeGroup(idGroup, true);
+    });
   });
 };
 
@@ -428,8 +443,9 @@ var setSubGroup = function (idGroup, idSubGroup, id) {
     }, function () {
       $('#' + id + ' input').replaceWith($('<b></b>').text($('#' + id + ' input').val()));
       $('#' + id + ' button').first().replaceWith($('<button></button>').html('<i class="fa fa-edit"></i>').on('click', function () {
-        generate(true);
-        setSubGroup(idGroup, idSubGroup, id);
+        generate(true, function () {
+          setSubGroup(idGroup, idSubGroup, id);
+        });
       }));
 
       setPopupButtons(true);
@@ -554,7 +570,7 @@ var setToGroup = function (idGroup, idSubGroup, element, text, id, semester, noI
   submited();
 };
 
-var addActive = function (list) {
+var addActive = function (list, callback) {
   if (typeof list === 'string')
     list = [list];
 
@@ -562,10 +578,10 @@ var addActive = function (list) {
   delete window.get.delActive;
 
   loading();
-  generate(true);
+  generate(true, callback);
 };
 
-var delActive = function (list) {
+var delActive = function (list, callback) {
   if (typeof list === 'string')
     list = [list];
 
@@ -573,7 +589,7 @@ var delActive = function (list) {
   delete window.get.addActive;
 
   loading();
-  generate(true);
+  generate(true, callback);
 };
 
 var seeStudent = function (login, info) {
@@ -655,6 +671,14 @@ var changeColor = function(id, color, name) {
   });
 };
 
+var changeStatus(status) {
+  getRequest('parameters.php', {
+    'status': status
+  }, function () {
+    generate();
+  });
+}
+
 
 /* Trombi */
 
@@ -663,7 +687,7 @@ var search = function () {
     $('<div></div>')
       .append($('<div></div>').text('Chercher un étudiant ou une UV pour l\'ajouter'))
       .append($('<input />').attr('id', 'addTabText').attr('onInput', 'checkSearch(this.value)'))
-      .append($('<button></button>').attr('id', 'searchButton').attr('onClick', 'printSearch(this.value)').text('Chercher')).html(),
+      .append($('<button></button>').attr('id', 'searchButton').attr('onClick', 'printSearch()').text('Chercher')).html(),
     $('<div></div>')
       .append($('<div></div>').addClass('studentCardsText'))
       .append($('<div></div>').addClass('studentCards'))
@@ -1589,7 +1613,7 @@ var generateStudentCard = function (infos, info, idGroup, idSubGroup, type) {
   }
   else {
     if (window.get.mode == 'organiser')
-      option.append($('<button></button>').html('<i class="fa fa-' + (infos.active ? 'eye-slash' : 'eye') + '"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).attr('onClick', (infos.active ? 'delActive' : 'addActive') + '("' + infos.login + '"); seeGroup("' + idGroup + '")'))
+      option.append($('<button></button>').html('<i class="fa fa-' + (window.active[infos.login] ? 'eye-slash' : 'eye') + '"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).attr('onClick', (window.active[infos.login] ? 'delActive' : 'addActive') + '("' + infos.login + '", function () {' + (idGroup ? 'seeGroup("' + idGroup + '")' : 'printSearch();') + '});'))
     else
       option.append($('<button></button>').html('<i class="fa fa-eye"></i>').attr('disabled', infos.login == window.sessionLogin || infos.extern).attr('onClick', 'seeStudent("' + infos.login + (info == undefined ? '' : '", "' + info) + '")'))
 
@@ -1608,7 +1632,7 @@ var generateStudentCard = function (infos, info, idGroup, idSubGroup, type) {
       .append($('<a></a>').attr('href', 'mailto:' + infos.email).text(infos.email)))
     .append(option);
 
-  if ((infos.active || infos.login == window.sessionLogin) && window.active[infos.login])
+  if (window.active[infos.login])
     card.css('background-color', window.active[infos.login] + 'CC').css('color', getFgColor(window.active[infos.login]));
 
   return card;
@@ -2348,7 +2372,7 @@ var generateCalendar = function(tasks, sides, uvs, daysInfo) {
 
   // Ajout de la case toute la journée
   if (window.get.mode === 'semaine' || window.get.mode === 'organiser' || (window.get.mode === 'classique' && window.get.mode_type === 'rooms')) {
-    div.clone().addClass('allDay').addClass(window.HOUR_MAX > hour || ($('#withWeekTool').prop('checked') && currentDay != 7) ? 'futureHour' : ($('#withWeekTool').prop('checked') && (window.get.mode === 'semaine' || window.get.mode === 'organiser') ? (currentDay != -1 ? 'passedHour' : 'currentHour') : '')).appendTo(scheduleTimeline);
+    div.clone().addClass('allDay').addClass((window.HOUR_MAX > hour && $('#withWeekTool').prop('checked') && currentDay != 7) ? 'futureHour' : ($('#withWeekTool').prop('checked') && (window.get.mode === 'semaine' || window.get.mode === 'organiser') ? (currentDay != -1 && window.HOUR_MAX > hour ? 'passedHour' : 'currentHour') : '')).appendTo(scheduleTimeline);
     gridColumnElement[0].append(div.clone().addClass('allDay').addClass('calendar-cell' + '10'));
   }
 

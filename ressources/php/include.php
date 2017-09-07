@@ -100,11 +100,18 @@
 
     ', FILE_APPEND);
 
-/*
     if ($data['status'] != '-1')
-      return mail($mail, $subject, $message.PHP_EOL.PHP_EOL.'Pour arrêter de recevoir des mails du service, tu peux à tout moment te désinscrire en cliquant ici: https://assos.utc.fr/emploidutemps/?param=sedesinscrire'.PHP_EOL.PHP_EOL.'En cas d\'erreur ou de bug, contacte-nous à cette adresse: simde@assos.utc.fr'.PHP_EOL.PHP_EOL.'Il y a une vie après les cours,'.PHP_EOL.'Le SiMDE', 'From:'.$from.' Content-Type: text/plain; charset="utf-8" Content-Transfer-Encoding: 8bit');
-*/
-    return FALSE;
+      return mail(
+        $mail,
+        $subject,
+        $message.'
+
+
+Pour arrêter de recevoir des mails du service, tu peux à tout moment te désinscrire en cliquant ici: https://assos.utc.fr/emploidutemps/ et cliquer dans le menu Options > Se désabonner
+
+Il y a une vie après les cours,
+Le SiMDE',
+        'From:'.$from.' Content-Type: text/plain; charset="utf-8" Content-Transfer-Encoding: 8bit');
   }
 
   function isUpdating() {
@@ -367,7 +374,7 @@
     return TRUE;
   }
 
-  if (isUpdating()) {
+  if (isUpdating() && !$_SESSION['admin']) { //  A améliorer
     echo 'Emploi d\'UTemps est en cours de mise à jour, veuillez patienter. La page se relancera d\'elle-même lorsque la mise à jour sera terminée
     <script>
     setTimeout(function(){ window.reload(); }, 5000);

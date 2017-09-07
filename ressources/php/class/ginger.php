@@ -1,4 +1,4 @@
-<?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps'.'/ressources/mdp.php'); // Récupération des données
+<?php
 
   include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps'.'/ressources/php/ginger/ApiException.php');
   include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps'.'/ressources/php/ginger/KoalaClient.php');

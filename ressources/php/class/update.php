@@ -1,4 +1,10 @@
 <?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/class/ginger.php');
+  include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/class/curl.php');
+
+$_SESSION['MODCASID'] = 'Sk5x54Z3Q6xSDz9jikB4frDfH0FZd';
+$curl = new CURL(strpos($_SERVER['HTTP_HOST'],'utc') !== false);
+if (isset($_SESSION['MODCASID']))
+  $curl->setCookies('MODCASID='.$_SESSION['MODCASID']);
 
 class UPDATE
 {
@@ -62,7 +68,6 @@ class UPDATE
     $file = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::tempDir.'login';
     $logsDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::tempDir;
     $edtDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::edtDir;
-    $picDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::picDir;
 
     if (!file_exists($logsDir.'update')) {
       if (!self::checkUpdate($curl)) {
@@ -183,7 +188,7 @@ class UPDATE
             continue;
           }
 
-          if ($i > 10) {
+          if ($i > 50) {
             echo $j - 1, ' emplois du temps ont déjà été sauvegardés';
             return FALSE;
           }
@@ -268,7 +273,7 @@ class UPDATE
 
 
   private static function insertUV ($elem) {
-    $queryIsUV = $GLOBALS['db']->prepare('SELECT id FROM uvs WHERE uv = ? AND type = ? AND groupe = ? AND day = ? AND begin = ? AND end = ? AND room = ? AND frequency = ? AND week = ?');
+    $query = 'SELECT id FROM uvs WHERE uv = ? AND type = ? AND groupe = ? AND day = ? AND begin = ? AND end = ? AND ';
     $jours = array('LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE');
 
     foreach ($jours as $i => $jour) {
@@ -277,17 +282,33 @@ class UPDATE
           break;
       }
     }
+
+    if ($elem[6] == '') {
+      $query .= '? IS NULL';
+      $elem[6] = NULL;
+    }
+    else
+      $query .= 'room = ?';
+
+    $query .= ' AND frequency = ? AND ';
+
+    if ($elem[8] == '') {
+      $query .= '? IS NULL';
+      $elem[8] = NULL;
+    }
+    else
+      $query .= 'week = ?';
+
+    $queryIsUV = $GLOBALS['db']->prepare($query);
     $GLOBALS['db']->execute($queryIsUV, $elem);
     $data = $queryIsUV->fetch();
     $id = $data['id'];
-
-    if ($elem[6] == '')
-      $elem[6] = NULL;
 
     if (empty($id)) {
       $queryAddUV = $GLOBALS['db']->prepare('INSERT INTO uvs(uv, type, groupe, day, begin, end, room, frequency, week) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)');
       $GLOBALS['db']->execute($queryAddUV, $elem);
       $GLOBALS['db']->execute($queryIsUV, $elem);
+
       $data = $queryIsUV->fetch();
       return $data['id'];
     }
@@ -300,7 +321,7 @@ class UPDATE
 
 
   private static function insertCours ($login, $id) {
-    $queryAddCours = $GLOBALS['db']->prepare('INSERT INTO uvs_followed(login, id) VALUES(?, ?)');
+    $queryAddCours = $GLOBALS['db']->prepare('INSERT INTO uvs_followed(login, idUV) VALUES(?, ?)');
     $GLOBALS['db']->execute($queryAddCours, array($login, $id));
   }
 
@@ -316,7 +337,6 @@ class UPDATE
     $ecart = $fin - $debut;
 
     if ($ecart >= 1 && $debut < 20) {
-      echo $debutDispo[$debut], ' - ', $finDispo[$fin], '<br />';
       $insert = $GLOBALS['db']->prepare('INSERT INTO uvs_rooms(room, type, day, begin, end, gap) VALUES(?, ?, ?, ?, ?, ?)');
       $GLOBALS['db']->execute($insert, array($salle, $type, $jour, $debutDispo[$debut], $finDispo[$fin], $ecart));
     }
@@ -381,10 +401,10 @@ class UPDATE
   }
 
   public static function resetdb () {
-    $GLOBALS['db']->query('TRUNCATE TABLE events;
+    $GLOBALS['db']->request('TRUNCATE TABLE events;
       TRUNCATE TABLE events_followed;
-      TRUNCATE TABLE exchanged;
-      TRUNCATE TABLE exchanged_canceled;
+      TRUNCATE TABLE exchanges;
+      TRUNCATE TABLE exchanges_canceled;
       TRUNCATE TABLE exchanges_received;
       TRUNCATE TABLE exchanges_sent;
       TRUNCATE TABLE exchanges_set;
@@ -394,10 +414,8 @@ class UPDATE
       TRUNCATE TABLE students_groups_elements;
       TRUNCATE TABLE uvs;
       TRUNCATE TABLE uvs_followed;
-      TRUNCATE TABLE uvs_days;
       TRUNCATE TABLE uvs_colors;
-      TRUNCATE TABLE uvs_rooms;
-    ;');
+      TRUNCATE TABLE uvs_rooms;', array());
   }
 }
 ?>
