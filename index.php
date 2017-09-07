@@ -45,9 +45,10 @@
         if (isset($_GET['param']) && is_string($_GET['param']) && !empty($_GET['param']))
           echo 'setTimeout(function () { parameters("', $_GET['param'], '"); }, 1000);';
 */
-        if ($_SESSION['status'] == 0) {
+        if ($_SESSION['status'] == 0)
           echo "var isNew = true;";
-        }
+        else
+          echo "var isNew = false;";
       ?>
 
       if (isNew) {
@@ -73,7 +74,7 @@
           .append($('<br /><br />'))
           .append($('<div></div>').text('En cliquant sur le bouton Accepter, j\'accepte d\'utiliser le service de la meilleure des manières et d\'être responsable des mes choix (lors de mes échanges):'))
           .append($('<button></button>').text('Accepter').on('click', function () {
-            changeStatus(1):
+            changeStatus(1);
           }))
         );
 
