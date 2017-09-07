@@ -94,12 +94,6 @@
     );
     $data = $query->fetch();
 
-    file_put_contents('mails', $mail.'
-    '.$subject.'
-    '.$message.'
-
-    ', FILE_APPEND);
-
     if ($data['status'] != '-1')
       mail(
         $mail,
