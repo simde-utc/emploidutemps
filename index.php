@@ -52,7 +52,8 @@
       ?>
 
       if (isNew) {
-        popup('Bienvenue sur le service Emploid\'UTemps', $('<div></div>').addClass('centerCard')
+        setTimeout(function () { 
+	popup('Bienvenue sur le service Emploid\'UTemps', $('<div></div>').addClass('centerCard')
           .append($('<div></div>').text('Salut ! Bienvenue sur un service proposé par le BDE/SiMDE qui te permettra de réaliser tout un tas de choses avec ton emploi du temps étudiant.'))
           .append($('<br /><br />'))
           .append($('<div></div>').text('Emploid\'UTemps te permet de faire plusieurs choses:'))
@@ -75,10 +76,12 @@
           .append($('<div></div>').text('En cliquant sur le bouton Accepter, j\'accepte d\'utiliser le service de la meilleure des manières et d\'être responsable des mes choix (lors de mes échanges):'))
           .append($('<button></button>').text('Accepter').on('click', function () {
             changeStatus(1);
+	    setTimeout(function () {
+		window.location.reload();
+	    }, 1000);
           }))
         );
-
-        $('#zonePopup').css('display', 'none');
+	}, 1000);
       }
 
       $("body").keyup(function (event) {
