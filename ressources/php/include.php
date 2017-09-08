@@ -101,7 +101,7 @@
     ', FILE_APPEND);
 
     if ($data['status'] != '-1')
-      return mail(
+      mail(
         $mail,
         $subject,
         $message.'
@@ -111,7 +111,7 @@ Pour arrêter de recevoir des mails du service, tu peux à tout moment te désin
 
 Il y a une vie après les cours,
 Le SiMDE',
-        'From:'.$from.' Content-Type: text/plain; charset="utf-8" Content-Transfer-Encoding: 8bit');
+        'From:'.$from);
   }
 
   function isUpdating() {
