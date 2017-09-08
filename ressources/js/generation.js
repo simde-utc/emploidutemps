@@ -1600,7 +1600,7 @@ var generateMode = function () {
 };
 
 var generateStudentCard = function (infos, info, idGroup, idSubGroup, type) {
-  var text = (infos.login == 'cerichar' ? 'César RICHARD - Licorne d\'amour <3' : infos.firstname + ' ' + infos.surname);
+  var text = (infos.login == 'cerichar' ? 'César RICHARD - Licorne d\'amour <3' : (infos.firstname == null ? 'Aucune information sur la personne' : infos.firstname + ' ' + infos.surname);
   var id = 'card-' + infos.login + (idSubGroup ? '-' + idSubGroup : '');
   var option = $('<div></div>').addClass('optionsCard');
 
