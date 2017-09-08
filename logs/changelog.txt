@@ -374,3 +374,9 @@ Beta 2.6: 2017-09-07
   - Correction de bugs
 
 Mise à jour des emplois du temps: 2017-09-07 23:59:05
+
+Release 2.1: 2017-09-08
+  - Ajout de la fonctionnalité mails
+  - Ajout du menu d'accueil
+  - Correction du texte
+  - Correction de nombreux bugs (échanges, mauvais idExchang, pas de mails)

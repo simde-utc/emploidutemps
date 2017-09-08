@@ -243,7 +243,7 @@ Si tu regrettes ta proposition d\'échange, tu peux toujours l\'annuler (avant q
         sendMail(
           $studentInfos['email'],
           uvTypeToText($uv['type']).' de '.$uv['uv']. ' - Proposition reçue',
-          'Tu viens de recevoir une proposition qui est la suivante: obternir le '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].
+          'Tu viens de recevoir une proposition qui est la suivante: obtenir le '.uvTypeToText($uv['type']).' de '.$uv['uv'].' du '.dayToText($uv['day']).' de '.$uv['begin'].' à '.$uv['end'].
           ' en échange avec le tien du '.dayToText($uv2['day']).' de '.$uv2['begin'].' à '.$uv2['end'].'
 
 Bien sûr, tu peux attendre pour répondre voire, ne pas répondre du tout à la proposition qui t\'a été faite. Par contre, ça se fait au shotgun, le premier qui accepte est le premier servi.
@@ -382,7 +382,7 @@ Tu es la '.($nbr + 1).'ème personne à proposer cette échange. Tu seras tenu.e
       array($uv2['id'], $received['login'])
     );
     $data = $query->fetch();
-    $coloReceived = $data['color'];
+    $colorReceived = $data['color'];
 
     // On désactive les créneaux échangés
     $GLOBALS['db']->request(
@@ -396,11 +396,11 @@ Tu es la '.($nbr + 1).'ème personne à proposer cette échange. Tu seras tenu.e
 
     // On ajoute les créneaux échangés
     $GLOBALS['db']->request(
-      'INSERT INTO uvs_followed(idUV, login, exchanged, color) VALUES(?, ?, 1)',
+      'INSERT INTO uvs_followed(idUV, login, exchanged, color) VALUES(?, ?, 1, ?)',
       array($uv2['id'], $sent['login'], $colorSent)
     );
     $GLOBALS['db']->request(
-      'INSERT INTO uvs_followed(idUV, login, exchanged, color) VALUES(?, ?, 1)',
+      'INSERT INTO uvs_followed(idUV, login, exchanged, color) VALUES(?, ?, 1, ?)',
       array($uv['id'], $received['login'], $colorReceived)
     );
 

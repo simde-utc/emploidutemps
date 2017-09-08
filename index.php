@@ -76,9 +76,6 @@
           .append($('<div></div>').text('En cliquant sur le bouton Accepter, j\'accepte d\'utiliser le service de la meilleure des manières et d\'être responsable des mes choix (lors de mes échanges):'))
           .append($('<button></button>').text('Accepter').on('click', function () {
             changeStatus(1);
-	    setTimeout(function () {
-		window.location.reload();
-	    }, 1000);
           }))
         );
 	}, 1000);
@@ -161,8 +158,10 @@
 
     // En cas d'erreur, recharger la page
     $(document).ajaxError(function(err) {
-      console.log(err)
-      //location.reload();
+      $.miniNoty('<i class="fa fa-exclamation-circle" aria-hidden="true"></i> Une erreur a ete détectee. Si le problème persiste, signale-le nous. Merci !', 'error');
+      setTimeout(function () {
+	location.reload();
+      }, 1000);
     });
   </script>
   <title>Emploi d'UTemps</title>

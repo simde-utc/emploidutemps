@@ -106,6 +106,9 @@ Pour arrêter de recevoir des mails du service, tu peux à tout moment te désin
 Il y a une vie après les cours,
 Le SiMDE',
         'From:'.$from);
+//        'From:'.$from.'
+//Content-type: text/html; charset=iso-8859-1');
+//Content-type: text/html; charset=UTF-8');
   }
 
   function isUpdating() {

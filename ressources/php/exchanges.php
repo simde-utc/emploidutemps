@@ -3,6 +3,8 @@
 
   header('Content-Type: application/json');
 
+//returnJSON(array('error' => 'Echanges bloqués maximum 1h, écoute l\'amphi'));
+
   if (isset($_GET['mode']) && is_string($_GET['mode']))
     $mode = $_GET['mode'];
   else

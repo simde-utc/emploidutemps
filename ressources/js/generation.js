@@ -675,7 +675,9 @@ var changeStatus = function (status) {
   getRequest('parameters.php', {
     'status': status
   }, function () {
-    generate();
+    setTimeout(function () {
+      window.location.reload();
+    }, 1000);
   });
 };
 
@@ -713,7 +715,7 @@ var checkSearch = function (input) {
   var text = input.replace(/\s+/g, ' ').replace(/^\s+/g, '').replace(/(\s.+)\s$/g, '$1');
   $('#addTabText').val(text);
 
-  $('#searchButton').prop('disabled', text.length < 2);
+  $('#searchButton').prop('disabled', text.length == 0);
 };
 
 var printSearch = function (begin) {
@@ -1981,16 +1983,20 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
   var div = $('<div></div>');
   var button = $('<button/>');
 
+  var card, style;
+  //tasks.forEach(function(group) {
+  $.each(tasks, function(index, group) {
+//    group.data.forEach(function(task) {
+    $.each(group.data, function(index2, task) {
   if (window.get.mode == 'modifier' && window.get.mode_type == 'uvs_followed') {
-    tasks[0].data.forEach(function(task) {
+    $.each(tasks[0].data, function(index0, task) {
       if (task.subject == window.get.uv && task.type == window.get.type)
         toExchange = task;
     });
   }
 
-  var card, style;
-  tasks.forEach(function(group) {
-    group.data.forEach(function(task) {
+
+
       cardClass = 'card';
       if (task.day != day)
         return;
@@ -2029,8 +2035,8 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
 
       // Il faut vérifier si des cards coincident
       nbrSameTime = 1;
-      tasks.forEach(function(groupToCompare) {
-        groupToCompare.data.forEach(function(toCompare) {
+      $.each(tasks, function(indexComp, groupToCompare) {
+        $.each(groupToCompare.data, function(indexComp2, toCompare) {
           if (toCompare.day != day || task.id == toCompare.id)
             return;
 
@@ -2117,7 +2123,7 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
               });
             }
             else {
-              interraction = div.clone().addClass('interraction');
+	      interraction = div.clone().addClass('interraction');
               option = button.clone().addClass('option').css('background-color', task.bgColor).css('color', getFgColor(task.bgColor));
 
               if (window.get.mode_type == 'uvs_followed') {
@@ -2125,9 +2131,13 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
                 option.clone().html('<i class="fa fa-handshake-o" aria-hidden="true"></i> Proposer en échange').on('click', function() {
                   askExchange(toExchange.idUV, task.idUV);
                 }).appendTo(interraction);
+
+                if (!task.description)
+                  task.description = 'En ' + (toExchange.available == '1' && toExchange.exchanged == '1' ? 'récupération' : 'échange') + ' du mien du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + (toExchange.timeText ? toExchange.timeText.replace('-', ' à ') : toExchange.begin + ' à ' + toExchange.end);
+
               }
               else {
-                toExchange = task.exchange;
+	        var toExchange = task.exchange;
                 var type = '';
                 var bgColor;
 
@@ -2204,10 +2214,10 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
                 style.color = getFgColor(bgColor);
                 card.children('.note').first().append(type);
                 button.clone().addClass('option').css('background-color', bgColor).css('color', style.color).html("<i class='fa fa-info' aria-hidden='true'></i> Informations").on('click', function() { seeUVInformations(task); }).prependTo(interraction);
-              }
 
-              if (!task.description)
-                task.description = 'En ' + (toExchange.available == '1' && toExchange.exchanged == '1' ? 'récupération' : 'échange') + ' du mien du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + (toExchange.timeText ? toExchange.timeText.replace('-', ' à ') : toExchange.begin + ' à ' + toExchange.end);
+                if (!task.description)       
+	          task.description = 'En ' + (toExchange.available == '1' && toExchange.exchanged == '1' ? 'récupération' : 'échange') + ' du mien du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + (toExchange.timeText ? toExchange.timeText.replace('-', ' à ') : toExchange.begin + ' à ' + toExchange.end);
+              }
 
               interraction.prepend($('<div></div>').addClass('description').html(task.description));
               interraction.appendTo(card);
