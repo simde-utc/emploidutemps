@@ -10,168 +10,14 @@
   <link rel="stylesheet" href="ressources/css/jquery-ui.min.css">
   <link rel="stylesheet" href="ressources/css/jquery-ui.structure.min.css">
   <link rel="stylesheet" href="ressources/css/jquery.timepicker.css">
-  <script type="text/javascript" src="ressources/js/jquery-3.1.1.min.js"></script>
-  <script type="text/javascript" src="ressources/js/generation.js"></script>
-  <script type="text/javascript" src="ressources/js/jquery.touchSwipe.min.js"></script>
-  <script type="text/javascript" src="ressources/js/html2canvas.min.js"></script>
-  <script type="text/javascript" src="ressources/js/jspdf.min.js"></script>
-  <script type="text/javascript" src="ressources/js/clipboard.min.js"></script>
-  <script type="text/javascript" src="ressources/js/jquery.mininoty.min.js"></script>
-  <script type="text/javascript" src="ressources/js/jquery-ui.min.js"></script>
-  <script type="text/javascript" src="ressources/js/datapicker-fr.js"></script>
-  <script type="text/javascript" src="ressources/js/jquery.timepicker.min.js"></script>
-  <script type="text/javascript">
-    function main () {
-      generateCalendar([], 1, {});
-      setCalendar();
-
-      window.get = <?php echo json_encode(array('mode' => $_SESSION['mode'])); ?>;
-
-      window.get = <?php
-        $query = $GLOBALS['db']->request(
-          'SELECT login FROM students WHERE login = ?',
-          array($_SESSION['login'])
-        );
-
-        if ($query->rowCount() == 0)
-          echo json_encode(array('mode' => 'semaine'));
-        else
-          echo json_encode($_GET);
-
-        echo ';
-        ';
-/*
-        // Lance le paramètre demandé (désinscription par exemple)
-        if (isset($_GET['param']) && is_string($_GET['param']) && !empty($_GET['param']))
-          echo 'setTimeout(function () { parameters("', $_GET['param'], '"); }, 1000);';
-*/
-        if ($_SESSION['status'] == 0)
-          echo "var isNew = true;";
-        else
-          echo "var isNew = false;";
-      ?>
-
-      if (isNew) {
-        setTimeout(function () { 
-	popup('Bienvenue sur le service Emploid\'UTemps', $('<div></div>').addClass('centerCard')
-          .append($('<div></div>').text('Salut ! Bienvenue sur un service proposé par le BDE/SiMDE qui te permettra de réaliser tout un tas de choses avec ton emploi du temps étudiant.'))
-          .append($('<br /><br />'))
-          .append($('<div></div>').text('Emploid\'UTemps te permet de faire plusieurs choses:'))
-          .append($('<div></div>').text('- Afficher un emploi du temps (comme le tien, celui d\'un.e de tes potes ou d\'une UV) sur une semaine type'))
-          .append($('<div></div>').text('- Comparer ton emploi du temps avec un autre (comme celui d\'un.e de tes potes ou d\'une UV) sur une semaine type'))
-          .append($('<div></div>').text('- Modifier ton emploi du temps en échangeant tes créneaux avec d\'autres valides et disponibles (de façon très simple)'))
-          .append($('<div></div>').text('- Afficher ton emploi du temps d\'une semaine réelle (comme afficher ton emploi du temps sur la semaine du 05/03)'))
-          .append($('<div></div>').text('- Afficher simultanément plusieurs emplois du temps pour organiser facilement des réunions ou des évènements'))
-          .append($('<br /><br />'))
-          .append($('<div></div>').text('Mais c\'est aussi encore plus:'))
-          .append($('<div></div>').text('- Rechercher via un Trombi un.e étudiant.e'))
-          .append($('<div></div>').text('- Affichage automatique de tes associations avec l\'affichage des membres'))
-          .append($('<div></div>').text('- Une gestion totale d\'un système de groupe que tu peux toi-même créer'))
-          .append($('<div></div>').text('- Des possibilités infinies d\'export: en pdf, en image, en ics pour le mettre dans ton agenda informatique...'))
-          .append($('<div></div>').text('- Un système facile et intelligent d\'échange de créneaux'))
-          .append($('<div></div>').text('- Une paramétration et des outils'))
-          .append($('<div></div>').text('- Un affichage des salles de cours et de TDs libres'))
-          .append($('<div></div>').text('- Un site adapté aux mobiles'))
-          .append($('<br /><br />'))
-          .append($('<div></div>').text('En cliquant sur le bouton Accepter, j\'accepte d\'utiliser le service de la meilleure des manières et d\'être responsable des mes choix (lors de mes échanges):'))
-          .append($('<button></button>').text('Accepter').on('click', function () {
-            changeStatus(1);
-          }))
-        );
-	}, 1000);
-      }
-
-      $("body").keyup(function (event) {
-        if(event.keyCode == 27) {
-          closePopup();
-          window.search = '';
-        }
-      });
-
-
-      generate();
-    }
-
-    var toogleNav = function () {
-      $('#nav').toggleClass('see');
-      $('#parameters').removeClass('see');
-    }
-
-    var toogleParam = function () {
-      $('#parameters').toggleClass('see');
-      $('#nav').removeClass('see');
-    }
-
-    $(window).resize(function() {
-      setCalendar();
-    });
-
-    $(function () {
-      $('#calendar-container').swipe( {
-        swipeLeft: function() { setCalendar(focusedDay + 1); },
-        swipeRight: function() { setCalendar(focusedDay - 1); }
-      });
-    });
-
-    $.miniNoty = function(message, type){
-  		var timeToHide = 5000;
-  		var	timeAnimEnd = 500;
-  		var padding = 10;
-
-  		var cls = 'miniNoty miniNoty-' + (type ? type : 'success');
-  		var node = $('<div/>', {
-				'class': cls,
-				html: message
-			});
-
-  		if ($('.miniNoty').length) {
-  			var elLast = $('.miniNoty:last-child');
-  		  var elLastBottom = parseInt(elLast.css('bottom'));
-  			var	elLastHeight = elLast.outerHeight();
-
-  			node.css('bottom', elLastBottom + elLastHeight + padding + 'px');
-  		}
-
-  		$('body').append(node);
-
-  		// delete on click
-  		node.click(function () {
-  			node.removeClass('miniNoty-show');
-  			setTimeout(function () {
-				  node.remove();
-  			}, timeAnimEnd);
-  		})
-
-  		// push stack
-  		setTimeout(function () {
-  			node.addClass('miniNoty-show');
-  		}, 10)
-
-  		// timeout to hide
-  		setTimeout(function () {
-  			node.removeClass('miniNoty-show');
-  			setTimeout(function () {
-  				node.remove();
-  			}, timeAnimEnd)
-  		}, timeToHide)
-  	}
-
-    // En cas d'erreur, recharger la page
-    $(document).ajaxError(function(err) {
-      $.miniNoty('<i class="fa fa-exclamation-circle" aria-hidden="true"></i> Une erreur a ete détectee. Si le problème persiste, signale-le nous. Merci !', 'error');
-      setTimeout(function () {
-	location.reload();
-      }, 1000);
-    });
-  </script>
   <title>Emploi d'UTemps</title>
 </head>
 
-<body onLoad='main()'>
+<body>
   <div id='header'>
     <button id='navButton' onClick='toogleNav()'><i class="fa fa-2x fa-bars" aria-hidden="true"></i></button>
     <a id='name' href='/emploidutemps'>Emploi d'UTemps</a>
-    <button id='search' onClick='search()'><i class="fa fa-2x fa-search" aria-hidden="true"></i></button>
+    <button id='search' onClick='startSearch()'><i class="fa fa-2x fa-search" aria-hidden="true"></i></button>
     <button id='help' onClick='help()' DISABLED><i class="fa fa-2x fa-question-circle" aria-hidden="true"></i></button>
     <button id='parametersButton' onClick="toogleParam()"><i class="fa fa-2x fa-cog" aria-hidden="true"></i></button>
   </div>
@@ -190,7 +36,7 @@
       <div id='modeText'>
         Mode:
       </div>
-      <div class='sub-menu'>
+      <div class='sub-menu' <?php if ($_SESSION['extern']) { echo 'style="display:none"'; }?>>
         <div>
           Semaine type:
         </div>
@@ -203,7 +49,7 @@
           Semaine du <?php $data = explode('-', $_SESSION['week']); echo $data[2], '/', $data[1]; ?>:
         </div>
         <input name='mode' id='mode_semaine' type='radio' onClick='changeMode("semaine");'><label for='mode_semaine'> Classique</label><br />
-        <input name='mode' id='mode_organiser' type='radio' onClick='changeMode("organiser");'><label for='mode_organiser'> Organiser</label><br />
+        <input name='mode' id='mode_organiser' type='radio' onClick='changeMode("organiser");'><label for='mode_organiser'> Superposer</label><br />
         <div id='week'>
           <button id='before'><i class="fa fa-arrow-left" aria-hidden="true"></i></button>
           <button id='actual'>Cette semaine</button>
@@ -290,11 +136,175 @@
       </div>
     </div>
     <div id='affichage_credit' class="menu sub-menu">
-      <div style='text-align: center;'>
+      <h5 style='text-align: center;'>
         <i class="fa fa-code" aria-hidden="true"></i> avec <i class="fa fa-heart" aria-hidden="true"></i> par Samy NASTUZZI
-      </div>
+      </h5>
     </div>
   </div>
+
+  <script type="text/javascript" src="ressources/js/jquery-3.1.1.min.js"></script>
+  <script type="text/javascript" src="ressources/js/generation.js"></script>
+  <script type="text/javascript" src="ressources/js/jquery.touchSwipe.min.js"></script>
+  <script type="text/javascript" src="ressources/js/html2canvas.min.js"></script>
+  <script type="text/javascript" src="ressources/js/jspdf.min.js"></script>
+  <script type="text/javascript" src="ressources/js/clipboard.min.js"></script>
+  <script type="text/javascript" src="ressources/js/jquery.mininoty.min.js"></script>
+  <script type="text/javascript" src="ressources/js/jquery-ui.min.js"></script>
+  <script type="text/javascript" src="ressources/js/datapicker-fr.js"></script>
+  <script type="text/javascript" src="ressources/js/jquery.timepicker.min.js"></script>
+  <script type="text/javascript">
+    generateCalendar([], 1, {});
+    setCalendar();
+
+    window.get = <?php echo json_encode(array('mode' => $_SESSION['mode'])); ?>;
+
+    window.get = <?php
+      $query = $GLOBALS['db']->request(
+        'SELECT login FROM students WHERE login = ?',
+        array($_SESSION['login'])
+      );
+
+      if ($query->rowCount() == 0)
+        echo json_encode(array('mode' => 'semaine'));
+      else
+        echo json_encode($_GET);
+
+      echo ';
+      ';
+/*
+      // Lance le paramètre demandé (désinscription par exemple)
+      if (isset($_GET['param']) && is_string($_GET['param']) && !empty($_GET['param']))
+        echo 'setTimeout(function () { parameters("', $_GET['param'], '"); }, 1000);';
+*/
+      if ($_SESSION['status'] == 0 && !$_SESSION['extern'])
+        echo "var isNew = true;";
+      else
+        echo "var isNew = false;";
+
+       if ($_SESSION['extern'])
+         echo "var isExtern = true;";
+       else
+         echo "var isExtern = false;";
+
+    ?>
+
+    if (isNew) {
+      setTimeout(function () {
+        popup('Bienvenue sur le service Emploid\'UTemps', $('<div></div>').addClass('centerCard')
+          .append($('<div></div>').text('Salut ! Bienvenue sur un service proposé par le BDE/SiMDE qui te permettra de réaliser tout un tas de choses avec ton emploi du temps étudiant.'))
+          .append($('<br /><br />'))
+          .append($('<div></div>').text('Emploid\'UTemps te permet de faire plusieurs choses:'))
+          .append($('<div></div>').text('- Afficher un emploi du temps (comme le tien, celui d\'un.e de tes potes ou d\'une UV) sur une semaine type'))
+          .append($('<div></div>').text('- Comparer ton emploi du temps avec un autre (comme celui d\'un.e de tes potes ou d\'une UV) sur une semaine type'))
+          .append($('<div></div>').text('- Modifier ton emploi du temps en échangeant tes créneaux avec d\'autres valides et disponibles (de façon très simple)'))
+          .append($('<div></div>').text('- Afficher ton emploi du temps d\'une semaine réelle (comme afficher ton emploi du temps sur la semaine du 05/03)'))
+          .append($('<div></div>').text('- Afficher simultanément plusieurs emplois du temps pour organiser facilement des réunions ou des évènements'))
+          .append($('<br /><br />'))
+          .append($('<div></div>').text('Mais c\'est aussi encore plus:'))
+          .append($('<div></div>').text('- Rechercher via un Trombi un.e étudiant.e'))
+          .append($('<div></div>').text('- Affichage automatique de tes associations avec l\'affichage des membres'))
+          .append($('<div></div>').text('- Une gestion totale d\'un système de groupe que tu peux toi-même créer'))
+          .append($('<div></div>').text('- Des possibilités infinies d\'export: en pdf, en image, en ics pour le mettre dans ton agenda informatique...'))
+          .append($('<div></div>').text('- Un système facile et intelligent d\'échange de créneaux'))
+          .append($('<div></div>').text('- Une paramétration et des outils'))
+          .append($('<div></div>').text('- Un affichage des salles de cours et de TDs libres'))
+          .append($('<div></div>').text('- Un site adapté aux mobiles'))
+          .append($('<br /><br />'))
+          .append($('<div></div>').text('En cliquant sur le bouton Accepter, j\'accepte d\'utiliser le service de la meilleure des manières et d\'être responsable des mes choix (lors de mes échanges):'))
+          .append($('<button></button>').text('Accepter').on('click', function () {
+            changeStatus(1);
+          }))
+        );
+      }, 1000);
+    }
+
+    $("body").keyup(function (event) {
+      if(event.keyCode == 27) {
+        closePopup();
+        window.search = '';
+      }
+    });
+
+
+    generate();
+
+    var toogleNav = function () {
+      $('#nav').toggleClass('see');
+      $('#parameters').removeClass('see');
+    }
+
+    var toogleParam = function () {
+      $('#parameters').toggleClass('see');
+      $('#nav').removeClass('see');
+    }
+
+    $(window).resize(function() {
+      setCalendar();
+    });
+
+    $(function () {
+      $('#calendar-container').swipe( {
+        swipeLeft: function() { setCalendar(focusedDay + 1); },
+        swipeRight: function() { setCalendar(focusedDay - 1); }
+      });
+    });
+
+    $.miniNoty = function(message, type){
+  		var timeToHide = 10000;
+  		var	timeAnimEnd = 250;
+  		var padding = 10;
+
+  		var cls = 'miniNoty miniNoty-' + (type ? type : 'success');
+  		var node = $('<div/>', {
+				'class': cls,
+				html: message
+			});
+
+  		if ($('.miniNoty').length) {
+  			var elLast = $('.miniNoty:last-child');
+  		  var elLastBottom = parseInt(elLast.css('bottom'));
+  			var	elLastHeight = elLast.outerHeight();
+
+  			node.css('bottom', elLastBottom + elLastHeight + padding + 'px');
+  		}
+
+  		$('body').append(node);
+
+  		// delete on click
+  		node.click(function () {
+  			node.removeClass('miniNoty-show');
+  			setTimeout(function () {
+				  node.remove();
+  			}, timeAnimEnd);
+  		})
+
+  		// push stack
+  		setTimeout(function () {
+  			node.addClass('miniNoty-show');
+  		}, 10)
+
+  		// timeout to hide
+  		setTimeout(function () {
+  			node.removeClass('miniNoty-show');
+  			setTimeout(function () {
+  				node.remove();
+  			}, timeAnimEnd)
+  		}, timeToHide)
+  	}
+
+    // En cas d'erreur, recharger la page
+    $(document).ajaxError(function(err, jqxhr, settings, thrownError) {
+      console.log(jqxhr.status);
+      if (jqxhr.status == '503')
+        $.miniNoty('<i class="fa fa-exclamation-circle" aria-hidden="true"></i> Il faut que tu te reconnectes au CAS', 'normal');
+      else
+        $.miniNoty('<i class="fa fa-exclamation-circle" aria-hidden="true"></i> Une erreur a ete détectee. Si le problème persiste, <a href=/disconnect.php>déconnecte-toi</a> ou signale-le nous. Merci !', 'error');
+
+      setTimeout(function () {
+	       location.reload();
+      }, 5000);
+    });
+  </script>
 </body>
 </html>
 

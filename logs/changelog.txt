@@ -375,8 +375,19 @@ Beta 2.6: 2017-09-07
 
 Mise à jour des emplois du temps: 2017-09-07 23:59:05
 
-Release 2.1: 2017-09-08
+Release 2.0.1: 2017-09-08
   - Ajout de la fonctionnalité mails
   - Ajout du menu d'accueil
   - Correction du texte
-  - Correction de nombreux bugs (échanges, mauvais idExchang, pas de mails)
+  - Correction de nombreux bugs (échanges, mauvais idExchange, pas de mails)
+
+Release 2.0.2: 2017-09-20
+  - Ajout de la vérification de compte existant
+  - Ajout de la vérification de groupe créé
+  - Changement concernant le protocole d'annulation (annule à présent la demane aussi et réactive la demande d'échange)) pour permettre de valider encore par la suite
+  - Amélioration de l'outil recherche (accents non comptés)
+  - Amélioration du système de groupe (contraintes, vérifications)
+  - Amélioration des exports (compatibilité Android, réduction de l'image exportée si nécessaire)
+  - Amélioration de la compatibilité navigateurs (css, js)
+  - Optimisation du chargement avec déplacement des scripts à la fin du code
+  - Correction de nombreaux bugs (outil recherche, manque un caractère pour l'énumération des uvs)

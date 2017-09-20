@@ -12,9 +12,6 @@
   include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/class/cas.php');
   $daysArray = array('Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche');
 
-  if (isset($_GET['MODCASID']) && is_string($_GET['MODCASID']))
-    $_SESSION['MODCASID'] = $_GET['MODCASID'];
-
   $db = new db();
 
   function shutdown() {
@@ -65,10 +62,21 @@
       else
         setDate('monday this week');
 
-      $GLOBALS['db']->request(
-        'UPDATE students SET email = ?, firstname = ?, surname = ? WHERE login = ?',
-        array($_SESSION['email'], $_SESSION['firstname'], $_SESSION['surname'], $_SESSION['login'])
+      $query = $GLOBALS['db']->request(
+        'SELECT * FROM students WHERE login = ?',
+        array($_SESSION['login'])
       );
+
+      if ($query->rowCount() == 0) {
+        $_SESSION['extern'] = TRUE;
+      }
+      else {
+        $_SESSION['extern'] = FALSE;
+        $GLOBALS['db']->request(
+          'UPDATE students SET email = ?, firstname = ?, surname = ? WHERE login = ?',
+          array($_SESSION['email'], $_SESSION['firstname'], $_SESSION['surname'], $_SESSION['login'])
+        );
+      }
 
       $GLOBALS['db']->request(
         'INSERT INTO debug(login, date) VALUES(?, NOW())',

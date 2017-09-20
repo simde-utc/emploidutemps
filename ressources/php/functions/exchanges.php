@@ -759,11 +759,11 @@ Tu peux toujours toi-même demander d\'annuler l\'échange si tu le souhaites en
 
     // On annule l'échange
     $GLOBALS['db']->request(
-      'UPDATE exchanges_sent SET available = 0, exchanged = 0, date = NOW() WHERE id = ?',
+      'DELETE FROM exchanges_sent WHERE id = ?',
       array($sent['id'])
     );
     $GLOBALS['db']->request(
-      'UPDATE exchanges_received SET available = 0, exchanged = 0, date = NOW() WHERE id = ?',
+      'UPDATE exchanges_received SET available = 1, exchanged = 0, date = NOW() WHERE id = ?',
       array($received['id'])
     );
 
@@ -849,7 +849,7 @@ Les emplois du temps ont été actualisés et chacun a récupéré son créneau 
   }
 
   function cancelAskExchange($idExchange, $login = NULL, $reason = NULL) {
-    // On vérifie qu'on avait ben une proposition encore disponibles
+    // On vérifie qu'on avait bien une proposition encore disponibles
     if (count(getSentExchanges($login, NULL, $idExchange, 1, 0)) == 0)
       return 'Impossible d\'annuler cet échange';
 

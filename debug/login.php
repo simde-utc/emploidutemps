@@ -14,8 +14,7 @@ if ($_SESSION['admin'] && isset($_GET['login'])) {
   setGroups();
 }
 
-echo 'Vous êtes connecté sous le login: '.$_SESSION['login'];
+header('Location: /emploidutemps/');
+exit;
 
 ?>
-<br />
-<a href='/emploidutemps/'>Retour sur le site</a>

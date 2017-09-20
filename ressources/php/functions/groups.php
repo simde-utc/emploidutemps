@@ -73,6 +73,11 @@
       $roles = $end['roles'];
     }
 
+    $data = json_decode(file_get_contents('http://assos.utc.fr/abonnement/'.$_SESSION['login'].'/json'), TRUE);
+
+    foreach ($data as $role)
+      array_push($roles, array('asso' => $role));
+
     if (count($roles) != 0) {
       foreach ($roles as $role) {
         $asso = $role['asso'];
@@ -493,11 +498,13 @@
 
   function addToGroup($idGroup, $idSubGroup, $element, $info) {
     $query = $GLOBALS['db']->request(
-      'SELECT id FROM students_groups_elements WHERE idSubGroup = ? AND element = ?',
-      array($idSubGroup, $element)
+      'SELECT name
+      FROM students_groups_subs, students_groups_elements
+      WHERE students_groups_subs.idGroup = ? AND students_groups_subs.id = students_groups_elements.idSubGroup AND element = ?',
+      array($idGroup, $element)
     );
 
-    if ($query->rowCount() == 1)
+    if ($query->rowCount() != 0)
       return FALSE;
 
     if ($element == $_SESSION['login'])

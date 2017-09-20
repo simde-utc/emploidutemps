@@ -54,7 +54,7 @@
 
 
 body {
-  font-family: Helvetica, ​Arial, ​sans-serif;
+  font-family: Helvetica, Arial, sans-serif;
   overflow-x: hidden;
   background-color: #273036;
   margin: 0;
@@ -208,7 +208,10 @@ input {
 }
 
 #week {
-  display: flex;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
 }
 
 #week button {
@@ -443,13 +446,17 @@ button.option:last-child:nth-child(2n+1) {
 }
 
 .calendar-headers {
-  display: flex;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+
   padding-left: 61px;
   position: relative;
 }
 
 .calendar-headers > div {
-  flex: 0 0 137px;
+  width: 137px;
   height: 20px;
   padding-top: 10px;
   /*margin-bottom: 10px;*/
@@ -468,7 +475,11 @@ button.option:last-child:nth-child(2n+1) {
 
 
 .calendar-main {
-  display: flex;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+
 }
 
 .calendar-main-timeline {
@@ -496,7 +507,11 @@ button.option:last-child:nth-child(2n+1) {
 
 
 .calendar-main-body {
-  display: flex;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+
   border-bottom: 1px solid #AABBBB;
 }
 
@@ -692,7 +707,6 @@ background-color: #FFFFFF;
 }
 
 #zoneGrey {
-  pointer-events: none;
   position: fixed;
   visibility: hidden;
   top: 0;
@@ -757,7 +771,6 @@ background-color: #FFFFFF;
 }
 
 #popupHead {
-  position: sticky;
   top: 0;
   left: 0;
   margin: 0px;
@@ -824,7 +837,11 @@ background-color: #FFFFFF;
 }
 
 .subCard ,.optionCards {
-  display: flex;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+
   flex-wrap: wrap;
   justify-content: space-around;
   margin: 0.5%;
@@ -841,7 +858,11 @@ background-color: #FFFFFF;
 }
 
 .studentCards, .uvCards {
-  display: flex;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+
   flex-wrap: wrap;
 }
 
@@ -853,7 +874,11 @@ background-color: #FFFFFF;
 }
 
 .studentCard, .uvCard {
-  display: flex;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+
   flex-grow: 1;
   min-width: 300px;
   width: 23%;
@@ -907,12 +932,15 @@ background-color: #FFFFFF;
   display: block;
   height: 50%;
   width: 50px;
-  padding: auto;
   cursor: pointer;
 }
 
 .cardButtons {
-  display: flex;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+
 }
 
 .cardButtons button {
@@ -968,7 +996,11 @@ background-color: #FFFFFF;
 }
 */
 #option {
-  display: flex;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+
   flex-wrap: nowrap;
   background-color: #273036;
   z-index: 1;
@@ -1076,28 +1108,13 @@ background-color: #FFFFFF;
   border-radius: 2.5px;
 }
 
-#tabs button:hover + .tab-close, #tabs button:hover + .tab-close, #tabs .tab-close:hover:not(.active):not(.blocked) {
-  display: inline;
-  position: absolute;
-  top: 0;
-  transform: translate(-16px, 0);
-}
-
-#tabs .tab-close:hover:not(.active):not(.blocked) {
-  background-color: #0000;
-  color: #F00;
-}
-
-#tabs .tab-close {
-  display: none;
-  width: 15px;
-  background-color: #0000;
-  padding: 0;
-}
-
 .subject {
   margin-top: 1px;
-  display: flex;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+
   justify-content: space-between;
   flex-wrap: wrap;
 }

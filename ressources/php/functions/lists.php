@@ -4,6 +4,7 @@
       'SELECT login, semester, email, firstname, surname
         FROM students
         WHERE lower(login) LIKE lower(CONCAT("%", ?, "%")) OR lower(CONCAT(firstname, "_", surname, "_", firstname)) LIKE lower(CONCAT("%", ?, "%"))
+        COLLATE "utf8_unicode_ci"
         ORDER BY firstname, surname, login
         LIMIT ?, ?',
       array($search, $search, $begin, $end),
@@ -18,6 +19,7 @@
       'SELECT uv
         FROM uvs_colors
         WHERE lower(uv) LIKE lower(CONCAT("%", ?, "%"))
+        COLLATE "utf8_unicode_ci"
         LIMIT ?, ?',
       array($search, $begin, $end),
       array(2 => PDO::PARAM_INT, 3 => PDO::PARAM_INT)

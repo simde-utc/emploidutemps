@@ -30,7 +30,7 @@ END:VEVENT';
 }
 
   function startExport($name) {
-    header("Content-type: text/plain");
+    header("Content-type: text/calendar; charset=UTF-8");
     header("Content-Disposition: attachment; filename=\"".preg_replace("/[^A-Za-z0-9\_\-\.]/", '', $name).".ics\"");
 
     echo 'BEGIN:VCALENDAR
@@ -69,6 +69,17 @@ if (isGetSet(array('mode', 'idEventFollowed')) && $_GET['mode'] == 'event') {
   printEvent(str_replace('-', '', $event['date']), str_replace(':', '', $event['begin']).'00', str_replace('-', '', $event['date']), str_replace(':', '', $event['end']).'00', $event['subject'], $event['description'], $event['location'], 0);
 }
 elseif (isGetSet(array('mode')) && $_GET['mode'] == 'all') {
+  $alarm = (isset($_GET['alarm']) && $_GET['alarm'] > 0 ? $_GET['alarm'] : 0); // 0 désactive l'alarme
+  $begin = (isset($_GET['begin']) ? $_GET['begin'] : '0001-01-01');
+  $end = (isset($_GET['end']) ? $_GET['end'] : '9999-12-31');
+
+  $beginDate = new DateTime($begin);
+  $endDate = new DateTime($end);
+  if ($beginDate > $endDate) {
+    header('Content-Type: application/json');
+    returnJSON(array('error' => 'Impossible d\'exporter avec une date de fin finissant avant la date de début d\'export'));
+  }
+
   startExport('Emploi du temps - '.$_SESSION['firstname'].' '.$_SESSION['surname']);
   // On organise nos UVs en fonction des jours de la semaine
   $tasks = array(
@@ -81,9 +92,6 @@ elseif (isGetSet(array('mode')) && $_GET['mode'] == 'all') {
     getUVsFollowed($_SESSION['login'], 1, NULL, 6)  // Inutile mais bon haha au cas où
   );
 
-  $alarm = (isset($_GET['alarm']) && $_GET['alarm'] > 0 ? $_GET['alarm'] : 0); // 0 désactive l'alarme
-  $begin = (isset($_GET['begin']) ? $_GET['begin'] : '0001-01-01');
-  $end = (isset($_GET['end']) ? $_GET['end'] : '9999-12-31');
   $infos = array(
     'subject' => NULL,
     'description' => NULL,

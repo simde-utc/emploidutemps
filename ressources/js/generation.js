@@ -1,7 +1,7 @@
 var HOUR_MIN = 7;
 var HOUR_MAX = 21;
-var RELOAD_SEC = 60;
-var headers = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi",  "Samedi", 'Dimanche'];
+var RELOAD_SEC = 120;
+var headers = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi",  "Samedi", "Dimanche"];
 var date = new Date();
 var sessionLogin = '';
 var get = {};
@@ -12,8 +12,9 @@ var focusedDay = (date.getDay() + 6) % 7;
 var getRequest = function (url, get, callback, silentMode) {
   var request = '';
 
-  if (!silentMode)
+  if (!silentMode) {
     loading();
+  }
 
   for (var key in get) {
     if (typeof get[key] == 'object') {
@@ -456,10 +457,17 @@ var setSubGroup = function (idGroup, idSubGroup, id) {
 };
 
 var addToGroup = function (element, text) {
-  console.log(element)
   getRequest('groups.php', {
     'mode': 'get',
    }, function (data) {
+     console.log(Object.keys(data.groups).length)
+    if (Object.keys(data.groups).length == 1) {
+      addGroup();
+      $.miniNoty('<i class="fa fa-info-circle" aria-hidden="true"></i> Il faut créer un groupe avant de pouvoir ajouter ' + text, 'normal');
+
+      return;
+    }
+
     console.log(data);
     var corps = $('<div></div>').addClass('centerCard').text('Groupe: ');
 
@@ -468,10 +476,15 @@ var addToGroup = function (element, text) {
       $('#sub_' + this.value).css('display', 'inline');
       $( this ).data('selected', '#sub_' + this.value);
 
-      if ($('#sub_' + this.value).prop('disabled'))
+      if ($('#sub_' + this.value).prop('disabled')) {
+        $('#sub0').attr('disabled', true);
         $('#sub1').click();
+
+        if ($('#sub_' + this.value + ' option').length > 1)
+        $.miniNoty('<i class="fa fa-info-circle" aria-hidden="true"></i> Il n\'est pas possible d\'ajouter ' + text + ' dans un sous-groupe généré automatiquement pour la gestion des groupes associations', 'normal');
+      }
       else
-        $('#sub0').click();
+        $('#sub0').attr('disabled', false).click();
     });
     var subgroups = $('<div></div>');
     $.each(data.groups, function (name, group) {
@@ -492,6 +505,10 @@ var addToGroup = function (element, text) {
 
         option.appendTo(hidden);
       });
+
+      if (hidden.prop('disabled'))
+        $('<option></option>').text('Aucun sous-groupe disponible').prependTo(hidden);
+
       hidden.appendTo(subgroups);
     });
 
@@ -499,11 +516,12 @@ var addToGroup = function (element, text) {
 
     groups.appendTo(corps);
     $('<span></span><br />').text('Choisir un sous-groupe existant: ').prependTo(subgroups);
-    $('<br /><input></input>').attr('type', 'radio').attr('id', 'sub0').attr('name', 'sub').prop("checked", true).val(0).prependTo(subgroups);
-    subgroups.attr('onClick', '$("#sub0").prop("checked", true)').appendTo(corps);
+    $('<input />').attr('type', 'radio').attr('id', 'sub0').attr('name', 'sub').prop("checked", true).val(0).prependTo(subgroups);
+    $('<br />').prependTo(subgroups);
+    subgroups.attr('onClick', '$("#sub0").prop("checked", !$("#sub0").prop("disabled"))').appendTo(corps);
     $('<input></input>').attr('type', 'radio').attr('id', 'sub1').attr('name', 'sub').val(1).appendTo(corps);
     $('<span></span><br />').text('Créer un sous-groupe: ').appendTo(corps);
-    $('<input></input><br /><br />').css('width', '25%').css('min-width', '350px').attr('id', 'newSubGroup').attr('onClick', '$("#sub1").prop("checked", true)').attr('placeholder', 'Nouveau sous-groupe').appendTo(corps);
+    $('<input></input><br /><br />').css('width', '25%').css('min-width', '350px').attr('id', 'newSubGroup').attr('onClick', '$("#sub1").prop("checked", true);').attr('placeholder', 'Nouveau sous-groupe').appendTo(corps);
     $('<span></span><br />').text('Description: ').appendTo(corps);
     $('<input></input><br /><br />').css('width', '25%').css('min-width', '350px').attr('id', 'info').attr('placeholder', 'Description').appendTo(corps);
     $('<button></button>').html('<i class="fa fa-plus" aria-hidden="true"></i> Ajouter').on('click', function () {
@@ -527,6 +545,14 @@ var addToGroup = function (element, text) {
       });
     }).appendTo(corps);
     popup('Ajouter ' + text, corps);
+
+    if (Object.keys(data.groups)[0]) {
+      if ($('#sub_' + Object.keys(data.groups)[0]).prop('disabled')) {
+        $('#sub0').prop('disabled', true);
+        $('#sub1').click();
+        $
+      }
+      }
   });
 };
 
@@ -684,7 +710,7 @@ var changeStatus = function (status) {
 
 /* Trombi */
 
-var search = function () {
+var startSearch = function () {
   popup(
     $('<div></div>')
       .append($('<div></div>').text('Chercher un étudiant ou une UV pour l\'ajouter'))
@@ -770,7 +796,13 @@ var exportDownload = function (type) {
         .append(' Au ')
         .append($('<input /><br /><br />').attr('type', 'date').attr('placeholder', 'dernier évènement').attr('id', 'end'))
         .append($('<button></button>').text('Générer et télécharger mon emploi du temps').on('click', function () {
-          window.location.href = '/emploidutemps/ressources/php/exports.php?mode=all&begin=' + $('#begin').val() + ($('#end').val() == '' ? '' : '&end=' + $('#end').val()) + ($('#alarm').val() == '' ? '' : '&alarm=' + $('#alarm').val());
+          var begin = new Date($('#begin').val());
+          var end = new Date($('#end').val());
+
+          if (begin.getTime() > end.getTime())
+            $.miniNoty('<i class="fa fa-exclamation-circle" aria-hidden="true"></i> Impossible de créer un fichier d\'export avec une date de début finissant après la date de fin', 'error');
+          else
+            window.location.href = '/emploidutemps/ressources/php/exports.php?mode=all&begin=' + $('#begin').val() + ($('#end').val() == '' ? '' : '&end=' + $('#end').val()) + ($('#alarm').val() == '' ? '' : '&alarm=' + $('#alarm').val());
         }))
       );
     }
@@ -854,26 +886,29 @@ var getImg = function () {
 
       if (window.sides == 2)
         $(days[(i * window.sides) + 1]).css('display', 'none');
+
       hidden += 1;
     }
   }
 
   var calendar = $('#calendar-container');
-  calendar.css('width', 1032 + 'px').addClass('calendar-exported');
+  calendar.css('width', (1028 - (hidden * 138)) + 'px').addClass('calendar-exported');
 
   html2canvas(calendar[0], { onrendered: function(canvas) {
     if (type == 'jpeg') {
       var ctx = canvas.getContext('2d')
-      var imgData=ctx.getImageData(0,0,canvas.width,canvas.height);
-      var data=imgData.data;
-      for(var i=0;i<data.length;i+=4){
-          if(data[i+3]<255){
-              data[i]=255;
-              data[i+1]=255;
-              data[i+2]=255;
-              data[i+3]=255;
-          }
+      var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var data = imgData.data;
+
+      for(var i = 0; i < data.length; i += 4){
+        if(data[i+3] < 255){
+          data[i] = 255;
+          data[i+1] = 255;
+          data[i+2] = 255;
+          data[i+3] = 255;
+        }
       }
+
       ctx.putImageData(imgData,0,0);
     }
 
@@ -886,8 +921,8 @@ var getImg = function () {
     }
 
     calendar.removeClass('calendar-exported');
-    setCalendar(window.focusedDay);
     $('#generatedImg').html('<img src="' + canvas.toDataURL('image/' + type || 'png', 1.0) + '">');
+    setCalendar(window.focusedDay);
   }});
 };
 
@@ -916,12 +951,13 @@ var getPDF = function () {
 
       if (window.sides == 2)
         $(days[(i * window.sides) + 1]).css('display', 'none');
+
       hidden += 1;
     }
   }
 
   var calendar = $('#calendar-container');
-  calendar.css('width', 1036 + 'px').addClass('calendar-exported');
+  calendar.css('width', 1032 + 'px').addClass('calendar-exported');
 
   html2canvas(calendar[0], { onrendered: function(canvas) {
     doc.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', 12 + (hidden * 18), 26);
@@ -1400,7 +1436,7 @@ var getFreeTimes = function (timeNeeded, nbrNotAvailable, dayToSee) {
 
   getRequest('calendar.php', window.get, function (data) {
     var days = {};
-    for (let i = 0; i < window.headers.length; i++) {
+    for (var i = 0; i < window.headers.length; i++) {
       if ($('#ftCheck' + i))
         days[i] = $('#ftCheck' + i).prop('checked');
       else
@@ -1413,7 +1449,7 @@ var getFreeTimes = function (timeNeeded, nbrNotAvailable, dayToSee) {
 
       freeTimes[i] = {};
 
-      for (let j = window.HOUR_MIN; j < max; j += 0.5) { // On fait par tranche de demi-heure
+      for (var j = window.HOUR_MIN; j < max; j += 0.5) { // On fait par tranche de demi-heure
         freeTimes[i][j] = [];
 
         $.each(data.infos.active, function (element, color) {
@@ -1435,7 +1471,7 @@ var getFreeTimes = function (timeNeeded, nbrNotAvailable, dayToSee) {
       });
     });
 
-    for (let i = 0; i < window.headers.length; i++) {
+    for (var i = 0; i < window.headers.length; i++) {
       $.each(freeTimes[i], function (freeTime, availableList) {
         if (!nbrAvailables[availableList.length])
           nbrAvailables[availableList.length] = {};
@@ -1449,8 +1485,8 @@ var getFreeTimes = function (timeNeeded, nbrNotAvailable, dayToSee) {
 
     var most = 0;
     var select = $('<select></select>');
-    for (let i = Object.keys(nbrAvailables).length - 1; i > 0; i--) {
-      let diff = Object.keys(window.active).length - Object.keys(nbrAvailables)[i];
+    for (var i = Object.keys(nbrAvailables).length - 1; i > 0; i--) {
+      var diff = Object.keys(window.active).length - Object.keys(nbrAvailables)[i];
 
       select.append($('<option></option>',{
         'text': diff,
@@ -1474,10 +1510,6 @@ var getFreeTimes = function (timeNeeded, nbrNotAvailable, dayToSee) {
 
     if (!dayToSee)
       dayToSee = Object.keys(nbrAvailables[most])[0];
-
-    console.log(freeTimes);
-    console.log(nbrAvailables);
-    console.log('Objet renvoyé avec [jour][heure de début]: ' + (most));
 
     if (nbrAvailables[most]) {
       var days = $('<div></div>');
@@ -1895,7 +1927,7 @@ var generatePrinted = function (groups) {
     $('#affichage_printed').css('display', 'none');
 
     if (window.get.mode != 'modifier' && window.get.mode != 'semaine') {
-      var text = (window.get.login ? groups.others.subgroups.students.elements[window.get.login].firstname + ' ' + groups.others.subgroups.students.elements[window.get.login].surname : (window.get.uv ? window.get.uv : ''));
+      var text = (window.get.login && groups.others.subgroups.students.elements[window.get.login].firstname != null ? groups.others.subgroups.students.elements[window.get.login].firstname + ' ' + groups.others.subgroups.students.elements[window.get.login].surname : (window.get.uv ? window.get.uv : window.get.login));
 
       if (window.get.login || window.get.uv)
         $('<button></button>').html('<i class="fa fa-plus" aria-hidden="true"></i> Ajouter ' + text).on('click', function () {
@@ -2123,7 +2155,7 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
               });
             }
             else {
-	      interraction = div.clone().addClass('interraction');
+              interraction = div.clone().addClass('interraction');
               option = button.clone().addClass('option').css('background-color', task.bgColor).css('color', getFgColor(task.bgColor));
 
               if (window.get.mode_type == 'uvs_followed') {
@@ -2137,7 +2169,7 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
 
               }
               else {
-	        var toExchange = task.exchange;
+                var toExchange = task.exchange;
                 var type = '';
                 var bgColor;
 
@@ -2215,8 +2247,8 @@ var generateCards = function (schedulerTasks, tasks, day, sides, uvs) {
                 card.children('.note').first().append(type);
                 button.clone().addClass('option').css('background-color', bgColor).css('color', style.color).html("<i class='fa fa-info' aria-hidden='true'></i> Informations").on('click', function() { seeUVInformations(task); }).prependTo(interraction);
 
-                if (!task.description)       
-	          task.description = 'En ' + (toExchange.available == '1' && toExchange.exchanged == '1' ? 'récupération' : 'échange') + ' du mien du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + (toExchange.timeText ? toExchange.timeText.replace('-', ' à ') : toExchange.begin + ' à ' + toExchange.end);
+                if (!task.description)
+                  task.description = 'En ' + (toExchange.available == '1' && toExchange.exchanged == '1' ? 'récupération' : 'échange') + ' du mien du ' + window.headers[toExchange.day].toLowerCase() + ' de ' + (toExchange.timeText ? toExchange.timeText.replace('-', ' à ') : toExchange.begin + ' à ' + toExchange.end);
               }
 
               interraction.prepend($('<div></div>').addClass('description').html(task.description));
@@ -2373,7 +2405,7 @@ var generateCalendar = function(tasks, sides, uvs, daysInfo) {
       classHour = '';
 
     // Création des demi-horaires
-    div.clone().addClass(classHour).text((Number.isInteger(time) ? (time < 10 ? '0' : '') + Math.floor(time) + (Math.ceil(time) > Math.floor(time) ? ':30' : ':00') : '')).appendTo(scheduleTimeline)
+    div.clone().addClass(classHour).text(((time == parseInt(time, 10)) ? (time < 10 ? '0' : '') + Math.floor(time) + (Math.ceil(time) > Math.floor(time) ? ':30' : ':00') : '')).appendTo(scheduleTimeline)
 
     // Création des demi-cases (* ${side} pour chaque heure)
     for (side = 0; side < sides; side++)
@@ -2387,57 +2419,66 @@ var generateCalendar = function(tasks, sides, uvs, daysInfo) {
   }
 
   // On peuple l'affichage
-  for (let j = 0; j < window.headers.length * sides; j++) {
-    var schedulerTasks = div.clone().addClass('calendar-tasks');
-    generateCards(schedulerTasks, tasks, j / sides, sides, uvs);
+  for (var j = 0; j < window.headers.length * sides; j++) {
+    (function (j) {
+      var schedulerTasks = div.clone().addClass('calendar-tasks');
+      generateCards(schedulerTasks, tasks, j / sides, sides, uvs);
 
-    var grid = gridColumnElement[j % sides].clone();
+      var grid = gridColumnElement[j % sides].clone();
 
-    if ((window.get.mode === 'semaine' || window.get.mode === 'organiser') && $('#withWeekTool').prop('checked')) {
-      if (j == currentDay) {
-        grid = div.clone().addClass('currentDay');
+      if ((window.get.mode === 'semaine' || window.get.mode === 'organiser') && $('#withWeekTool').prop('checked')) {
+        if (j == currentDay) {
+          grid = div.clone().addClass('currentDay');
 
-        for (let i = 0; i < (window.HOUR_MAX - window.HOUR_MIN) * 2; i++) {
-          cell = div.clone().addClass('calendar-cell10');
-          if ((window.HOUR_MIN + i / 2) < hour)
-            cell.addClass('passedHour');
-          else if ((window.HOUR_MIN + i / 2) === hour)
-            cell.addClass('currentHour');
-          else
-            cell.addClass('futureHour').html('<i class="fa fa-plus" aria-hidden="true"></i>').on('click', function () {
-              createEvenement(j, (window.HOUR_MIN + i / 2), (window.HOUR_MIN + i / 2) + 1);
-            });
+          for (var i = 0; i < (window.HOUR_MAX - window.HOUR_MIN) * 2; i++) {
+            (function (i) {
+              cell = div.clone().addClass('calendar-cell10');
+              if ((window.HOUR_MIN + i / 2) < hour)
+                cell.addClass('passedHour');
+              else if ((window.HOUR_MIN + i / 2) === hour)
+                cell.addClass('currentHour');
+              else
+                cell.addClass('futureHour').html('<i class="fa fa-plus" aria-hidden="true"></i>').on('click', function () {
+                  console.log(j)
+                  console.log(i)
+                  createEvenement(j, (window.HOUR_MIN + i / 2), (window.HOUR_MIN + i / 2) + 1);
+                });
 
-          grid.append(cell);
+              grid.append(cell);
+            })(i);
+          }
+
+          grid.append(div.clone().addClass('allDay').addClass(window.HOUR_MAX > hour ? 'futureHour' : 'currentHour').addClass('calendar-cell' + '10').html('<i class="fa fa-plus" aria-hidden="true"></i>').on('click', function () {
+            createEvenement(j, 0, 24);
+          }));
         }
+        else if (j > currentDay) {
+          grid.addClass('futureDay');
 
-        grid.append(div.clone().addClass('allDay').addClass(window.HOUR_MAX > hour ? 'futureHour' : 'currentHour').addClass('calendar-cell' + '10').html('<i class="fa fa-plus" aria-hidden="true"></i>').on('click', function () {
-          createEvenement(j, 0, 24);
-        }));
-      }
-      else if (j > currentDay) {
-        grid.addClass('futureDay');
+        for (var i = 0; i < (window.HOUR_MAX - window.HOUR_MIN) * 2; i++) {
+            (function (i) {
+              $(grid.children()[i]).addClass('futureHour').html('<i class="fa fa-plus" aria-hidden="true"></i>').on('click', function () {
+                createEvenement(j, (window.HOUR_MIN + i / 2), (window.HOUR_MIN + i / 2) + 1);
+              });
+            })(i);
+          }
 
-        for (let i = 0; i < (window.HOUR_MAX - window.HOUR_MIN) * 2; i++)
-          $(grid.children()[i]).addClass('futureHour').html('<i class="fa fa-plus" aria-hidden="true"></i>').on('click', function () {
-            createEvenement(j, (window.HOUR_MIN + i / 2), (window.HOUR_MIN + i / 2) + 1);
+          $(grid.children()[(window.HOUR_MAX - window.HOUR_MIN) * 2]).addClass('futureHour').html('<i class="fa fa-plus" aria-hidden="true"></i>').on('click', function () {
+            createEvenement(j, 0, 24);
           });
+        }
+        else {
+          grid.addClass('passedDay');
 
-        $(grid.children()[(window.HOUR_MAX - window.HOUR_MIN) * 2]).addClass('futureHour').html('<i class="fa fa-plus" aria-hidden="true"></i>').on('click', function () {
-          createEvenement(j, 0, 24);
-        });
+          for (var i = 0; i < (window.HOUR_MAX - window.HOUR_MIN) * 2 + 1; i++)
+            $(grid.children()[i]).addClass('passedHour');
+        }
       }
-      else {
-        grid.addClass('passedDay');
 
-        for (let i = 0; i < (window.HOUR_MAX - window.HOUR_MIN) * 2 + 1; i++)
-          $(grid.children()[i]).addClass('passedHour');
-      }
-    }
-
-    grid.addClass('days');
-    grid.prepend(schedulerTasks);
-    grid.appendTo(scheduleBody);
+      grid.addClass('days');
+      grid.prepend(schedulerTasks);
+      grid.appendTo(scheduleBody);
+    })(j);
   }
 
   scheduleMain.append(scheduleTimeline);
