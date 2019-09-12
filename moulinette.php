@@ -94,6 +94,11 @@ function insertSalles() {
   }
 }
 
+$colors = array('#7DC779', '#82A1CA', '#F2D41F', '#457293', '#AB7AC6', '#DF6F53', '#B0CEE9', '#AAAAAA', '#1C704E');
+function getARandomColor() {
+  return $GLOBALS['colors'][mt_rand(1, count($GLOBALS['colors'])) - 1];
+}
+
 $db = new DB();
 
 $personne = include('off.php');
@@ -104,18 +109,20 @@ foreach ($personne as $key => $elem) {
   $login = $elem['login'];
 
   try {
-    echo "Get $key/$nbr: $login\n";
-    $uvs = json_decode(file_get_contents("$WS_UTC=$login"));
+    $uvs = json_decode(file_get_contents("$WS_DSI?login=$login"));
+
+    $s = array_unique(array_map(function ($uv) {
+      return $uv->uv;
+    }, $uvs));
+
+    $c = count($s);
+    echo "Get $key/$nbr: $login with $c uvs\n";
   } catch (Exception $e) {
     echo "Error for $login\n";
-    sleep(0.1);
   }
 
   if (count($uvs)) {
     $ginger = json_decode(file_get_contents("$LOVELY_GINGER/$login?key=$KEY"));
-    $s = array_unique(array_map(function ($uv) {
-      return $uv->uv;
-    }, $uvs));
 
 
     $db->request('INSERT INTO students(login, surname, firstname, email, semester, uvs, nbrUV) VALUES(?, ?, ?, ?, "N/A", ?, ?)', [
@@ -164,17 +171,30 @@ foreach ($personne as $key => $elem) {
       $r = $db->request('SELECT * FROM uvs WHERE uv = ? AND type = ? AND groupe = ?', [
         $name, $type, $group,
       ]);
-    }
 
-    $id = $r->fetch()['id'];
+      $id = $r->fetch()['id'];
+
+      $r = $db->request('SELECT * FROM uvs_colors WHERE uv = ?', [
+        $name
+      ]);
+
+      if ($r->rowCount() === 0) {
+        $db->request('INSERT INTO uvs_colors(uv, color) VALUES(?, ?)', [
+          $name, getARandomColor()
+        ]);
+      }
+    } else {
+      $fetch = $r->fetch();
+      $id = $fetch['id'];
+
+      $db->request('UPDATE uvs SET nbrEtu = ? WHERE id = ?', [$fetch['nbrEtu'] + 1, $id]);
+    }
 
     $db->request('INSERT INTO uvs_followed(idUV, login, color, enabled, exchanged) VALUES(?, ?, null, 1, 0)', [
       $id, $login
     ]);
   }
-
-  sleep(0.01);
 }
 
-echo 'Inserting rooms\n';
+echo "Inserting rooms\n";
 insertSalles();
