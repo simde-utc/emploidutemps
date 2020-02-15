@@ -1301,7 +1301,7 @@ var acceptExchange = function (idExchange, idUV, idUV2) {
     var corps = $('<div></div>').addClass('centerCard');
 
     corps
-      .append($('<div></div>').html('Après avoir accepter cette proposition, les emplois du temps seront mis à jour et l\'échange aura été effectué. Si malheuresement, tu souhaites récupérer ton créneau, tu peux toujours réaliser une demande d\'annulation de l\'échange. Tu pourras ensuite échanger ton nouveau créneau avec un autre si tu le souhaites.<br /><br />'))
+      .append($('<div></div>').html('Après avoir accepté cette proposition, les emplois du temps seront mis à jour et l\'échange aura été effectué. Si malheuresement, tu souhaites récupérer ton créneau, tu peux toujours réaliser une demande d\'annulation de l\'échange. Tu pourras ensuite échanger ton nouveau créneau avec un autre si tu le souhaites.<br /><br />'))
       .append($('<button></button>').addClass('submitedButton').text('Accepter cette proposition').on('click', function () {
         getRequest('exchanges.php', {
           'mode': 'accept',
