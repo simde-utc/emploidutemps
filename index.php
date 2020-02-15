@@ -115,7 +115,7 @@
       Liens utiles:
       <div>
         <button onClick="window.open('https://assos.utc.fr');"><i class="fa fa-external-link" aria-hidden="true"></i> Portail des assos</button>
-        <button onClick="window.open('http://moodle.utc.fr/login/index.php?authCAS=CAS');"><i class="fa fa-external-link" aria-hidden="true"></i> Moodle</button>
+        <button onClick="window.open('https://moodle.utc.fr/login/index.php?authCAS=CAS');"><i class="fa fa-external-link" aria-hidden="true"></i> Moodle</button>
         <button onClick="window.open('https://assos.utc.fr/uvweb/');"><i class="fa fa-external-link" aria-hidden="true"></i> UVWeb</button>
         <button onClick="window.open('https://gitlab.utc.fr/simde/emploidutemps');"><i class="fa fa-external-link" aria-hidden="true"></i> Gitlab (code source)</button>
         <button onClick="window.open('mailto:simde@assos.utc.fr?subject=[EmploidUTemps] ');"><i class="fa fa-envelope-o" aria-hidden="true"></i> Nous contacter</button>
@@ -310,11 +310,11 @@
 
 <!--
 
-        <button style="display: inline; margin-left: 0;" onClick="window.open(\'https://\' + window.location.hostname + \'/emploidutemps\' + \'/logs/changelog.txt\');"><i class="fa fa-file-text-o" aria-hidden="true"></i> Changelog</button>
+        <button style="display: inline; margin-left: 0;" onClick="window.open(\'/emploidutemps\' + \'/logs/changelog.txt\');"><i class="fa fa-file-text-o" aria-hidden="true"></i> Changelog</button>
         <button style="display: inline; margin-left: 5px;" onClick="parameters(\'checkUpdate\');"><i class="fa fa-refresh" aria-hidden="true"></i> Chercher une màj (indisponible pour le moment)</button>
       </div>
       <button onClick="parameters(\'contacter\');"><i class="fa fa-envelope-o" aria-hidden="true"></i> Nous contacter</button>';
-//      <button onClick="window.open(\'https://\' + window.location.hostname + \'/emploidutemps\' + \'/maj.php\');">Rechercher des mises à jour</button>
+//      <button onClick="window.open(\'/emploidutemps\' + \'/maj.php\');">Rechercher des mises à jour</button>
         echo '<button onClick="parameters(\'sedesinscrire\');""><i class="fa fa-times" aria-hidden="true"></i> Se désinscrire du service</button>';
       else
         echo '<button onClick="parameters(\'reinscription\');""><i class="fa fa-check" aria-hidden="true"></i> Se réinscrire au service</button>';
