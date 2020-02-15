@@ -27,6 +27,8 @@
   <div id='zonePopup' onClick='closePopup();'></div>
   <div id='popup'></div>
 
+  <?php include('./ressources/php/horaires_previsionnels.php'); ?>
+
   <div id='title'></div>
   <div id='otherDay'><button onClick='setCalendar(focusedDay - 1);'><i class="fa fa-arrow-left" aria-hidden="true"></i></button><button onClick='setCalendar(focusedDay + 1);'><i class="fa fa-arrow-right" aria-hidden="true"></i></button></div>
   <div id="calendar-container"></div>
