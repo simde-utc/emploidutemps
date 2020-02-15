@@ -3,7 +3,7 @@
   mb_internal_encoding("UTF-8");
   session_start();
 
-  ini_set('display_errors', 1);  ini_set('display_startup_errors', 1);  error_reporting(E_ALL);
+  //ini_set('display_errors', 1);  ini_set('display_startup_errors', 1);  error_reporting(E_ALL);
 
   $etuPic = '<i class="searchImg fa fa-4x fa-user-o" style="padding-left: 1px; padding-top: 3px;" aria-hidden="true"></i>';
   $uvPic = '<i class="searchImg fa fa-4x fa-graduation-cap" style="margin-left:10%;" aria-hidden="true"></i>';
@@ -102,6 +102,12 @@
     );
     $data = $query->fetch();
 
+    $headers  = 'MIME-Version: 1.0'."\r\n";
+    $headers .= 'Content-type: text/plain; charset=UTF-8'."\r\n";
+    $headers .= 'From: emploidutemps@assos.utc.fr'."\r\n";
+    $headers .= 'Reply-To: emploidutemps@assos.utc.fr'."\r\n";
+
+
     if ($data['status'] != '-1')
       mail(
         $mail,
@@ -113,10 +119,7 @@ Pour arrêter de recevoir des mails du service, tu peux à tout moment te désin
 
 Il y a une vie après les cours,
 Le SiMDE',
-        'From:'.$from);
-//        'From:'.$from.'
-//Content-type: text/html; charset=iso-8859-1');
-//Content-type: text/html; charset=UTF-8');
+        $headers);
   }
 
   function isUpdating() {
@@ -380,10 +383,7 @@ Le SiMDE',
   }
 
   if (isUpdating() && !$_SESSION['admin']) { //  A améliorer
-    echo 'Emploi d\'UTemps est en cours de mise à jour, veuillez patienter. La page se relancera d\'elle-même lorsque la mise à jour sera terminée
-    <script>
-    setTimeout(function(){ window.reload(); }, 5000);
-    </script>';
+    echo 'Emploi d\'UTemps est en cours de mise à jour, veuillez patienter. La page se relancera d\'elle-même lorsque la mise à jour sera terminée';
     exit;
   }
 

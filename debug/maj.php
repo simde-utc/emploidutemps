@@ -3,10 +3,13 @@
 
   $dir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps'.'/ressources/edt';
 
-  if (!$_SESSION['admin']) {
+  if ($_SESSION['login'] !== 'snastuzz') {
     echo 'Tu n\'as pas les droits';
     exit;
   }
+
+  $_SESSION['admin'] = true;
+
   if (UPDATE::checkModcasid($curl)) {
     if (UPDATE::tryToUpdate($curl))
       header('Location: /emploidutemps/');
