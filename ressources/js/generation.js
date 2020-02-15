@@ -61,6 +61,14 @@ var changeMode = function (mode) {
   generate();
 };
 
+var promptPrevoir = function () {
+  $('#prevoir').css('visibility', 'visible');
+  $('#prevoir').css('opacity', '1');
+  $('#zonePopup').addClass('focused');
+
+  focus();
+};
+
 var generate = function (silentMode, callback) {
   console.time('generate');
 
@@ -167,6 +175,8 @@ var popup = function (popupHead, content, bgColor, fgColor) {
 var closePopup = function () {
   $('#popup').css('visibility', 'hidden');
   $('#popup').css('opacity', '0');
+  $('#prevoir').css('visibility', 'hidden');
+  $('#prevoir').css('opacity', '0');
 
   $('#zonePopup').removeClass('focused');
   $('#zonePopup').removeClass('focused');

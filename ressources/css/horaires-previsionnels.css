@@ -7,7 +7,6 @@
 }
 
 #future {
-  color: white;
   padding: 10px;
   max-width: 1000px;
   margin: 0 auto;
@@ -15,12 +14,6 @@
 
 .center {
   text-align: center;
-}
-
-@media screen and (min-width: 1350px) and (max-width: 1600px) {
-  #future {
-    padding-left: 225px;
-  }
 }
 
 #future h1, #future h2 {
