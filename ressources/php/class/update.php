@@ -1,7 +1,7 @@
 <?php include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/class/ginger.php');
   include($_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.'/ressources/php/class/curl.php');
 
-$_SESSION['MODCASID'] = 'Sk5x54Z3Q6xSDz9jikB4frDfH0FZd';
+$_SESSION['MODCASID'] = 'PMIQttPKqMYhhMI7coZIbnYzcotiU';
 $curl = new CURL(strpos($_SERVER['HTTP_HOST'],'utc') !== false);
 if (isset($_SESSION['MODCASID']))
   $curl->setCookies('MODCASID='.$_SESSION['MODCASID']);
@@ -29,9 +29,6 @@ class UPDATE
 
     $logsDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::tempDir;
     $edtDir = $_SERVER['DOCUMENT_ROOT'].'/emploidutemps/'.self::edtDir;
-
-    if (file_exists($logsDir.'lastCheck') && time() - file_get_contents($logsDir.'lastCheck') < 60)
-      return FALSE;
 
     if (!file_exists($edtDir))
       return TRUE;
@@ -143,7 +140,7 @@ class UPDATE
         file_put_contents($edtDir.$edt, $text);
 
         $new += 1;
-        if ($new >= 10) {
+        if ($new >= 25) {
           echo ($j+1), ' emplois du temps téléchargés sur ', count($edts);
           return FALSE;
         }
@@ -218,7 +215,14 @@ class UPDATE
     $edtFile = fopen($edt, 'r');
     if ($edtFile) {
         if (fgets($edtFile) !== false && ($line = fgets($edtFile)) !== false) {
-          $login = self::setCurrentLogin(self::insertEtu($line));
+	$totest = trim(str_replace(' ', '', str_replace('-', '', $line)));
+	if (empty($totest)) {
+		$line = fgets($edtFile);
+
+	}
+	  $etu = self::insertEtu($line);
+
+          $login = self::setCurrentLogin($etu);
         }
 
         while (($line = fgets($edtFile)) !== false) {
@@ -245,7 +249,7 @@ class UPDATE
         $infoFromGinger = array('nom' => NULL, 'prenom' => NULL, 'mail' => $infoFromLine[0].'@etu.utc.fr');
       else {
         echo 'Une erreur a été détectée au sein de Ginger: ', $e;
-        exit;
+	exit;
       }
     }
 
