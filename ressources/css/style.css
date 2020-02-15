@@ -724,7 +724,7 @@ background-color: #FFFFFF;
   transition: all 0.5s ease;
 }
 
-#popup {
+#popup, #prevoir {
   flex-wrap: wrap;
   position: absolute;
   left: 50%;
@@ -749,7 +749,7 @@ background-color: #FFFFFF;
   overflow-x: hidden;
 }
 
-#popupHead {
+#popupHead, #prevoirHead {
   top: 0;
   left: 0;
   margin: 0px;
@@ -772,7 +772,7 @@ background-color: #FFFFFF;
   padding: 2px;
 }
 
-#popupContent {
+#popupContent, #future {
   overflow: auto;
 }
 
