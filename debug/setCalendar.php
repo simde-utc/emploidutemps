@@ -33,9 +33,9 @@
   <input name='end' type='date' <?php echo isset($_GET['end']) ? 'value="'.$day.'"' : ''; ?> placeholder="Fin: YYYY-MM-DD" />
   <br /><br />
   Y a-t-il ?
-  <input type='checkbox' name='C' CHECKED/> Cours
-  <input type='checkbox' name='D' CHECKED/> TD
-  <input type='checkbox' name='T' CHECKED/> TP
+  <input type='checkbox' name='C' id="C" CHECKED/><label for="C"> Cours</label>
+  <input type='checkbox' name='D' id="D" CHECKED/><label for="D"> TD</label>
+  <input type='checkbox' name='T' id="T" CHECKED/><label for="T"> TP</label>
   <br /><br />
   <input type='checkbox' name='noWeek'/> Pas de semaine définie (inutile de remplir si pas défini)
   <br />

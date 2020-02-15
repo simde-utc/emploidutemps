@@ -9,6 +9,10 @@ var colors = [];
 var task = null;
 var focusedDay = (date.getDay() + 6) % 7;
 
+var pasEncoreRomanet = function() {
+    $.miniNoty('Pas encore Romanet !', 'warning');
+}
+
 var getRequest = function (url, get, callback, silentMode) {
   var request = '';
 
@@ -742,6 +746,16 @@ var startSearch = function () {
 
   $('#searchButton').prop('disabled', true);
 
+  getRequest('suggestions.php', {}, function(data) {
+    $('.studentCards').empty();
+    $('.studentCardsText').text(data.length + ' étudiant' + (data.length > 1 ? 's' : '') + ' suggéré' + (data.length > 1 ? 's' : ''));
+    data.forEach(function (student) {
+      $('.studentCards').append(generateStudentCard(student, 'Ajouté.e depuis le trombi'));
+    });
+
+    $('#popup').scrollTop(0);
+  });
+
   setTimeout(function () { // La fonction ne marche pas sans Timeout..
     $("#addTabText").focus();
   }, 100);
@@ -757,11 +771,6 @@ var checkSearch = function (input) {
 var printSearch = function (begin) {
   if (begin == undefined || begin == '')
     begin = 0;
-  console.log({
-    'search': $('#addTabText').val().replace(/^\s+|\s+$/g, '').replace(/_/g, '').replace(/\s/, '%\\_%\\'),
-    'begin': begin,
-    'nbr': 50
-  });
   $('#searchButton').prop('disabled', true);
   getRequest('lists.php', {
     'search': $('#addTabText').val().replace(/^\s+|\s+$/g, '').replace(/_/g, '').replace(/\s/, '%\\_%\\'),

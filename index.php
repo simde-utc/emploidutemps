@@ -146,12 +146,17 @@
         <button onClick="window.open('https://assos.utc.fr');"><i class="fa fa-external-link" aria-hidden="true"></i> Portail des assos</button>
         <button onClick="window.open('https://moodle.utc.fr/login/index.php?authCAS=CAS');"><i class="fa fa-external-link" aria-hidden="true"></i> Moodle</button>
         <button onClick="window.open('https://assos.utc.fr/uvweb/');"><i class="fa fa-external-link" aria-hidden="true"></i> UVWeb</button>
-        <button onClick="window.open('https://gitlab.utc.fr/simde/emploidutemps');"><i class="fa fa-external-link" aria-hidden="true"></i> Gitlab (code source)</button>
+        <button onClick="window.open('https://github.com/simde-utc/emploidutemps');"><i class="fa fa-external-link" aria-hidden="true"></i> Github (code source)</button>
         <button onClick="window.open('mailto:simde@assos.utc.fr?subject=[EmploidUTemps] ');"><i class="fa fa-envelope-o" aria-hidden="true"></i> Nous contacter</button>
       </div>
     </div>
     <div id='affichage_options' class="menu sub-menu">
       Options:
+      <div>
+        Suggestions:
+        <input type='radio' id='withSuggestions' name='suggestionsTool' onClick="pasEncoreRomanet()"><label for='withSuggestions'>Avec</label>
+        <input type='radio' id='withoutSuggestions' name='suggestionsTool' onClick="generate()" CHECKED><label for='withoutSuggestions'>Sans</label>
+      </div>
       <div>
         <button onClick="getRequest('parameters.php', { 'defaultMode': get.mode })"><i class="fa fa-cog" aria-hidden="true"></i> Affecter ce mode par défaut</button>
         <button <?php if ($_SESSION['status'] != -1) {

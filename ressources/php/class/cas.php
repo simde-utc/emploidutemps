@@ -1,86 +1,65 @@
 <?php
 
-class xmlToArrayParser {
-  /** The array created by the parser can be assigned to any variable: $anyVarArr = $domObj->array.*/
-  public  $array = array();
-  public  $parse_error = false;
-  private $parser;
-  private $pointer;
+function xmlstr_to_array($xmlstr) {
+  $doc = new DOMDocument();
+  $doc->loadXML($xmlstr);
+  $root = $doc->documentElement;
+  $output = domnode_to_array($root);
+  $output['@root'] = $root->tagName;
 
-  /** Constructor: $domObj = new xmlToArrayParser($xml); */
-  public function __construct($xml) {
-    $this->pointer =& $this->array;
-    $this->parser = xml_parser_create("UTF-8");
-    xml_set_object($this->parser, $this);
-    xml_parser_set_option($this->parser, XML_OPTION_CASE_FOLDING, false);
-    xml_set_element_handler($this->parser, "tag_open", "tag_close");
-    xml_set_character_data_handler($this->parser, "cdata");
-    $this->parse_error = xml_parse($this->parser, ltrim($xml))? false : true;
+  return $output;
+}
+
+function domnode_to_array($node) {
+  $output = array();
+  switch ($node->nodeType) {
+    case XML_CDATA_SECTION_NODE:
+    case XML_TEXT_NODE:
+      $output = trim($node->textContent);
+    break;
+    case XML_ELEMENT_NODE:
+      for ($i=0, $m=$node->childNodes->length; $i<$m; $i++) {
+        $child = $node->childNodes->item($i);
+        $v = domnode_to_array($child);
+        if(isset($child->tagName)) {
+          $t = $child->tagName;
+          if(!isset($output[$t])) {
+            $output[$t] = array();
+          }
+          $output[$t][] = $v;
+        }
+        elseif($v || $v === '0') {
+          $output = (string) $v;
+        }
+      }
+      if($node->attributes->length && !is_array($output)) { //Has attributes but isn't an array
+        $output = array('@content'=>$output); //Change output into an array.
+      }
+      if(is_array($output)) {
+        if($node->attributes->length) {
+          $a = array();
+          foreach($node->attributes as $attrName => $attrNode) {
+            $a[$attrName] = (string) $attrNode->value;
+          }
+          $output['@attributes'] = $a;
+        }
+        foreach ($output as $t => $v) {
+          if(is_array($v) && count($v)==1 && $t!='@attributes') {
+            $output[$t] = $v[0];
+          }
+        }
+      }
+    break;
   }
 
-  /** Free the parser. */
-  public function __destruct() { xml_parser_free($this->parser);}
-
-  /** Get the xml error if an an error in the xml file occured during parsing. */
-  public function get_xml_error() {
-    if($this->parse_error) {
-      $errCode = xml_get_error_code ($this->parser);
-      $thisError =  "Error Code [". $errCode ."] \"<strong style='color:red;'>" . xml_error_string($errCode)."</strong>\",
-                            at char ".xml_get_current_column_number($this->parser) . "
-                            on line ".xml_get_current_line_number($this->parser)."";
-    }else $thisError = $this->parse_error;
-    return $thisError;
-  }
-
-  private function tag_open($parser, $tag, $attributes) {
-    $this->convert_to_array($tag, 'attrib');
-    $idx=$this->convert_to_array($tag, 'cdata');
-    if(isset($idx)) {
-      $this->pointer[$tag][$idx] = Array('@idx' => $idx,'@parent' => &$this->pointer);
-      $this->pointer =& $this->pointer[$tag][$idx];
-    }else {
-      $this->pointer[$tag] = Array('@parent' => &$this->pointer);
-      $this->pointer =& $this->pointer[$tag];
-    }
-    if (!empty($attributes)) { $this->pointer['attrib'] = $attributes; }
-  }
-
-  /** Adds the current elements content to the current pointer[cdata] array. */
-  private function cdata($parser, $cdata) { $this->pointer['cdata'] = trim($cdata); }
-
-  private function tag_close($parser, $tag) {
-    $current = & $this->pointer;
-    if(isset($this->pointer['@idx'])) {unset($current['@idx']);}
-
-    $this->pointer = & $this->pointer['@parent'];
-    unset($current['@parent']);
-
-    if(isset($current['cdata']) && count($current) == 1) { $current = $current['cdata'];}
-    else if(empty($current['cdata'])) {unset($current['cdata']);}
-  }
-
-  /** Converts a single element item into array(element[0]) if a second element of the same name is encountered. */
-  private function convert_to_array($tag, $item) {
-    if(isset($this->pointer[$tag][$item])) {
-      $content = $this->pointer[$tag];
-      $this->pointer[$tag] = array((0) => $content);
-      $idx = 1;
-    }else if (isset($this->pointer[$tag])) {
-      $idx = count($this->pointer[$tag]);
-      if(!isset($this->pointer[$tag][0])) {
-        foreach ($this->pointer[$tag] as $key => $value) {
-            unset($this->pointer[$tag][$key]);
-            $this->pointer[$tag][0][$key] = $value;
-    }}}else $idx = null;
-    return $idx;
-  }
+  return $output;
 }
 
 class CAS {
 	const URL = 'https://cas.utc.fr/cas/';
 
 
-	public static function authenticate()	{
+	public static function authenticate($parse = TRUE)	{
 		if (!isset($_GET['ticket']) || empty($_GET['ticket']))
 			return -1;
 
@@ -89,13 +68,12 @@ class CAS {
 		if (empty($data))
 			return -1;
 
-//#print_r($data); exit;
-		$parsed = new xmlToArrayParser($data);
+    $array = xmlstr_to_array($data);
 
-		if (!isset($parsed->array['cas:serviceResponse']['cas:authenticationSuccess']))
-			return -1;
+    if (!isset($array['cas:authenticationSuccess']))
+      return -1;
 
-		return $parsed->array['cas:serviceResponse']['cas:authenticationSuccess'];
+    return $parse ? $array['cas:authenticationSuccess'] : $data;
 	}
 
 
