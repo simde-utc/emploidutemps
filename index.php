@@ -298,7 +298,7 @@
       if (jqxhr.status == '503')
         $.miniNoty('<i class="fa fa-exclamation-circle" aria-hidden="true"></i> Il faut que tu te reconnectes au CAS', 'normal');
       else
-        $.miniNoty('<i class="fa fa-exclamation-circle" aria-hidden="true"></i> Une erreur a ete détectee. Si le problème persiste, <a href=/disconnect.php>déconnecte-toi</a> ou signale-le nous. Merci !', 'error');
+        $.miniNoty('<i class="fa fa-exclamation-circle" aria-hidden="true"></i> Une erreur a été détectée. Si le problème persiste, <a href=/disconnect.php>déconnecte-toi</a> ou signale-le nous. Merci !', 'error');
 
       setTimeout(function () {
 	       location.reload();
